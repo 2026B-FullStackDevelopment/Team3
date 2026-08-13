@@ -23,5 +23,8 @@
   "type": "module",
   "devDependencies": {
     "concurrently": "^10.0.4"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }
