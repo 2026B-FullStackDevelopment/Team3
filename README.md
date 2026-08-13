@@ -2,11 +2,18 @@
 
 Full-stack application developed by Team 3 for the Full-Stack Development course.
 
+## Team Member
+
+- Huynh Tan Phuc - s4103131
+- Dao Tien Dung - s4088577
+- Lam Vi Tin - s4116601
+- Nguyen Nhat Minh - s4112692 
+
 ## Tech Stack
 
-* **Frontend:** React + Vite + TypeScript
-* **Backend:** Node.js + Express + TypeScript
-* **Documentation:** SRS, diagrams, reports
+- **Frontend:** React + Vite + TypeScript
+- **Backend:** Node.js + Express + TypeScript
+- **Documentation:** SRS, diagrams, reports
 
 ## Project Structure
 
@@ -22,9 +29,9 @@ Team3/
 
 ## Prerequisites
 
-* Node.js 24 LTS
-* pnpm
-* Git
+- Node.js 24 LTS
+- pnpm
+- Git
 
 Check your versions:
 
@@ -86,9 +93,9 @@ production  # Stable/production code
 dev         # Daily development
 ```
 
-* `dev` is the default branch.
-* Do not push directly to `main` or `production`.
-* All changes should go through Pull Requests.
+- `dev` is the default branch.
+- Do not push directly to `main` or `production`.
+- All changes should go through Pull Requests.
 
 ## Branch Naming
 
