@@ -1,4 +1,6 @@
 import express from "express";
+import "dotenv/config";
+import { connectDatabase } from "./config/database.js";
 
 const app = express();
 
@@ -13,6 +15,14 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
-});
+async function startServer() {
+  try {
+    await connectDatabase();
+    app.listen(PORT, () => {
+      console.log(`Backend running at http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server", error);
+  }
+}
+startServer();
