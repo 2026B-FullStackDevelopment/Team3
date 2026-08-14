@@ -19,13 +19,18 @@ Full-stack application developed by Team 3 for the Full-Stack Development course
 
 ```text
 Team3/
-├── frontend/       # React + Vite
-├── backend/        # Node.js + Express
-├── docs/            # Documentation
+├── frontend/            # React + Vite
+├── backend/             # Node.js + Express
+├── docs/                # Documentation (not created yet)
 ├── .gitignore
 ├── README.md
-└── package.json
+├── package.json         # Workspace root — scripts only, no app code
+└── pnpm-workspace.yaml  # Declares backend/ and frontend/ as workspace packages
 ```
+
+This is a single pnpm workspace with **one lockfile at the root**. Do not add a
+lockfile or `pnpm-workspace.yaml` inside `backend/` or `frontend/` — nested
+lockfiles are ignored by pnpm and drift out of sync.
 
 ## Prerequisites
 
@@ -51,6 +56,9 @@ cd Team3
 
 ### 2. Install dependencies
 
+Run this from the repository root only — it installs `backend/` and
+`frontend/` together:
+
 ```bash
 pnpm install
 ```
@@ -63,6 +71,10 @@ cp frontend/.env.example frontend/.env
 ```
 
 Do not commit `.env` files.
+
+`backend/.env` must define `MONGODB_URI` — the backend calls
+`mongoose.connect()` on startup and will fail to boot without it. `PORT` is
+optional and defaults to `3000`.
 
 ## Run the Application
 
@@ -151,11 +163,41 @@ pnpm build:frontend
 
 # Build backend
 pnpm build:backend
+
+# Typecheck backend
+pnpm check
 ```
+
+## API Routes
+
+Implemented as skeletons — the routers and controllers exist, every handler
+currently answers `501 Not Implemented`.
+
+### Donor dashboard — `/api/donor/food-listings`
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/` | Dashboard list of the donor's listings (paginated, filterable) |
+| `POST` | `/` | Create a listing |
+| `GET` | `/statistics` | Dashboard totals and chart series |
+| `GET` | `/:id` | One listing |
+| `PATCH` | `/:id` | Edit listing details |
+| `DELETE` | `/:id` | Delete a listing with no records against it |
+| `POST` | `/:id/duplicate` | New listing reusing this configuration |
+| `GET` | `/:id/donations` | Donation and reservation records |
+| `POST` | `/:id/donations` | Manually record food given to a recipient |
+| `PATCH` | `/:id/status` | Publish / pause / resume / cancel / complete |
+| `PATCH` | `/:id/ration` | Set or clear the per-recipient ration limit |
+
+`/statistics` is registered before `/:id` on purpose — reorder them and Express
+matches `statistics` as an id, making the route unreachable.
+
+These routes have **no authentication or ownership scoping yet**. The auth,
+role and ownership middleware are still empty files.
 
 ## Documentation
 
-Project documentation is stored in:
+Project documentation will be stored in `docs/` (not created yet):
 
 ```text
 docs/
