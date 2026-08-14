@@ -12,13 +12,18 @@ Full-stack application developed by Team 3 for the Full-Stack Development course
 
 ```text
 Team3/
-├── frontend/       # React + Vite
-├── backend/        # Node.js + Express
-├── docs/            # Documentation
+├── frontend/            # React + Vite
+├── backend/             # Node.js + Express
+├── docs/                # Documentation (not created yet)
 ├── .gitignore
 ├── README.md
-└── package.json
+├── package.json         # Workspace root — scripts only, no app code
+└── pnpm-workspace.yaml  # Declares backend/ and frontend/ as workspace packages
 ```
+
+This is a single pnpm workspace with **one lockfile at the root**. Do not add a
+lockfile or `pnpm-workspace.yaml` inside `backend/` or `frontend/` — nested
+lockfiles are ignored by pnpm and drift out of sync.
 
 ## Prerequisites
 
@@ -44,6 +49,9 @@ cd Team3
 
 ### 2. Install dependencies
 
+Run this from the repository root only — it installs `backend/` and
+`frontend/` together:
+
 ```bash
 pnpm install
 ```
@@ -56,6 +64,10 @@ cp frontend/.env.example frontend/.env
 ```
 
 Do not commit `.env` files.
+
+`backend/.env` must define `MONGODB_URI` — the backend calls
+`mongoose.connect()` on startup and will fail to boot without it. `PORT` is
+optional and defaults to `3000`.
 
 ## Run the Application
 
@@ -144,11 +156,14 @@ pnpm build:frontend
 
 # Build backend
 pnpm build:backend
+
+# Typecheck backend
+pnpm check
 ```
 
 ## Documentation
 
-Project documentation is stored in:
+Project documentation will be stored in `docs/` (not created yet):
 
 ```text
 docs/
