@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
+import "dotenv/config";
 
 export async function connectDatabase() {
-  await mongoose.connect(process.env.MONGODB_URI!);
-  console.log("Database connected");
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    throw new Error("MONGODB_URI is missing");
+  }
+
+  await mongoose.connect(uri);
 }

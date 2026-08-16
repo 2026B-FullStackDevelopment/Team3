@@ -1,16 +1,33 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, type StringSchemaDefinition } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-const DonorProfileSchema = new Schema({
-  id: {
+export interface IDonorProfile {
+  _id: string;
+  userId: string;
+  taxCode: string;
+  companyName: string;
+  city?: string;
+  avatarUrl?: string;
+  address: string;
+  location: {
+    type: "Point";
+    coordinates: number[];
+  };
+}
+
+const DonorProfileSchema = new Schema<IDonorProfile>({
+  _id: {
     type: String,
     required: true,
-    default: uuidv4,
+    default: () => uuidv4(),
   },
   userId: {
     type: String,
     required: true,
     ref: "User",
+  },
+  companyName: {
+    type: String,
   },
   taxCode: {
     type: String,
@@ -18,6 +35,9 @@ const DonorProfileSchema = new Schema({
     required: true,
   },
   city: {
+    type: String,
+  },
+  address: {
     type: String,
   },
   avatarUrl: {
@@ -36,4 +56,7 @@ const DonorProfileSchema = new Schema({
   },
 });
 DonorProfileSchema.index({ location: "2dsphere" });
-export const DonorProfile = mongoose.model("DonorProfile", DonorProfileSchema);
+export const DonorProfile = mongoose.model<IDonorProfile>(
+  "DonorProfile",
+  DonorProfileSchema,
+);

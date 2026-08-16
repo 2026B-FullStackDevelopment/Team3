@@ -3,4 +3,5 @@ packages:
   - frontend
 
 allowBuilds:
+  bcrypt: false
   esbuild: true

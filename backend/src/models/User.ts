@@ -9,11 +9,26 @@ export enum AccountStatus {
   Active = "Active",
   Deactivated = "Deactivated",
 }
-const userSchema = new Schema(
+
+export interface IUser {
+  _id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  role: userRole;
+  accountStatus: AccountStatus;
+  failedLoginAttemps: number;
+  lockedUntil?: Date | null;
+  lastFailedLoginAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>(
   {
-    id: {
+    _id: {
       type: String,
-      default: uuidv4,
+      default: () => uuidv4(),
     },
     username: {
       type: String,
@@ -34,7 +49,7 @@ const userSchema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: Object.values(AccountStatus),
+      enum: Object.values(userRole),
     },
     accountStatus: {
       type: String,
@@ -42,7 +57,7 @@ const userSchema = new Schema(
       enum: Object.values(AccountStatus),
     },
     failedLoginAttemps: {
-      type: String,
+      type: Number,
       default: 0,
       min: 0,
     },
@@ -59,4 +74,4 @@ const userSchema = new Schema(
     timestamps: true,
   },
 );
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model<IUser>("User", userSchema);

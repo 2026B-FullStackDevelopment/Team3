@@ -1,10 +1,20 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-const RecipientProfileSchema = new Schema({
-  id: {
+export interface IRecipientProfile {
+  _id: string;
+  userId: string;
+  userName: string;
+  city?: string;
+  avatarUrl?: string;
+  isPremium?: boolean | null;
+  premiumExpiryDate?: Date | null;
+}
+
+const RecipientProfileSchema = new Schema<IRecipientProfile>({
+  _id: {
     type: String,
-    default: uuidv4,
+    default: () => uuidv4(),
   },
   userId: {
     type: String,
@@ -35,7 +45,7 @@ const RecipientProfileSchema = new Schema({
   },
 });
 
-export const RecipientProfile = mongoose.model(
+export const RecipientProfile = mongoose.model<IRecipientProfile>(
   "RecipientProfile",
   RecipientProfileSchema,
 );
