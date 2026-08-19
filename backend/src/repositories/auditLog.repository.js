@@ -1,16 +1,5 @@
 
-import {
-  AuditLog,
-  AuditLogStatus,
-  type AuditTargetType,
-  type IAuditLog,
-} from "../models/AuditLog.js";
-
-type CreateAuditLogInput = Pick<
-  IAuditLog,
-  "action" | "adminId" | "targetId" | "targetType" | "previousState"
-> &
-  Partial<Pick<IAuditLog, "status" | "undoDeadline" | "createdAt">>;
+import { AuditLog, AuditLogStatus } from "../models/AuditLog.js";
 
 /**
  * Inserts a new audit log entry when an admin takes an action.
@@ -18,7 +7,7 @@ type CreateAuditLogInput = Pick<
  * defaults (status: Pending, createdAt: now), so we don't restate them
  * here; callers only pass fields that vary per action.
  */
-export async function create(entryData: CreateAuditLogInput): Promise<IAuditLog> {
+export async function create(entryData) {
   return AuditLog.create(entryData);
 }
 
@@ -27,7 +16,7 @@ export async function create(entryData: CreateAuditLogInput): Promise<IAuditLog>
  * Just findById — no populate/projection, since the AdminService decides
  * what shape it needs, not this layer.
  */
-export async function findById(id: string): Promise<IAuditLog | null> {
+export async function findById(id) {
   return AuditLog.findById(id);
 }
 
@@ -38,7 +27,7 @@ export async function findById(id: string): Promise<IAuditLog | null> {
  * (e.g. actions that never allowed undo) can never match — Mongo would
  * otherwise treat a missing/null date as satisfying `$lte`.
  */
-export async function findExpiredPending(): Promise<IAuditLog[]> {
+export async function findExpiredPending() {
   return AuditLog.find({
     status: AuditLogStatus.Pending,
     undoDeadline: { $ne: null, $lte: new Date() },
@@ -49,30 +38,13 @@ export async function findExpiredPending(): Promise<IAuditLog[]> {
  * Transitions an entry's status (e.g. Pending -> Finalized on sweep,
  * Pending -> Undone on manual undo), stamping undoneAt/undoneBy when given.
  */
-export async function updateStatus(
-  id: string,
-  newStatus: AuditLogStatus,
-  undoneAt?: Date,
-  undoneBy?: string,
-): Promise<IAuditLog | null> {
-  const update: Partial<Pick<IAuditLog, "status" | "undoneAt" | "undoneBy">> = {
-    status: newStatus,
-  };
+export async function updateStatus(id, newStatus, undoneAt, undoneBy) {
+  const update = { status: newStatus };
   if (undoneAt !== undefined) update.undoneAt = undoneAt;
   if (undoneBy !== undefined) update.undoneBy = undoneBy;
 
   return AuditLog.findByIdAndUpdate(id, { $set: update }, { new: true });
 }
-
-type AuditLogFilters = {
-  targetType?: AuditTargetType;
-  status?: AuditLogStatus;
-  adminId?: string;
-  startDate?: Date;
-  endDate?: Date;
-  page?: number;
-  limit?: number;
-};
 
 /**
  * Paginated/filtered list for the admin Audit Log page. Runs find() and
@@ -80,23 +52,21 @@ type AuditLogFilters = {
  * other's result — the count is needed for the UI's page numbers, so we
  * can't avoid the second query, only avoid running it sequentially.
  */
-export async function findAll(
-  filters: AuditLogFilters = {},
-): Promise<{ entries: IAuditLog[]; total: number }> {
+export async function findAll(filters = {}) {
   const { targetType, status, adminId, startDate, endDate, page = 1, limit = 20 } = filters;
 
-  const query: Record<string, unknown> = {};
+  const query = {};
   if (targetType !== undefined) query.targetType = targetType;
   if (status !== undefined) query.status = status;
   if (adminId !== undefined) query.adminId = adminId;
   if (startDate !== undefined || endDate !== undefined) {
-    const createdAt: Record<string, Date> = {};
+    const createdAt = {};
     if (startDate !== undefined) createdAt.$gte = startDate;
     if (endDate !== undefined) createdAt.$lte = endDate;
     query.createdAt = createdAt;
   }
 
-  const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit; // for the skip button
 
   const [entries, total] = await Promise.all([
     AuditLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
