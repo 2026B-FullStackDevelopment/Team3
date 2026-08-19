@@ -1,14 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-export interface IRevokedToken {
-  _id: string;
-  jti: string;
-  userId?: string;
-  expiresAt?: Date;
-}
-
-const RevokedTokenSchema = new Schema<IRevokedToken>({
+const RevokedTokenSchema = {
   _id: {
     type: String,
     required: true,
@@ -27,8 +20,5 @@ const RevokedTokenSchema = new Schema<IRevokedToken>({
   expiresAt: {
     type: Date,
   },
-});
-export const RevokedToken = mongoose.model<IRevokedToken>(
-  "RevokedToken",
-  RevokedTokenSchema,
-);
+};
+export const RevokedToken = mongoose.model("RevokedToken", RevokedTokenSchema);

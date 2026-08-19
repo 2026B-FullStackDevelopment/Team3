@@ -1,19 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { foodCategory } from "./NotificationPreference.js";
-import { MeasurementUnit } from "./Donation.js";
+import { MeasurementUnit } from "./donation.js";
 
-export interface IDonorReportItem {
-  _id: string;
-  donorReportId: string;
-  foodCategory: string;
-  measurementUnit: string;
-  donatedQuantity: Number;
-  revenue: Number;
-  donationCount: Number;
-}
-
-const DonorReportItemSchema = new Schema<IDonorReportItem>({
+const DonorReportItemSchema = new Schema({
   _id: {
     type: String,
     required: true,
@@ -42,7 +32,7 @@ const DonorReportItemSchema = new Schema<IDonorReportItem>({
     type: Number,
   },
 });
-export const DonorReportItem = mongoose.model<IDonorReportItem>(
+export const DonorReportItem = mongoose.model(
   "DonorReportItem",
   DonorReportItemSchema,
 );

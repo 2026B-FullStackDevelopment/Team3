@@ -1,48 +1,24 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-export enum AuditTargetType {
-  User = "User",
-  Donation = "Donation",
-}
+export const AuditTargetType = {
+  User: "User",
+  Donation: "Donation",
+};
 
-export enum AdminActionType {
-  DeactivateUser = "DeactivateUser",
-  ReactivateUser = "ReactivateUser",
-  CancelDonation = "CancelDonation",
-}
+export const AdminActionType = {
+  DeactivateUser: "DeactivateUser",
+  ReactivateUser: "ReactivateUser",
+  CancelDonation: "CancelDonation",
+};
 
-export enum AuditLogStatus {
-  Pending = "Pending",
-  Finalized = "Finalized",
-  Undone = "Undone",
-}
+export const AuditLogStatus = {
+  Pending: "Pending",
+  Finalized: "Finalized",
+  Undone: "Undone",
+};
 
-export interface IAuditLog {
-  _id: string;
-
-  adminId: string;
-
-  action: AdminActionType;
-
-  targetType: AuditTargetType;
-
-  targetId: string;
-
-  previousState: unknown;
-
-  status: AuditLogStatus;
-
-  undoDeadline?: Date | null;
-
-  undoneBy?: string | null;
-
-  undoneAt?: Date | null;
-
-  createdAt: Date;
-}
-
-const auditLogSchema = new Schema<IAuditLog>({
+const auditLogSchema = new Schema({
   _id: {
     type: String,
     default: () => uuidv4(),
@@ -109,4 +85,4 @@ const auditLogSchema = new Schema<IAuditLog>({
   },
 });
 
-export const AuditLog = mongoose.model<IAuditLog>("AuditLog", auditLogSchema);
+export const AuditLog = mongoose.model("AuditLog", auditLogSchema);

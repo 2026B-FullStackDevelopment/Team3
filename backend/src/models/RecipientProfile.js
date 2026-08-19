@@ -1,17 +1,7 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-export interface IRecipientProfile {
-  _id: string;
-  userId: string;
-  userName: string;
-  city?: string;
-  avatarUrl?: string;
-  isPremium?: boolean | null;
-  premiumExpiryDate?: Date | null;
-}
-
-const RecipientProfileSchema = new Schema<IRecipientProfile>({
+export const RecipientProfileSchema = {
   _id: {
     type: String,
     default: () => uuidv4(),
@@ -43,9 +33,9 @@ const RecipientProfileSchema = new Schema<IRecipientProfile>({
     type: Date,
     default: null,
   },
-});
+};
 
-export const RecipientProfile = mongoose.model<IRecipientProfile>(
+export const RecipientProfile = mongoose.model(
   "RecipientProfile",
   RecipientProfileSchema,
 );

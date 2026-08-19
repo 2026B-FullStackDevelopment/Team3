@@ -15,7 +15,7 @@ import {
   Donation,
   MeasurementUnit,
   DonationStatus,
-} from "../models/Donation.js";
+} from "../models/donation.js";
 
 import {
   Reservation,

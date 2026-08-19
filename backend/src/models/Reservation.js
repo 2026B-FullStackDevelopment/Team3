@@ -1,32 +1,18 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-export enum PaymentMethod {
-  Cash = "Cash",
-  Wallet = "Wallet",
-  Card = "Card",
-}
-export enum ReservationStatus {
-  Reserved = "Reserved",
-  CollectedByRecipient = "CollectedByRecipient",
-  Collected = "Collected",
-  CancelledByDonor = "CancelledByDonor",
-}
+export const PaymentMethod = {
+  Cash: "Cash",
+  Wallet: "Wallet",
+  Card: "Card",
+};
+export const ReservationStatus = {
+  Reserved: "Reserved",
+  CollectedByRecipient: "CollectedByRecipient",
+  Collected: "Collected",
+  CancelledByDonor: "CancelledByDonor",
+};
 
-export interface IReservation {
-  _id: string;
-  donationId: string;
-  recipientProfileId: string;
-  manualRecipientName: string;
-  quantity: number;
-  status?: ReservationStatus;
-  totalPaid: number;
-  paymentMethod?: PaymentMethod;
-  feedback?: string | null;
-  reservedAt?: Date | null;
-  collectedAt?: Date | null;
-}
-
-const ReservationSchema = new Schema<IReservation>({
+export const ReservationSchema = {
   _id: {
     type: String,
     required: true,
@@ -80,9 +66,6 @@ const ReservationSchema = new Schema<IReservation>({
     type: Date,
     default: null,
   },
-});
+};
 
-export const Reservation = mongoose.model<IReservation>(
-  "Reservation",
-  ReservationSchema,
-);
+export const Reservation = mongoose.model("Reservation", ReservationSchema);
