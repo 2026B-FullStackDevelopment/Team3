@@ -1,30 +1,16 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-export enum userRole {
-  Recipient = "Recipient",
-  Donor = "Donor",
-  Admin = "Admin",
-}
-export enum AccountStatus {
-  Active = "Active",
-  Deactivated = "Deactivated",
-}
+export const userRole = {
+  Recipient: "Recipient",
+  Donor: "Donor",
+  Admin: "Admin",
+};
+export const AccountStatus = {
+  Active: "Active",
+  Deactivated: "Deactivated",
+};
 
-export interface IUser {
-  _id: string;
-  username: string;
-  email: string;
-  passwordHash: string;
-  role: userRole;
-  accountStatus: AccountStatus;
-  failedLoginAttemps: number;
-  lockedUntil?: Date | null;
-  lastFailedLoginAt?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema(
   {
     _id: {
       type: String,
@@ -74,4 +60,4 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
   },
 );
-export const User = mongoose.model<IUser>("User", userSchema);
+export const User = mongoose.model("User", userSchema);

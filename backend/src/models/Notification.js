@@ -1,21 +1,12 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-export enum NotificationType {
-  ListingMatched = "ListingMatched",
-  ListingSoldOut = "ListingSoldOut",
-  ListingCancelledByAdmin = "ListingCancelledByAdmin",
-}
+export const NotificationType = {
+  ListingMatched: "ListingMatched",
+  ListingSoldOut: "ListingSoldOut",
+  ListingCancelledByAdmin: "ListingCancelledByAdmin",
+};
 
-export interface INotification {
-  _id: string;
-  userId: string;
-  type?: NotificationType;
-  relatedDonationId?: string;
-  isRead?: boolean;
-  createdAt?: Date | null;
-}
-
-const NotificationSchema = new Schema<INotification>({
+const NotificationSchema = {
   _id: {
     type: String,
     required: true,
@@ -44,9 +35,6 @@ const NotificationSchema = new Schema<INotification>({
     type: Date,
     default: null,
   },
-});
+};
 
-export const Notification = mongoose.model<INotification>(
-  "Notification",
-  NotificationSchema,
-);
+export const Notification = mongoose.model("Notification", NotificationSchema);

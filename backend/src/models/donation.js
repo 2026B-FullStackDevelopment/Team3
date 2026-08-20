@@ -1,39 +1,22 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { foodCategory } from "./NotificationPreference.js";
-export enum MeasurementUnit {
-  KG = "KG",
-  G = "G",
-  L = "L",
-  ML = "ML",
-  Unit = "Unit",
-  PerRequest = "PerRequest",
-}
-export enum DonationStatus {
-  Active = "Active",
-  Paused = "Paused",
-  PendingCancellation = "PendingCancellation",
-  Cancelled = "Cancelled",
-  SoldOut = "SoldOut",
-}
-export interface IDonation {
-  _id: string;
-  donorProfileId: string;
-  name: string;
-  description?: string;
-  measurementUnit: string;
-  foodCategory?: foodCategory;
-  isVegetarian?: boolean | null;
-  donationLimit: number;
-  price: number;
-  remainingQuantity: number;
-  ration: number;
-  status?: DonationStatus;
-  revenue: number;
-  createdAt: Date;
-  closedAt?: Date | null;
-}
-const DonationSchema = new Schema<IDonation>({
+export const MeasurementUnit = {
+  KG: "KG",
+  G: "G",
+  L: "L",
+  ML: "ML",
+  Unit: "Unit",
+  PerRequest: "PerRequest",
+};
+export const DonationStatus = {
+  Active: "Active",
+  Paused: "Paused",
+  PendingCancellation: "PendingCancellation",
+  Cancelled: "Cancelled",
+  SoldOut: "SoldOut",
+};
+export const DonationSchema = {
   _id: {
     type: String,
     required: true,
@@ -100,6 +83,6 @@ const DonationSchema = new Schema<IDonation>({
     type: Date,
     default: null,
   },
-});
+};
 
-export const Donation = mongoose.model<IDonation>("Donation", DonationSchema);
+export const Donation = mongoose.model("Donation", DonationSchema);

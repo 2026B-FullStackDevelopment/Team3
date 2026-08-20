@@ -1,13 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-export interface IWallet {
-  _id: string;
-  recipientProfileId: string;
-  balance: number;
-}
-
-const WalletSchema = new Schema<IWallet>({
+export const WalletSchema = {
   _id: {
     type: String,
     required: true,
@@ -23,5 +17,5 @@ const WalletSchema = new Schema<IWallet>({
     default: 0,
     min: 0,
   },
-});
-export const Wallet = mongoose.model<IWallet>("Wallet", WalletSchema);
+};
+export const Wallet = mongoose.model("Wallet", WalletSchema);
