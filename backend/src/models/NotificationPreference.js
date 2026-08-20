@@ -9,43 +9,40 @@ export const foodCategory = {
   Drink: "Drink",
 };
 
-const NotificationPreferenceSchema =
-  new Schema() <
-  INotificationPreference >
-  {
-    _id: {
-      type: String,
-      required: true,
-      default: () => uuidv4(),
-    },
-    recipientProfileId: {
-      type: String,
-      required: true,
-      ref: "RecipientProfile",
-    },
-    foodCategory: {
-      type: [String],
-      enum: Object.values(foodCategory),
-    },
-    isVegetarian: {
-      type: Boolean,
-    },
-    priceRangeMin: {
-      type: Number,
-      min: 0,
-      default: 0,
-      required: true,
-    },
-    priceRangeMax: {
-      type: Number,
-      min: 0,
-      default: 0,
-      required: true,
-    },
-    city: {
-      type: String,
-    },
-  };
+const NotificationPreferenceSchema = new Schema({
+  _id: {
+    type: String,
+    required: true,
+    default: () => uuidv4(),
+  },
+  recipientProfileId: {
+    type: String,
+    required: true,
+    ref: "RecipientProfile",
+  },
+  foodCategory: {
+    type: [String],
+    enum: Object.values(foodCategory),
+  },
+  isVegetarian: {
+    type: Boolean,
+  },
+  priceRangeMin: {
+    type: Number,
+    min: 0,
+    default: 0,
+    required: true,
+  },
+  priceRangeMax: {
+    type: Number,
+    min: 0,
+    default: 0,
+    required: true,
+  },
+  city: {
+    type: String,
+  },
+});
 export const NotificationPreference = mongoose.model(
   "NotificationPreference",
   NotificationPreferenceSchema,
