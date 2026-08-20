@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import "dotenv/config";
 
 export async function connectDatabase() {
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI_TEST;
 
   if (!uri) {
     throw new Error("MONGODB_URI is missing");
