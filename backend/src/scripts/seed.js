@@ -41,7 +41,7 @@ import { DonorReport, ReportType } from "../models/DonorReport.js";
 
 import { DonorReportItem } from "../models/DonorReportItem.js";
 
-async function clearDatabase(): Promise<void> {
+async function clearDatabase() {
   console.log("Clearing existing data...");
 
   // Delete dependent collections first.
@@ -107,7 +107,7 @@ async function seedUsers() {
   };
 }
 
-async function seedRecipientProfile(userId: string) {
+async function seedRecipientProfile(userId) {
   console.log("2/13 Seeding RecipientProfile...");
 
   return RecipientProfile.create({
@@ -120,7 +120,7 @@ async function seedRecipientProfile(userId: string) {
   });
 }
 
-async function seedDonorProfile(userId: string) {
+async function seedDonorProfile(userId) {
   console.log("3/13 Seeding DonorProfile...");
 
   return DonorProfile.create({
@@ -139,7 +139,7 @@ async function seedDonorProfile(userId: string) {
   });
 }
 
-async function seedNotificationPreference(recipientProfileId: string) {
+async function seedNotificationPreference(recipientProfileId) {
   console.log("4/13 Seeding NotificationPreference...");
 
   return NotificationPreference.create({
@@ -153,7 +153,7 @@ async function seedNotificationPreference(recipientProfileId: string) {
   });
 }
 
-async function seedWallet(recipientProfileId: string) {
+async function seedWallet(recipientProfileId) {
   console.log("5/13 Seeding Wallet...");
 
   return Wallet.create({
@@ -162,7 +162,7 @@ async function seedWallet(recipientProfileId: string) {
   });
 }
 
-async function seedDonations(donorProfileId: string) {
+async function seedDonations(donorProfileId) {
   console.log("6/13 Seeding Donation...");
 
   const bread = await Donation.create({
@@ -199,7 +199,7 @@ async function seedDonations(donorProfileId: string) {
   };
 }
 
-async function seedReservation(donationId: string, recipientProfileId: string) {
+async function seedReservation(donationId, recipientProfileId) {
   console.log("7/13 Seeding Reservation...");
 
   return Reservation.create({
@@ -217,8 +217,8 @@ async function seedReservation(donationId: string, recipientProfileId: string) {
 }
 
 async function seedTransaction(
-  recipientProfileId: string,
-  reservationId: string,
+  recipientProfileId,
+  reservationId,
 ) {
   console.log("8/13 Seeding Transaction...");
 
@@ -232,7 +232,7 @@ async function seedTransaction(
   });
 }
 
-async function seedNotification(userId: string, donationId: string) {
+async function seedNotification(userId, donationId) {
   console.log("9/13 Seeding Notification...");
 
   return Notification.create({
@@ -244,7 +244,7 @@ async function seedNotification(userId: string, donationId: string) {
   });
 }
 
-async function seedRevokedToken(userId: string) {
+async function seedRevokedToken(userId) {
   console.log("10/13 Seeding RevokedToken...");
 
   return RevokedToken.create({
@@ -254,7 +254,7 @@ async function seedRevokedToken(userId: string) {
   });
 }
 
-async function seedAuditLog(adminId: string, targetUserId: string) {
+async function seedAuditLog(adminId, targetUserId) {
   console.log("11/13 Seeding AuditLog...");
 
   return AuditLog.create({
@@ -276,7 +276,7 @@ async function seedAuditLog(adminId: string, targetUserId: string) {
   });
 }
 
-async function seedDonorReport(donorProfileId: string) {
+async function seedDonorReport(donorProfileId) {
   console.log("12/13 Seeding DonorReport...");
 
   return DonorReport.create({
@@ -290,7 +290,7 @@ async function seedDonorReport(donorProfileId: string) {
   });
 }
 
-async function seedDonorReportItems(donorReportId: string) {
+async function seedDonorReportItems(donorReportId) {
   console.log("13/13 Seeding DonorReportItem...");
 
   const breadItem = await DonorReportItem.create({
@@ -317,7 +317,7 @@ async function seedDonorReportItems(donorReportId: string) {
   };
 }
 
-async function seed(): Promise<void> {
+async function seed() {
   try {
     await connectDatabase();
 
