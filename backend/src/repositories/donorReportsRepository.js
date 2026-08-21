@@ -1,5 +1,5 @@
-import { DonorReport } from "../models/DonorReport";
-import { DonorReportItem } from "../models/DonorReportItem";
+import { DonorReport } from "../models/DonorReport.js";
+import * as donorReportItemsRepository from "./donorReportItemsRepository.js";
 
 export async function create(data) {
   return DonorReport.create(data);
@@ -9,8 +9,8 @@ export async function findReportById(id) {
   return DonorReport.findById(id);
 }
 export async function findReportsByDonor(donorProfileId) {
-  return (await DonorReport.find({ donorProfileId })).toSorted({
-    generateAt: -1,
+  return (await DonorReport.find({ donorProfileId })).sort({
+    generatedAt: -1,
   });
 }
 export async function updateReport(id, data) {
@@ -19,28 +19,28 @@ export async function updateReport(id, data) {
     {
       $set: data,
     },
-    { new: data, runValidators: true },
+    { new: true, runValidators: true },
   );
 }
 export async function deleteReport(id) {
   return DonorReport.findByIdAndDelete(id);
 }
 export async function createReportItem(data) {
-  return DonorReportItem.create(data);
+  return donorReportItemsRepository.create(data);
 }
 export async function createReportItems(items) {
-  return DonorReportItem.insertMany(items);
+  return donorReportItemsRepository.createMany(items);
 }
-export async function findItemsByReport(DonorReportId) {
-  return DonorReportItem.find({ donorReportId });
+export async function findItemsByReport(donorReportId) {
+  return donorReportItemsRepository.findByReportId(donorReportId);
 }
 export async function deleteItemsByReport(donorReportId) {
-  return DonorReportItem.deleteMany({ donorProfileId });
+  return donorReportItemsRepository.deleteByReportId(donorReportId);
 }
 export async function findReportWithItems(id) {
   const [report, items] = await Promise.all([
     DonorReport.findById(id),
-    DonorReportItem.find({ donorReportId: id }),
+    donorReportItemsRepository.findByReportId(id),
   ]);
   if (!report) return null;
 
@@ -53,7 +53,7 @@ export async function createReportWithItems(reportData, itemsData = []) {
   const report = await DonorReport.create(reportData);
 
   const items = itemsData.length
-    ? await DonorReportItem.insertMany(
+    ? await donorReportItemsRepository.createMany(
         itemsData.map((item) => ({
           ...item,
           donorReportId: report._id,
@@ -69,7 +69,7 @@ export async function createReportWithItems(reportData, itemsData = []) {
 export async function deleteReportWithItems(id) {
   const [report] = await Promise.all([
     DonorReport.findByIdAndDelete(id),
-    DonorReportItem.deleteMany({ donorReportId: id }),
+    donorReportItemsRepository.deleteByReportId(id),
   ]);
   return report;
 }
@@ -82,17 +82,17 @@ export async function findAll(filters = {}) {
     page = 1,
     limit = 20,
   } = filters;
-  const query = [];
+  const query = {};
   if (donorProfileId !== undefined) query.donorProfileId = donorProfileId;
   if (reportType !== undefined) query.reportType = reportType;
   if (periodStart !== undefined || periodEnd !== undefined) {
-    query.generateAt = {};
+    query.generatedAt = {};
     if (periodStart !== undefined) query.generatedAt.$gte = periodStart;
     if (periodEnd !== undefined) query.generatedAt.$lte = periodEnd;
   }
   //pagination for users
   const skip = (page - 1) * limit;
-  const [entries, total] = await Promise([
+  const [entries, total] = await Promise.all([
     DonorReport.find(query).sort({ generatedAt: -1 }).skip(skip).limit(limit),
     DonorReport.countDocuments(query),
   ]);
