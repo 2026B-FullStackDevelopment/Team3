@@ -68,7 +68,6 @@ async function seedUsers() {
   const passwordHash = await bcrypt.hash("Password123!", 12);
 
   const admin = await User.create({
-    username: "admin",
     email: "admin@example.com",
     passwordHash,
     role: userRole.Admin,
@@ -79,7 +78,6 @@ async function seedUsers() {
   });
 
   const donor = await User.create({
-    username: "donor01",
     email: "donor@example.com",
     passwordHash,
     role: userRole.Donor,
@@ -90,7 +88,6 @@ async function seedUsers() {
   });
 
   const recipient = await User.create({
-    username: "recipient01",
     email: "recipient@example.com",
     passwordHash,
     role: userRole.Recipient,
@@ -112,7 +109,6 @@ async function seedRecipientProfile(userId) {
 
   return RecipientProfile.create({
     userId,
-    userName: "recipient01",
     city: "Ho Chi Minh City",
     avatarUrl: "https://example.com/images/recipient-avatar.png",
     isPremium: false,
@@ -216,10 +212,7 @@ async function seedReservation(donationId, recipientProfileId) {
   });
 }
 
-async function seedTransaction(
-  recipientProfileId,
-  reservationId,
-) {
+async function seedTransaction(recipientProfileId, reservationId) {
   console.log("8/13 Seeding Transaction...");
 
   return Transaction.create({

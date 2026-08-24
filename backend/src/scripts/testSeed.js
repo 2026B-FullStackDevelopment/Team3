@@ -183,7 +183,6 @@ async function testIndexes() {
  */
 async function createUsers() {
   const admin = await User.create({
-    username: `test-admin-${runId}`,
     email: `test-admin-${runId}@example.com`,
     passwordHash: "TEST_ONLY_NOT_A_REAL_HASH",
 
@@ -196,7 +195,6 @@ async function createUsers() {
   });
 
   const donor = await User.create({
-    username: `test-donor-${runId}`,
     email: `test-donor-${runId}@example.com`,
     passwordHash: "TEST_ONLY_NOT_A_REAL_HASH",
 
@@ -209,7 +207,6 @@ async function createUsers() {
   });
 
   const recipient = await User.create({
-    username: `test-recipient-${runId}`,
     email: `test-recipient-${runId}@example.com`,
     passwordHash: "TEST_ONLY_NOT_A_REAL_HASH",
 
@@ -245,7 +242,6 @@ async function createUsers() {
 async function createProfiles(donorUserId, recipientUserId) {
   const recipientProfile = await RecipientProfile.create({
     userId: recipientUserId,
-    userName: `profile-${runId}`,
     city: "Ho Chi Minh City",
     avatarUrl: "",
     isPremium: false,
@@ -690,8 +686,6 @@ async function testUniqueUserEmail() {
   const email = `unique-check-${runId}@example.com`;
 
   const first = await User.create({
-    username: `unique-one-${runId}`,
-
     email,
 
     passwordHash: "TEST",
@@ -709,8 +703,6 @@ async function testUniqueUserEmail() {
 
   try {
     const second = await User.create({
-      username: `unique-two-${runId}`,
-
       email,
 
       passwordHash: "TEST",
