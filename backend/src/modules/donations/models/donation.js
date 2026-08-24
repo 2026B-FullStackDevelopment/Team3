@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { foodCategory } from "./NotificationPreference.js";
+import { foodCategory } from "../../notifications/models/NotificationPreference.js";
 export const MeasurementUnit = {
   KG: "KG",
   G: "G",
