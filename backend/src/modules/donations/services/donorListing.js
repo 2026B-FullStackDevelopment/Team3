@@ -1,4 +1,4 @@
-import * as donationRepository from "../repositories/donationRepository.js";
+import * as donationRepository from "../repositories/donorListingRepository.js";
 import {
   MeasurementUnit,
   DonationStatus,

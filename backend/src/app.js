@@ -1,5 +1,5 @@
 import express from "express";
-import { donorListingRoutes } from "../src/routes/donorListing.js";
+import { donorListingRoutes } from "./modules/donations/routes/donorListing.js";
 
 // Annotated because tsconfig has `declaration: true`, which cannot name the
 // inferred type across the pnpm virtual store.
