@@ -170,7 +170,10 @@ export async function duplicateFoodListing(req, res, next) {
       isVegetarian: sourceData.isVegetarian,
       donationLimit: sourceData.donationLimit,
       price: sourceData.price,
-      remainingQuantity: sourceData.donationLimit,
+      remainingQuantity:
+        sourceData.donationLimit > 0
+          ? sourceData.donationLimit
+          : sourceData.remainingQuantity,
       ration: sourceData.ration,
       ...req.body,
     });

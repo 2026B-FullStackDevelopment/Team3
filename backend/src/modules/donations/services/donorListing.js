@@ -167,7 +167,7 @@ export async function listDonation(filters = {}) {
   const normalizedFilters = {
     page: normalizePage(filters.page),
     limit: normalizeLimit(filters.limit),
-    included: filters.includedClosed === true,
+    includeClosed: filters.includeClosed !== false,
   };
   if (filters.status !== undefined) {
     normalizedFilters.status = validateEnum(
@@ -291,8 +291,8 @@ export async function updateDonation(id, donorProfileId, input = {}) {
   }
 
   if (
-    current.status === Donation.status.Cancelled ||
-    current.status === Donation.status.SoldOut
+    current.status === DonationStatus.Cancelled ||
+    current.status === DonationStatus.SoldOut
   ) {
     throw new ValidationError("A closed donation cannot be edited");
   }
@@ -311,8 +311,8 @@ const ALLOWED_STATUS_TRANSITIONS = {
   [DonationStatus.Active]: [
     DonationStatus.Paused,
     DonationStatus.PendingCancellation,
-    Donation.Cancelled,
-    Donation.SoldOut,
+    DonationStatus.Cancelled,
+    DonationStatus.SoldOut,
   ],
   [DonationStatus.Paused]: [
     DonationStatus.Active,
