@@ -1,6 +1,6 @@
 import * as auditLogRepository from "../repositories/auditLog.repository.js";
 import { AdminActionType, AuditTargetType, AuditLogStatus } from "../models/AuditLog.js";
-import { NotFoundError, ValidationError } from "../domain/errors.js";
+import { NotFoundError, ValidationError } from "../../../shared/errors/errors.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;

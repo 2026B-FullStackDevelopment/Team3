@@ -2,44 +2,44 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import { connectDatabase } from "../config/database.js";
 
-import { User, userRole, AccountStatus } from "../models/User.js";
+import { User, userRole, AccountStatus } from "../modules/users/models/User.js";
 
-import { RecipientProfile } from "../models/RecipientProfile.js";
-import { DonorProfile } from "../models/DonorProfile.js";
+import { RecipientProfile } from "../modules/users/models/RecipientProfile.js";
+import { DonorProfile } from "../modules/users/models/DonorProfile.js";
 import {
   NotificationPreference,
   foodCategory,
-} from "../models/NotificationPreference.js";
-import { Wallet } from "../models/Wallet.js";
+} from "../modules/notifications/models/NotificationPreference.js";
+import { Wallet } from "../modules/wallet/models/Wallet.js";
 
 import {
   Donation,
   MeasurementUnit,
   DonationStatus,
-} from "../models/donation.js";
+} from "../modules/donations/models/donation.js";
 
 import {
   Reservation,
   ReservationStatus,
   PaymentMethod,
-} from "../models/Reservation.js";
+} from "../modules/donations/models/Reservation.js";
 
-import { Transaction, TransactionType } from "../models/Transaction.js";
+import { Transaction, TransactionType } from "../modules/wallet/models/Transaction.js";
 
-import { Notification, NotificationType } from "../models/Notification.js";
+import { Notification, NotificationType } from "../modules/notifications/models/Notification.js";
 
-import { RevokedToken } from "../models/RevokedToken.js";
+import { RevokedToken } from "../modules/users/models/RevokedToken.js";
 
 import {
   AuditLog,
   AuditTargetType,
   AdminActionType,
   AuditLogStatus,
-} from "../models/AuditLog.js";
+} from "../modules/auditLog/models/AuditLog.js";
 
-import { DonorReport, ReportType } from "../models/DonorReport.js";
+import { DonorReport, ReportType } from "../modules/donorReports/models/DonorReport.js";
 
-import { DonorReportItem } from "../models/DonorReportItem.js";
+import { DonorReportItem } from "../modules/donorReports/models/DonorReportItem.js";
 
 async function clearDatabase() {
   console.log("Clearing existing data...");
