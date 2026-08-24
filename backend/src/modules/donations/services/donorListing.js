@@ -1,11 +1,14 @@
-import * as donationRepository from "../repositories/donationRepository";
+import * as donationRepository from "../repositories/donationRepository.js";
 import {
   MeasurementUnit,
   DonationStatus,
   DonationSchema,
   Donation,
-} from "../models/donation";
-import { NotFoundError, ValidationError } from "../domain/errors.js";
+} from "../models/donation.js";
+import {
+  NotFoundError,
+  ValidationError,
+} from "../../../shared/errors/errors.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
