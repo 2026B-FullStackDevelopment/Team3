@@ -16,12 +16,15 @@ app.get("/api/health", (_req, res) => {
     message: "Backend is running",
   });
 });
-
+// app.use((req, res, next) => {
+//   const donorProfileId = req.header("x-donor-profile-id");
+//   if (donorProfileId) {
+//     res.locals.donorProfileId = donorProfileId;
+//   }
+//   next();
+// });
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/donor/food-listings/:id/manual-donations", manualDonationRoutes);
-
-// TODO: mount the remaining routers (collection, feedback, reservation,
-// manualDonation, donorReport) as they are implemented.
 
 app.use((_req, res) => {
   res.status(404).json({ error: "NOT_FOUND", message: "Route not found" });
