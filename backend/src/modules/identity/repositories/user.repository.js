@@ -39,6 +39,14 @@ export async function findByEmailWithSecret(email) {
 }
 
 /**
+ * Fetches a user by _id. passwordHash stays hidden (select: false), so this is
+ * safe to map straight to a DTO. Returns null if not found.
+ */
+export async function findById(id) {
+  return User.findById(id);
+}
+
+/**
  * Records a failed login atomically: increments failedLoginAttempts, stamps
  * lastFailedLoginAt, and — in the SAME update — locks the account when the
  * (post-increment) count reaches the threshold. Uses an aggregation-pipeline

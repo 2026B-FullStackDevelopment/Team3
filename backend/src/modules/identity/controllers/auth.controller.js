@@ -38,6 +38,20 @@ export async function login(req, res, next) {
 }
 
 /**
+ * GET /api/auth/me  (protected — requireAuth attaches req.user)
+ * Returns the current authenticated user's DTO. Handy for the client to check
+ * whether the session cookie is still valid.
+ */
+export async function me(req, res, next) {
+  try {
+    const user = await authService.getCurrentUser(req.user.userId);
+    res.status(200).json({ user });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * POST /api/auth/logout  (protected — requireAuth attaches req.user)
  * Revokes the current token's jti and clears the session cookie.
  */

@@ -87,6 +87,18 @@ export async function login({ email, password }) {
 }
 
 /**
+ * Returns the current user's DTO for an authenticated request. A valid token
+ * whose user no longer exists is treated as an invalid session (401).
+ */
+export async function getCurrentUser(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new UnauthorizedError("Session is no longer valid");
+  }
+  return toUserDTO(user);
+}
+
+/**
  * Logs a user out by revoking the current token's jti. expiresAt mirrors the
  * token expiry so the revocation row self-expires via the TTL index. Idempotent:
  * revoking an already-revoked jti (duplicate key) is treated as success.
