@@ -19,10 +19,22 @@ export class ConflictError extends DomainError {
   statusCode = 409;
 }
 
+export class UnauthorizedError extends DomainError {
+  statusCode = 401;
+}
+
 export class ForbiddenError extends DomainError {
   statusCode = 403;
 }
 
+export class UnauthorizedError extends DomainError {
+  statusCode = 401;
+}
+
 export class ValidationError extends DomainError {
   statusCode = 400;
+}
+
+export class NotImplementedError extends DomainError {
+  statusCode = 501;
 }

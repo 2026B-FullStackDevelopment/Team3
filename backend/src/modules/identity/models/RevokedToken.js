@@ -1,10 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-const RevokedTokenSchema = {
+const RevokedTokenSchema = new Schema({
   _id: {
     type: String,
-    required: true,
     default: () => uuidv4(),
   },
   jti: {
@@ -15,10 +14,15 @@ const RevokedTokenSchema = {
   userId: {
     type: String,
     ref: "User",
-    default: () => uuidv4(),
+    required: true,
   },
   expiresAt: {
     type: Date,
+    required: true,
   },
-};
+});
+
+// TTL index: Mongo auto-purges a revocation once the underlying token has expired.
+RevokedTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 export const RevokedToken = mongoose.model("RevokedToken", RevokedTokenSchema);

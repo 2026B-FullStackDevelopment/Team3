@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
-export const RecipientProfileSchema = {
+export const RecipientProfileSchema = new Schema({
   _id: {
     type: String,
     default: () => uuidv4(),
@@ -24,16 +24,17 @@ export const RecipientProfileSchema = {
   },
   avatarUrl: {
     type: String,
+    default:null,
   },
   isPremium: {
     type: Boolean,
-    default: null,
+    default: false,
   },
   premiumExpiryDate: {
     type: Date,
     default: null,
   },
-};
+});
 
 export const RecipientProfile = mongoose.model(
   "RecipientProfile",
