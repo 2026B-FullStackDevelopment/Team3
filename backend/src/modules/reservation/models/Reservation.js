@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 export const PaymentMethod = {
   Cash: "Cash",
@@ -23,18 +23,15 @@ export const ReservationSchema = {
     ref: "Donation",
     required: true,
     index: true,
-    unique: true,
   },
   recipientProfileId: {
     type: String,
     ref: "RecipientProfile",
-    required: true,
     index: true,
-    unique: true,
+    default: null,
   },
   manualRecipientName: {
     type: String,
-    unique: true,
     index: true,
     required: true,
   },

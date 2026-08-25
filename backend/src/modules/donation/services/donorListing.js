@@ -3,7 +3,6 @@ import {
   MeasurementUnit,
   DonationStatus,
   DonationSchema,
-  Donation,
 } from "../models/donation.js";
 import {
   NotFoundError,
@@ -138,6 +137,41 @@ export async function createDonation(donorProfileId, input = {}) {
     revenue: 0,
     createdAt: new Date(),
     closedAt: null,
+  });
+}
+
+/**
+ * Creates a fresh active listing from an owned listing's configuration.
+ * Historical/operational values are deliberately reset by createDonation.
+ */
+export async function duplicateDonation(
+  sourceDonationId,
+  donorProfileId,
+  overrides = {},
+) {
+  const source = await getOwnedDonation(sourceDonationId, donorProfileId);
+  const sourceData =
+    typeof source.toObject === "function" ? source.toObject() : source;
+
+  // A new name is required because listing names are unique in the current model.
+  const name = requireNonEmptyString(overrides.name, "name");
+  const donationLimit = overrides.donationLimit ?? sourceData.donationLimit;
+  const initialQuantity =
+    donationLimit > 0 ? donationLimit : sourceData.remainingQuantity;
+
+  return createDonation(donorProfileId, {
+    name,
+    description: overrides.description ?? sourceData.description,
+    measurementUnit: overrides.measurementUnit ?? sourceData.measurementUnit,
+    foodCategory: overrides.foodCategory ?? sourceData.foodCategory,
+    isVegetarian:
+      overrides.isVegetarian === undefined
+        ? sourceData.isVegetarian
+        : overrides.isVegetarian,
+    donationLimit,
+    price: overrides.price ?? sourceData.price,
+    remainingQuantity: initialQuantity,
+    ration: overrides.ration ?? sourceData.ration,
   });
 }
 //READ/LOOKUP

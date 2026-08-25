@@ -155,28 +155,11 @@ export async function duplicateFoodListing(req, res, next) {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) return;
 
-    const source = await donorListingService.getOwnedDonation(
+    const listing = await donorListingService.duplicateDonation(
       req.params.id,
       donorProfileId,
+      req.body,
     );
-    const sourceData =
-      typeof source.toObject === "function" ? source.toObject() : source;
-
-    const listing = await donorListingService.createDonation(donorProfileId, {
-      name: sourceData.name,
-      description: sourceData.description,
-      measurementUnit: sourceData.measurementUnit,
-      foodCategory: sourceData.foodCategory,
-      isVegetarian: sourceData.isVegetarian,
-      donationLimit: sourceData.donationLimit,
-      price: sourceData.price,
-      remainingQuantity:
-        sourceData.donationLimit > 0
-          ? sourceData.donationLimit
-          : sourceData.remainingQuantity,
-      ration: sourceData.ration,
-      ...req.body,
-    });
 
     res.status(201).json({ listing });
   } catch (error) {
