@@ -20,7 +20,7 @@ import {
   Donation,
   MeasurementUnit,
   DonationStatus,
-} from "../modules/donation/models/donation.js";
+} from "../modules/donation/models/donation.model.js";
 
 import {
   Reservation,
@@ -50,9 +50,9 @@ import {
 import {
   DonorReport,
   ReportType,
-} from "../modules/donorReport/models/DonorReport.js";
+} from "../modules/donorReport/models/DonorReport.model.js";
 
-import { DonorReportItem } from "../modules/donorReport/models/DonorReportItem.js";
+import { DonorReportItem } from "../modules/donorReport/models/DonorReportItem.model.js";
 
 async function clearDatabase() {
   console.log("Clearing existing data...");
