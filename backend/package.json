@@ -2,15 +2,15 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.js",
-    "check": "tsc --noEmit",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
     "seed": "node src/scripts/seed.js",
+    "lint": "eslint src",
+    "format:check": "prettier --check src",
     "test:repository": "node --test src/modules/*/repositories/__tests__/*.test.js",
-    "test:db": "tsx src/scripts/testSeed.ts"
+    "test:db": "node src/scripts/testSeed.js"
   },
   "keywords": [],
   "author": "",
@@ -31,10 +31,10 @@
     "uuid": "^14.0.1"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.2.0",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "@eslint/js": "^9.19.0",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2"
   }
 }
