@@ -10,21 +10,17 @@ export const AccountStatus = {
   Deactivated: "Deactivated",
 };
 
-const userSchema = new Schema(
+const UserSchema = new Schema(
   {
     _id: {
       type: String,
       default: () => uuidv4(),
     },
-    username: {
-      type: String,
-      required: true,
-    },
     email: {
       type: String,
       required: true,
       unique: true,
-      lowecase: true,
+      lowercase: true,
       trim: true,
     },
     passwordHash: {
@@ -41,8 +37,9 @@ const userSchema = new Schema(
       type: String,
       required: true,
       enum: Object.values(AccountStatus),
+      default: AccountStatus.Active,
     },
-    failedLoginAttemps: {
+    failedLoginAttempts: {
       type: Number,
       default: 0,
       min: 0,
@@ -60,4 +57,4 @@ const userSchema = new Schema(
     timestamps: true,
   },
 );
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model("User", UserSchema);

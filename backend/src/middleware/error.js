@@ -1,20 +1,24 @@
-/**
- * Central error handler. Every DomainError subclass (NotFoundError,
- * ValidationError, etc. -- see shared/errors/errors.js) already carries its
- * own statusCode, so this middleware just reads that instead of each
- * controller re-deciding the HTTP status for the same error type. Anything
- * without a statusCode is an unexpected bug, not a domain error, so it falls
- * back to 500 and gets logged.
- */
-export function errorHandler(err, _req, res, _next) {
-  const statusCode = err.statusCode ?? 500;
+import { DomainError } from "../shared/errors/errors.js";
+import { env } from "../config/env.js";
 
-  if (statusCode === 500) {
-    console.error(err);
+/**
+ * Central Express error handler — mounted after all routes.
+ * Known DomainErrors carry their own statusCode and a safe message. Anything
+ * else is treated as an unexpected 500: log it server-side, but never leak
+ * internals (stack, driver messages) to the client.
+ */
+// eslint-disable-next-line no-unused-vars -- Express needs the 4-arg signature.
+export function errorHandler(err, req, res, next) {
+  if (err instanceof DomainError) {
+    return res.status(err.statusCode).json({
+      error: err.name,
+      message: err.message,
+    });
   }
 
-  res.status(statusCode).json({
-    error: err.name ?? "InternalServerError",
-    message: err.message ?? "An unexpected error occurred",
+  console.error("Unhandled error:", err);
+  return res.status(500).json({
+    error: "INTERNAL_SERVER_ERROR",
+    message: env.isProduction ? "Something went wrong" : String(err?.message),
   });
 }

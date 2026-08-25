@@ -1,22 +1,20 @@
 import { ForbiddenError, UnauthorizedError } from "../shared/errors/errors.js";
 
 /**
- * Role guard per A.2.3 -- rejects a request before it reaches a controller
- * if the caller's role isn't in the allowed list. Takes the roles as args
- * (`requireRole("Admin")`) rather than hardcoding "Admin" so the same guard
- * can protect any role-restricted route, not just Admin ones.
+ * Role guard — mount AFTER requireAuth on routes limited to specific roles
+ * (RBAC, BUSINESS_RULES §3). Returns a middleware that allows the request only
+ * if req.user.role is one of allowedRoles; otherwise 403. If req.user is
+ * missing (guard used without requireAuth), it fails closed with 401.
  *
- * TODO: req.user is not populated yet -- middleware/auth.js is still an
- * empty stub. Until that's implemented, every request hits the 401 branch
- * below, so routes using this guard are not actually reachable end-to-end.
+ *   router.get("/admin/x", requireAuth, requireRole("Admin"), handler)
  */
 export function requireRole(...allowedRoles) {
-  return function roleGuard(req, _res, next) {
+  return (req, _res, next) => {
     if (!req.user) {
       return next(new UnauthorizedError("Authentication required"));
     }
     if (!allowedRoles.includes(req.user.role)) {
-      return next(new ForbiddenError(`Requires role: ${allowedRoles.join(" or ")}`));
+      return next(new ForbiddenError("You do not have access to this resource"));
     }
     next();
   };
