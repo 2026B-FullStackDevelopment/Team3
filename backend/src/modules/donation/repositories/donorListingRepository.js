@@ -177,6 +177,14 @@ export async function updateDonationStatus(id, donorProfileId, status) {
   return updateOwnedDonation(id, donorProfileId, update);
 }
 
+export async function updateDonationRation(id, donorProfileId, ration) {
+  return Donation.findOneAndUpdate(
+    { _id: id, donorProfileId },
+    { $set: { ration } },
+    { new: true, runValidators: true },
+  );
+}
+
 export async function markPendingCancellation(id, donorProfileId) {
   return updateDonationStatus(
     id,

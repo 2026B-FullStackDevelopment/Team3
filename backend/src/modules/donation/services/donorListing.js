@@ -373,6 +373,46 @@ export async function listDonorDonations(donorProfileId, options = {}) {
     ...normalizedFilters,
   });
 }
+
+export function toListingDonationResponse(reservation) {
+  const entry = toPlainDonation(reservation);
+  const recipient = entry.recipientProfileId;
+
+  return {
+    id: entry._id ?? entry.id,
+    recipientUsername:
+      recipient?.userName ??
+      recipient?.username ??
+      entry.manualRecipientName ??
+      null,
+    reservedAt: entry.reservedAt ?? null,
+    collectedAt: entry.collectedAt ?? null,
+    quantity: entry.quantity,
+    status: entry.status,
+    totalPaid: entry.totalPaid,
+    paymentMethod: entry.paymentMethod ?? null,
+    feedback: entry.feedback ?? null,
+  };
+}
+
+export async function listFoodListingDonations(
+  donationId,
+  donorProfileId,
+  options = {},
+) {
+  const listing = await getOwnedDonation(donationId, donorProfileId);
+  const page = normalizePage(options.page);
+  const limit = normalizeLimit(options.limit);
+  const result = await reservationRepository.findByDonationId(listing.id, {
+    page,
+    limit,
+  });
+
+  return {
+    ...result,
+    entries: result.entries.map(toListingDonationResponse),
+  };
+}
 //Update Donation Flow
 export async function updateDonation(id, donorProfileId, input = {}) {
   const current = await getOwnedDonation(id, donorProfileId);
@@ -432,6 +472,39 @@ export async function updateDonation(id, donorProfileId, input = {}) {
     current.id,
     donorProfileId,
     changes,
+  );
+  if (!updated) {
+    throw new NotFoundError("Donation not found");
+  }
+  return updated;
+}
+
+export async function updateDonationRation(
+  id,
+  donorProfileId,
+  requestedRation,
+) {
+  const donation = await getOwnedDonation(id, donorProfileId);
+  const ration = requireNonNegativeNumber(requestedRation, "ration");
+
+  if (
+    donation.status === DonationStatus.Cancelled ||
+    donation.status === DonationStatus.SoldOut ||
+    donation.closedAt
+  ) {
+    throw new ValidationError("A closed donation cannot be edited");
+  }
+  if (donation.donationLimit > 0 && ration > donation.donationLimit) {
+    throw new ValidationError("ration cannot exceed donationLimit");
+  }
+  if (ration > 0 && ration > donation.remainingQuantity) {
+    throw new ValidationError("ration cannot exceed remainingQuantity");
+  }
+
+  const updated = await donationRepository.updateDonationRation(
+    id,
+    donorProfileId,
+    ration,
   );
   if (!updated) {
     throw new NotFoundError("Donation not found");

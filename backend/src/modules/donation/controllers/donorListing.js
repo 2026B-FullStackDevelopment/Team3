@@ -101,6 +101,35 @@ export async function getFoodListing(req, res, next) {
   }
 }
 
+/** GET /api/donor/food-listings/:id/donations */
+export async function listFoodListingDonations(req, res, next) {
+  try {
+    const donorProfileId = requireDonorProfileId(req, res);
+    if (!donorProfileId) return;
+
+    const result = await donorListingService.listFoodListingDonations(
+      req.params.id,
+      donorProfileId,
+      req.query,
+    );
+    const totalPages = Math.ceil(result.total / result.limit);
+
+    res.status(200).json({
+      entries: result.entries,
+      metadata: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages,
+        hasNextPage: result.page < totalPages,
+        hasPreviousPage: result.page > 1,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /** PATCH /api/donor/food-listings/:id */
 export async function updateFoodListing(req, res, next) {
   try {
@@ -160,10 +189,10 @@ export async function updateListingRation(req, res, next) {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) return;
 
-    const listing = await donorListingService.updateDonation(
+    const listing = await donorListingService.updateDonationRation(
       req.params.id,
       donorProfileId,
-      { ration: req.body?.ration },
+      req.body?.ration,
     );
 
     res.status(200).json({
