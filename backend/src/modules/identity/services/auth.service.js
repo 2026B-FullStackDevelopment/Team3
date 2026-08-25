@@ -1,6 +1,7 @@
 import { AccountStatus } from "../models/User.js";
 import { createProfile } from "../helpers/auth.helper.js";
 import * as userRepository from "../repositories/user.repository.js";
+import * as revokedTokenRepository from "../repositories/revokedToken.repository.js";
 import * as tokenService from "../helpers/token.helper.js";
 import bcrypt from "bcrypt";
 import { env } from "../../../config/env.js";
@@ -83,5 +84,20 @@ export async function login({ email, password }) {
   });
 
   return { user: toUserDTO(user), token, jti, expiresAt };
+}
+
+/**
+ * Logs a user out by revoking the current token's jti. expiresAt mirrors the
+ * token expiry so the revocation row self-expires via the TTL index. Idempotent:
+ * revoking an already-revoked jti (duplicate key) is treated as success.
+ */
+export async function logout({ jti, userId, expiresAt }) {
+  try {
+    await revokedTokenRepository.add({ jti, userId, expiresAt });
+  } catch (error) {
+    if (error?.code !== DUPLICATE_KEY) {
+      throw error;
+    }
+  }
 }
 

@@ -20,3 +20,12 @@ export function sign({ userId, role }) {
   const { exp } = jwt.decode(token);
   return { token, jti, expiresAt: new Date(exp * 1000) };
 }
+
+/**
+ * Verifies a token's signature and expiry, returning its decoded payload
+ * ({ userId, role, jti, iat, exp }). Throws (JsonWebTokenError /
+ * TokenExpiredError) on any invalid or expired token — callers map that to 401.
+ */
+export function verify(token) {
+  return jwt.verify(token, env.jwt.secret);
+}
