@@ -1,6 +1,8 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import { authRoutes } from "./modules/identity/routes/auth.routes.js";
+import { donorListingRoutes } from "./modules/donation/routes/donorListing.js";
+import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 
 const app = express();
@@ -16,6 +18,8 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+// app.use("/api/donor/food-listings", donorListingRoutes);
+app.use("/api/admin/audit-logs", auditLogRoutes);
 
 // TODO: mount the remaining routers (donation, reservation, feedback,
 // notification, admin) as they are implemented.
@@ -24,7 +28,6 @@ app.use((_req, res) => {
   res.status(404).json({ error: "NOT_FOUND", message: "Route not found" });
 });
 
-// Error handler goes last, after all routes.
 app.use(errorHandler);
 
 export default app;
