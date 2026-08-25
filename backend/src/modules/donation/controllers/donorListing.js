@@ -1,4 +1,5 @@
 import * as donorListingService from "../services/donorListing.js";
+import { toDonationListingResponse } from "../services/donorListing.js";
 
 function getDonorProfileId(req, res) {
   return (
@@ -42,7 +43,9 @@ export async function listFoodListings(req, res, next) {
       },
     );
 
-    res.status(200).json({ entries });
+    res.status(200).json({
+      entries: entries.map(toDonationListingResponse),
+    });
   } catch (error) {
     next(error);
   }
@@ -59,7 +62,9 @@ export async function createFoodListing(req, res, next) {
       req.body,
     );
 
-    res.status(201).json({ listing });
+    res.status(201).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -76,7 +81,9 @@ export async function getFoodListing(req, res, next) {
       donorProfileId,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -94,7 +101,9 @@ export async function updateFoodListing(req, res, next) {
       req.body,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -125,7 +134,9 @@ export async function updateListingStatus(req, res, next) {
       req.body?.status,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -143,7 +154,9 @@ export async function updateListingRation(req, res, next) {
       { ration: req.body?.ration },
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -161,7 +174,9 @@ export async function duplicateFoodListing(req, res, next) {
       req.body,
     );
 
-    res.status(201).json({ listing });
+    res.status(201).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }

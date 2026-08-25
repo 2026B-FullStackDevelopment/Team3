@@ -1,6 +1,8 @@
 import * as donationRepository from "../repositories/donorListingRepository.js";
 import {
+  allowsOnlineReservationForMeasurementUnit,
   MeasurementUnit,
+  PerRequestDonationWarning,
   DonationStatus,
   DonationSchema,
 } from "../models/donation.js";
@@ -16,6 +18,36 @@ const MAX_LIMIT = 100;
 const VALID_MEASUREMENT_UNIT = Object.values(MeasurementUnit);
 const VALID_STATUSES = Object.values(DonationStatus);
 const VALID_FOOD_CATEGORY = DonationSchema.foodCategory.enum;
+
+function toPlainDonation(donation) {
+  if (!donation) return donation;
+  return typeof donation.toObject === "function"
+    ? donation.toObject()
+    : donation;
+}
+
+export function buildReservationPolicy(donation) {
+  const measurementUnit =
+    typeof donation === "string" ? donation : donation?.measurementUnit;
+  const allowsOnlineReservation =
+    allowsOnlineReservationForMeasurementUnit(measurementUnit);
+
+  return {
+    allowsOnlineReservation,
+    warningMessages: allowsOnlineReservation ? [] : PerRequestDonationWarning,
+  };
+}
+
+export function toDonationListingResponse(donation) {
+  const listing = toPlainDonation(donation);
+  if (!listing) return listing;
+
+  return {
+    ...listing,
+    reservationPolicy: buildReservationPolicy(listing),
+  };
+}
+
 //VALIDATION HELPERS
 function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;

@@ -1,4 +1,8 @@
-import { Donation, DonationStatus } from "../models/donation.js";
+import {
+  Donation,
+  DonationStatus,
+  MeasurementUnit,
+} from "../models/donation.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -186,6 +190,7 @@ export async function decrementRemainingQuantity(id, quantity) {
     {
       _id: id,
       status: DonationStatus.Active,
+      measurementUnit: { $ne: MeasurementUnit.PerRequest },
       remainingQuantity: { $gte: quantity },
       closedAt: null,
     },
@@ -215,6 +220,7 @@ export async function applyReservation(id, quantity, totalPaid) {
     {
       _id: id,
       status: DonationStatus.Active,
+      measurementUnit: { $ne: MeasurementUnit.PerRequest },
       remainingQuantity: { $gte: quantity },
       closedAt: null,
     },
