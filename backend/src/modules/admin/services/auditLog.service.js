@@ -1,6 +1,6 @@
 import * as auditLogRepository from "../repositories/auditLog.repository.js";
 import { AdminActionType, AuditTargetType, AuditLogStatus } from "../models/AuditLog.js";
-import { NotFoundError, ValidationError } from "../../../shared/errors/errors.js";
+import { NotFoundError, ValidationError, ConflictError, NotImplementedError } from "../../../shared/errors/errors.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -169,4 +169,52 @@ export async function listAuditLogs(filters = {}) {
     page: normalizedPage,
     limit: normalizedLimit,
   };
+}
+
+/**
+ * Attempts to undo a Pending admin action within its undo window.
+ * Validates the entry is actually undoable (still Pending, deadline not
+ * passed) before anything else, since that check is real regardless of
+ * what undo eventually does. It stops short of reverting the target
+ * User/Donation record: per A.3.1, that has to go through that module's own
+ * service interface, and User/Donation don't expose one yet. Throwing here
+ * instead of flipping the entry to Undone avoids reporting a successful
+ * undo that didn't actually undo anything.
+ */
+export async function undoAction(auditLogId, actorId) {
+  if (!isNonEmptyString(auditLogId)) {
+    throw new ValidationError("auditLogId is required");
+  }
+  if (!isNonEmptyString(actorId)) {
+    throw new ValidationError("actorId is required");
+  }
+
+  const entry = await getAuditLogById(auditLogId);
+
+  if (entry.status !== AuditLogStatus.Pending) {
+    throw new ConflictError(`Audit log ${auditLogId} is ${entry.status}, not Pending -- it can no longer be undone`);
+  }
+  if (!entry.undoDeadline || new Date(entry.undoDeadline).getTime() <= Date.now()) {
+    throw new ConflictError(`Audit log ${auditLogId}'s undo window has expired`);
+  }
+
+  throw new NotImplementedError(
+    "Undo is not available yet: reverting the target record requires the User/Donation module service interfaces, which are not implemented."
+  );
+}
+
+/**
+ * Sweeps Pending entries whose undo window has passed and finalizes them.
+ * Meant to be called by a scheduled job (see the Scheduled Job Worker in
+ * the architecture diagram), not a user-facing route -- wiring an actual
+ * cron trigger for it is a separate task.
+ */
+export async function finalizeExpiredEntries() {
+  const expired = await auditLogRepository.findExpiredPending();
+
+  const finalized = await Promise.all(
+    expired.map((entry) => auditLogRepository.updateStatus(entry._id, AuditLogStatus.Finalized))
+  );
+
+  return finalized.map(toAuditLogDTO);
 }
