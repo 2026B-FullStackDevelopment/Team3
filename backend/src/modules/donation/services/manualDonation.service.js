@@ -16,7 +16,8 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/errors.js";
-import { Donation, DonationStatus } from "../models/donation.js";
+import { buildSoldOutAlert } from "./soldOutAlert.service.js";
+import { Donation, DonationStatus } from "../models/donation.model.js";
 import { validateManualDonationInput } from "../validators/manualDonation.js";
 
 export async function createManualDonation(
@@ -144,6 +145,8 @@ export async function createManualDonation(
       );
     }
 
+    const soldOutAlert = soldOut ? buildSoldOutAlert(updatedListing) : null;
+
     return {
       donation: reservation,
       payment: {
@@ -153,6 +156,7 @@ export async function createManualDonation(
         change,
       },
       listing: updatedListing,
+      soldOutAlert,
     };
   };
 

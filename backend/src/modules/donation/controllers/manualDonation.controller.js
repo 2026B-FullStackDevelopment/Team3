@@ -1,4 +1,4 @@
-import * as manualDonationService from "../services/manualDonation.js";
+import * as manualDonationService from "../services/manualDonation.service.js";
 
 function getDonorProfileId(req, res) {
   return (
