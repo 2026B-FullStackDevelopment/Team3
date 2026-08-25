@@ -10,7 +10,7 @@ import {
   updateFoodListing,
   updateListingRation,
   updateListingStatus,
-} from "../controllers/donorListing.js";
+} from "../controllers/donorListing.controller.js";
 
 export const donorListingRoutes = Router();
 

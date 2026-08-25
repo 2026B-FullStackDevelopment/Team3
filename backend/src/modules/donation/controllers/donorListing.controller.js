@@ -1,5 +1,5 @@
-import * as donorListingService from "../services/donorListing.js";
-import { toDonationListingResponse } from "../services/donorListing.js";
+import * as donorListingService from "../services/donorListing.service.js";
+import { toDonationListingResponse } from "../services/donorListing.service.js";
 
 function getDonorProfileId(req, res) {
   return (

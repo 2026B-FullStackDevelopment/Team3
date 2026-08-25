@@ -1,4 +1,4 @@
-import * as donationRepository from "../repositories/donorListingRepository.js";
+import * as donationRepository from "../repositories/donorListing.repository.js";
 import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
@@ -6,7 +6,7 @@ import {
   PerRequestDonationWarning,
   DonationStatus,
   DonationSchema,
-} from "../models/donation.js";
+} from "../models/donation.model.js";
 import {
   NotFoundError,
   ValidationError,

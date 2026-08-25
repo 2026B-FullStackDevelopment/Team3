@@ -2,7 +2,7 @@ import {
   Donation,
   DonationStatus,
   MeasurementUnit,
-} from "../models/donation.js";
+} from "../models/donation.model.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
