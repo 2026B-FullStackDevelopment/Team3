@@ -11,7 +11,7 @@ import { DonorProfile } from "../modules/users/models/DonorProfile.js";
 import {
   NotificationPreference,
   foodCategory,
-} from "../modules/notifications/models/NotificationPreference.js";
+} from "../modules/notification/models/NotificationPreference.js";
 
 import { Wallet } from "../modules/wallet/models/Wallet.js";
 
@@ -19,17 +19,17 @@ import {
   Donation,
   MeasurementUnit,
   DonationStatus,
-} from "../modules/donations/models/donation.js";
+} from "../modules/donation/models/donation.js";
 
 import {
   Reservation,
   ReservationStatus,
   PaymentMethod,
-} from "../modules/donations/models/Reservation.js";
+} from "../modules/reservation/models/Reservation.js";
 
 import { Transaction, TransactionType } from "../modules/wallet/models/Transaction.js";
 
-import { Notification, NotificationType } from "../modules/notifications/models/Notification.js";
+import { Notification, NotificationType } from "../modules/notification/models/Notification.js";
 
 import { RevokedToken } from "../modules/users/models/RevokedToken.js";
 
@@ -38,7 +38,7 @@ import {
   AuditTargetType,
   AdminActionType,
   AuditLogStatus,
-} from "../modules/auditLog/models/AuditLog.js";
+} from "../modules/admin/models/AuditLog.js";
 
 import { DonorReport, ReportType } from "../modules/donorReports/models/DonorReport.js";
 

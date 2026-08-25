@@ -7,8 +7,8 @@ import mongoose from "mongoose";
 
 import { DonorReport, ReportType } from "../../models/DonorReport.js";
 import { DonorReportItem } from "../../models/DonorReportItem.js";
-import { MeasurementUnit } from "../../../donations/models/donation.js";
-import { foodCategory } from "../../../notifications/models/NotificationPreference.js";
+import { MeasurementUnit } from "../../../donation/models/donation.js";
+import { foodCategory } from "../../../notification/models/NotificationPreference.js";
 import * as repository from "../donorReportItemsRepository.js";
 
 const testDatabaseUri = process.env.MONGODB_URI_TEST;
