@@ -18,6 +18,8 @@ const MAX_LIMIT = 100;
 const VALID_MEASUREMENT_UNIT = Object.values(MeasurementUnit);
 const VALID_STATUSES = Object.values(DonationStatus);
 const VALID_FOOD_CATEGORY = DonationSchema.foodCategory.enum;
+const VALID_SORT_FIELDS = ["createdAt", "revenue"];
+const VALID_SORT_ORDERS = ["asc", "desc"];
 
 function toPlainDonation(donation) {
   if (!donation) return donation;
@@ -88,7 +90,7 @@ function requirePositiveNumber(value, fieldName) {
 function validateEnum(value, allowedValues, fieldName) {
   if (!allowedValues.includes(value)) {
     throw new ValidationError(
-      `${fieldName}must be one of: ${allowedValues.join(",")}`,
+      `${fieldName} must be one of: ${allowedValues.join(",")}`,
     );
   }
   return value;
@@ -111,6 +113,127 @@ function normalizeLimit(value) {
     throw new ValidationError("limit must be a positive integer");
   }
   return Math.min(limit, MAX_LIMIT);
+}
+
+function normalizeDate(value, fieldName, endOfDay = false) {
+  if (value === undefined) return undefined;
+
+  const rawValue = optionalString(value, fieldName);
+  if (rawValue === "") return undefined;
+
+  const date = new Date(rawValue);
+  if (Number.isNaN(date.getTime())) {
+    throw new ValidationError(`${fieldName} must be a valid date`);
+  }
+
+  if (endOfDay && /^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+    date.setUTCHours(23, 59, 59, 999);
+  }
+
+  return date;
+}
+
+function normalizeSortBy(value) {
+  if (value === undefined || value === "") return "createdAt";
+  const sortBy = optionalString(value, "sortBy");
+  return validateEnum(sortBy, VALID_SORT_FIELDS, "sortBy");
+}
+
+function normalizeSortOrder(value) {
+  if (value === undefined || value === "") return "desc";
+  const sortOrder = optionalString(value, "sortOrder").toLowerCase();
+  return validateEnum(sortOrder, VALID_SORT_ORDERS, "sortOrder");
+}
+
+function buildSort(sortBy, sortOrder) {
+  return {
+    [sortBy]: sortOrder === "asc" ? 1 : -1,
+  };
+}
+
+function normalizeListingQuery(filters = {}) {
+  const sortBy = normalizeSortBy(filters.sortBy);
+  const sortOrder = normalizeSortOrder(filters.sortOrder);
+  const createdFrom = normalizeDate(filters.createdFrom, "createdFrom");
+  const createdTo = normalizeDate(filters.createdTo, "createdTo", true);
+
+  if (
+    createdFrom !== undefined &&
+    createdTo !== undefined &&
+    createdFrom > createdTo
+  ) {
+    throw new ValidationError("createdFrom cannot be after createdTo");
+  }
+
+  const normalizedFilters = {
+    page: normalizePage(filters.page),
+    limit: normalizeLimit(filters.limit),
+    includeClosed: filters.includeClosed !== false,
+    sortBy,
+    sortOrder,
+    sort: buildSort(sortBy, sortOrder),
+  };
+
+  if (createdFrom !== undefined) normalizedFilters.createdFrom = createdFrom;
+  if (createdTo !== undefined) normalizedFilters.createdTo = createdTo;
+
+  if (filters.status !== undefined) {
+    normalizedFilters.status = validateEnum(
+      filters.status,
+      VALID_STATUSES,
+      "status",
+    );
+  }
+  if (filters.measurementUnit !== undefined) {
+    normalizedFilters.measurementUnit = validateEnum(
+      filters.measurementUnit,
+      VALID_MEASUREMENT_UNIT,
+      "measurementUnit",
+    );
+  }
+  if (filters.foodCategory !== undefined) {
+    normalizedFilters.foodCategory = validateEnum(
+      filters.foodCategory,
+      VALID_FOOD_CATEGORY,
+      "foodCategory",
+    );
+  }
+  if (filters.search !== undefined) {
+    normalizedFilters.search = optionalString(filters.search, "search");
+  }
+  if (filters.isVegetarian !== undefined) {
+    if (
+      filters.isVegetarian !== true &&
+      filters.isVegetarian !== false &&
+      filters.isVegetarian !== "true" &&
+      filters.isVegetarian !== "false"
+    ) {
+      throw new ValidationError("isVegetarian must be true or false");
+    }
+    normalizedFilters.isVegetarian =
+      filters.isVegetarian === true || filters.isVegetarian === "true";
+  }
+  if (filters.minPrice !== undefined) {
+    normalizedFilters.minPrice = requireNonNegativeNumber(
+      filters.minPrice,
+      "minPrice",
+    );
+  }
+  if (filters.maxPrice !== undefined) {
+    normalizedFilters.maxPrice = requireNonNegativeNumber(
+      filters.maxPrice,
+      "maxPrice",
+    );
+  }
+  if (
+    normalizedFilters.minPrice !== undefined &&
+    normalizedFilters.maxPrice !== undefined &&
+    normalizedFilters.minPrice > normalizedFilters.maxPrice
+  ) {
+    throw new ValidationError("minPrice cannot exceed maxPrice");
+  }
+
+  return normalizedFilters;
 }
 //CREATE DONATION FLOW
 export async function createDonation(donorProfileId, input = {}) {
@@ -230,66 +353,7 @@ export async function getOwnedDonation(id, donorProfileId) {
 }
 // Listing and filtering
 export async function listDonation(filters = {}) {
-  const normalizedFilters = {
-    page: normalizePage(filters.page),
-    limit: normalizeLimit(filters.limit),
-    includeClosed: filters.includeClosed !== false,
-  };
-  if (filters.status !== undefined) {
-    normalizedFilters.status = validateEnum(
-      filters.status,
-      VALID_STATUSES,
-      "status",
-    );
-  }
-  if (filters.measurementUnit !== undefined) {
-    normalizedFilters.measurementUnit = validateEnum(
-      filters.measurementUnit,
-      VALID_MEASUREMENT_UNIT,
-      "measurementUnit",
-    );
-  }
-  if (filters.foodCategory !== undefined) {
-    normalizedFilters.foodCategory = validateEnum(
-      filters.foodCategory,
-      VALID_FOOD_CATEGORY,
-      "foodCategory",
-    );
-  }
-  if (filters.search !== undefined) {
-    normalizedFilters.search = optionalString(filters.search, "search ");
-  }
-  if (filters.isVegetarian !== undefined) {
-    if (
-      filters.isVegetarian !== true &&
-      filters.isVegetarian !== false &&
-      filters.isVegetarian !== "true" &&
-      filters.isVegetarian !== "false"
-    ) {
-      throw new ValidationError("isVegetarain must be true or false");
-    }
-    normalizedFilters.isVegetarian =
-      filters.isVegetarian === true || filters.isVegetarian === "true";
-  }
-  if (filters.minPrice !== undefined) {
-    normalizedFilters.minPrice = requireNonNegativeNumber(
-      filters.minPrice,
-      "minPrice",
-    );
-  }
-  if (filters.maxPrice !== undefined) {
-    normalizedFilters.maxPrice = requireNonNegativeNumber(
-      filters.maxPrice,
-      "maxPrice",
-    );
-  }
-  if (
-    normalizedFilters.minPrice !== undefined &&
-    normalizedFilters.maxPrice !== undefined &&
-    normalizedFilters.minPrice > normalizedFilters.maxPrice
-  ) {
-    throw new ValidationError("minPrice cannot exceed maxPrice");
-  }
+  const normalizedFilters = normalizeListingQuery(filters);
   return donationRepository.findAll(normalizedFilters);
 }
 export async function listActiveDonations(filters = {}) {
@@ -302,9 +366,10 @@ export async function listActiveDonations(filters = {}) {
 
 export async function listDonorDonations(donorProfileId, options = {}) {
   const ownerId = requireNonEmptyString(donorProfileId, "donorProfileId");
+  const normalizedFilters = normalizeListingQuery(options);
 
   return donationRepository.findDonationsByDonor(ownerId, {
-    includeClosed: options.includeClosed !== false,
+    ...normalizedFilters,
   });
 }
 //Update Donation Flow

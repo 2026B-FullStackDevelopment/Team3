@@ -36,15 +36,27 @@ export async function listFoodListings(req, res, next) {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) return;
 
-    const entries = await donorListingService.listDonorDonations(
+    const result = await donorListingService.listDonorDonations(
       donorProfileId,
       {
+        ...req.query,
         includeClosed: parseBoolean(req.query.includeClosed, true),
       },
     );
+    const totalPages = Math.ceil(result.total / result.limit);
 
     res.status(200).json({
-      entries: entries.map(toDonationListingResponse),
+      entries: result.entries.map(toDonationListingResponse),
+      metadata: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages,
+        hasNextPage: result.page < totalPages,
+        hasPreviousPage: result.page > 1,
+        sortBy: result.sortBy,
+        sortOrder: result.sortOrder,
+      },
     });
   } catch (error) {
     next(error);

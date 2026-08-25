@@ -13,10 +13,7 @@ import {
 
 export const donorListingRoutes = Router();
 
-donorListingRoutes
-  .route("/")
-  .get(listFoodListings)
-  .post(createFoodListing);
+donorListingRoutes.route("/").get(listFoodListings).post(createFoodListing);
 
 donorListingRoutes.post("/:id/duplicate", duplicateFoodListing);
 donorListingRoutes.patch("/:id/status", updateListingStatus);

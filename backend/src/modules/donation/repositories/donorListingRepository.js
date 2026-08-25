@@ -8,6 +8,10 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function normalizePage(value) {
   const page = Number(value);
   return Number.isInteger(page) && page > 0 ? page : DEFAULT_PAGE;
@@ -64,8 +68,8 @@ function buildDonationQuery(filters = {}) {
   }
 
   if (search !== undefined && String(search).trim() !== "") {
-    const searchRegex = new RegExp(String(search).trim(), "i");
-    query.$or = [{ name: searchRegex }, { description: searchRegex }];
+    const searchRegex = new RegExp(escapeRegExp(String(search).trim()), "i");
+    query.name = searchRegex;
   }
 
   if (!includeClosed) {
@@ -94,12 +98,12 @@ export async function findOwnedDonation(id, donorProfileId) {
 export async function findDonationsByDonor(donorProfileId, options = {}) {
   const { includeClosed = true, sort = { createdAt: -1 } } = options;
 
-  return Donation.find(
-    buildDonationQuery({
-      donorProfileId,
-      includeClosed,
-    }),
-  ).sort(sort);
+  return findAll({
+    ...options,
+    donorProfileId,
+    includeClosed,
+    sort,
+  });
 }
 
 export async function findActiveDonations(filters = {}) {
@@ -116,6 +120,8 @@ export async function findAll(filters = {}) {
     page = DEFAULT_PAGE,
     limit = DEFAULT_LIMIT,
     sort = { createdAt: -1 },
+    sortBy,
+    sortOrder,
   } = filters;
 
   const normalizedPage = normalizePage(page);
@@ -133,6 +139,8 @@ export async function findAll(filters = {}) {
     total,
     page: normalizedPage,
     limit: normalizedLimit,
+    sortBy,
+    sortOrder,
   };
 }
 
