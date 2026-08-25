@@ -1,4 +1,5 @@
 import * as donationRepository from "../repositories/donorListingRepository.js";
+import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
   MeasurementUnit,
@@ -439,21 +440,8 @@ export async function updateDonation(id, donorProfileId, input = {}) {
 }
 //Controlled Status Transition
 const ALLOWED_STATUS_TRANSITIONS = {
-  [DonationStatus.Active]: [
-    DonationStatus.Paused,
-    DonationStatus.PendingCancellation,
-    DonationStatus.Cancelled,
-    DonationStatus.SoldOut,
-  ],
-  [DonationStatus.Paused]: [
-    DonationStatus.Active,
-    DonationStatus.PendingCancellation,
-    DonationStatus.Cancelled,
-  ],
-  [DonationStatus.PendingCancellation]: [
-    DonationStatus.Active,
-    DonationStatus.Cancelled,
-  ],
+  [DonationStatus.Active]: [DonationStatus.Paused, DonationStatus.Cancelled],
+  [DonationStatus.Paused]: [DonationStatus.Active, DonationStatus.Cancelled],
   [DonationStatus.Cancelled]: [],
   [DonationStatus.SoldOut]: [],
 };
@@ -475,7 +463,20 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
       `A donation with no remaining quantity cannot be activated`,
     );
   }
-  return donationRepository.updateDonationStatus(id, donorProfileId, status);
+  const updated = await donationRepository.updateDonationStatus(
+    id,
+    donorProfileId,
+    status,
+  );
+  if (!updated) {
+    throw new NotFoundError("Donation not found");
+  }
+
+  if (status === DonationStatus.Cancelled) {
+    await reservationRepository.cancelActiveReservationsForDonation(id);
+  }
+
+  return updated;
 }
 //ADD DELETION
 export async function deleteDonation(id, donorProfileId) {
