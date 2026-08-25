@@ -1,10 +1,12 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import { authRoutes } from "./modules/identity/routes/auth.routes.js";
 import { errorHandler } from "./middleware/error.js";
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/api/health", (_req, res) => {
   res.json({

@@ -52,6 +52,20 @@ export function validateRegister(body = {}) {
   return { email, password, role, profile };
 }
 
+/**
+ * Validates + normalizes a login request body. Only checks presence/shape —
+ * credential correctness (and the generic failure response) is the service's
+ * job. No password-strength checks here; that gates registration, not login.
+ */
+export function validateLogin(body = {}) {
+  const email = asString(body.email).toLowerCase();
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!email || !password) {
+    throw new ValidationError("Email and password are required");
+  }
+  return { email, password };
+}
+
 function validateRecipientProfile(body) {
   const userName = asString(body.userName);
   if (!userName) {

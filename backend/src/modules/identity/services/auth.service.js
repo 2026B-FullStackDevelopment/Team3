@@ -1,11 +1,15 @@
-import { userRole } from "../models/User.js";
+import { AccountStatus } from "../models/User.js";
+import { createProfile } from "../helpers/auth.helper.js";
 import * as userRepository from "../repositories/user.repository.js";
-import * as recipientProfileRepository from "../repositories/recipientProfile.repository.js";
-import * as donorProfileRepository from "../repositories/donorProfile.repository.js";
+import * as tokenService from "../helpers/token.helper.js";
 import bcrypt from "bcrypt";
 import { env } from "../../../config/env.js";
 import { toUserDTO } from "../dtos/user.dto.js";
-import { ConflictError } from "../../../shared/errors/errors.js";
+import {
+  ConflictError,
+  UnauthorizedError,
+  ForbiddenError,
+} from "../../../shared/errors/errors.js";
 
 const DUPLICATE_KEY = 11000;
 
@@ -35,9 +39,49 @@ export async function register({ email, password, role, profile }) {
   return toUserDTO(user);
 }
 
-function createProfile(role, userId, profile) {
-  if (role === userRole.Recipient) {
-    return recipientProfileRepository.create({ userId, ...profile });
+/**
+ * Authenticates a login attempt and, on success, issues a session token.
+ * Flow (in order): existing email -> lockout -> password -> deactivated.
+ * The lockout is checked BEFORE the password so an account with too many
+ * failed attempts can't keep guessing until the lock expires. A Deactivated
+ * status is only revealed AFTER a correct password (BUSINESS_RULES §5.1).
+ * Failures are counted atomically and lock at the configured threshold.
+ * Returns { user (DTO), token, expiresAt, jti } for the controller to set the
+ * cookie. Does NOT set the cookie itself (that's the HTTP layer's job).
+ */
+export async function login({ email, password }) {
+  const user = await userRepository.findByEmailWithSecret(email);
+
+  // 1. Account must exist.
+  if (!user) {
+    throw new UnauthorizedError("Invalid email or password");
   }
-  return donorProfileRepository.create({ userId, ...profile });
+
+  // 2. A live lock short-circuits before any password attempt is allowed.
+  if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    throw new UnauthorizedError(
+      "Account is temporarily locked due to too many failed attempts. Try again later.",
+    );
+  }
+
+  // 3. Verify the password; a wrong one counts toward the lockout.
+  const passwordValid = await bcrypt.compare(password, user.passwordHash);
+  if (!passwordValid) {
+    await userRepository.registerFailedAttempt(user._id);
+    throw new UnauthorizedError("Invalid email or password");
+  }
+
+  // 4. Only after a verified password is it safe to reveal deactivation.
+  if (user.accountStatus === AccountStatus.Deactivated) {
+    throw new ForbiddenError("This account has been deactivated");
+  }
+
+  await userRepository.resetLockout(user._id);
+  const { token, jti, expiresAt } = tokenService.sign({
+    userId: user._id,
+    role: user.role,
+  });
+
+  return { user: toUserDTO(user), token, jti, expiresAt };
 }
+
