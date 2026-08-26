@@ -1,20 +1,15 @@
-import { userRole } from "../models/User.js";
 import * as userRepository from "../repositories/user.repository.js";
-import * as recipientProfileRepository from "../repositories/recipientProfile.repository.js";
-import * as donorProfileRepository from "../repositories/donorProfile.repository.js";
 import { toProfileDTO } from "../dtos/profile.dto.js";
+import { profileRepositoryFor } from "../helpers/profile.helper.js";
 import {
+  ConflictError,
   NotFoundError,
   UnauthorizedError,
 } from "../../../shared/errors/errors.js";
 
-/** Picks the role's profile repository. Role is trusted (from the signed token
- * and re-read off the User doc), and the route already restricts to members. */
-function profileRepositoryFor(role) {
-  return role === userRole.Recipient
-    ? recipientProfileRepository
-    : donorProfileRepository;
-}
+const DUPLICATE_KEY = 11000;
+
+
 
 /**
  * Loads the current user's full profile: the shared User fields plus the
@@ -29,6 +24,35 @@ export async function getProfile(userId) {
   }
 
   const profile = await profileRepositoryFor(user.role).findByUserId(userId);
+  if (!profile) {
+    throw new NotFoundError("Profile not found");
+  }
+
+  return toProfileDTO(user, profile);
+}
+
+/**
+ * Applies a validated partial patch to the current user's role profile and
+ * returns the updated composite DTO. The patch is already role-appropriate
+ * (validated in the controller); the role's repo is chosen off the DB User doc.
+ * A duplicate userName surfaces as E11000 and is mapped to a 409.
+ */
+export async function updateProfile(userId, patch) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new UnauthorizedError("Session is no longer valid");
+  }
+
+  let profile;
+  try {
+    profile = await profileRepositoryFor(user.role).updateByUserId(userId, patch);
+  } catch (error) {
+    if (error?.code === DUPLICATE_KEY) {
+      throw new ConflictError("userName is already in use");
+    }
+    throw error;
+  }
+
   if (!profile) {
     throw new NotFoundError("Profile not found");
   }

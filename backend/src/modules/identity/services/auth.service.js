@@ -1,5 +1,7 @@
 import { AccountStatus } from "../models/User.js";
-import { createProfile } from "../helpers/auth.helper.js";
+import * as recipientProfileRepository from "../repositories/recipientProfile.repository.js";
+import * as donorProfileRepository from "../repositories/donorProfile.repository.js";
+import { userRole } from "../models/User.js";
 import * as userRepository from "../repositories/user.repository.js";
 import * as revokedTokenRepository from "../repositories/revokedToken.repository.js";
 import * as tokenService from "../helpers/token.helper.js";
@@ -28,7 +30,12 @@ export async function register({ email, password, role, profile }) {
   const user = await userRepository.create({ email, passwordHash, role });
 
   try {
-    await createProfile(role, user._id, profile);
+    if (role === userRole.Recipient) {
+        recipientProfileRepository.create({ userId: user._id, ...profile });
+      }
+    else{
+      donorProfileRepository.create({ userId: user._id, ...profile });
+    }
   } catch (error) {
     await userRepository.deleteById(user._id); // Delete user if the create user profile failed.
     if (error?.code === DUPLICATE_KEY) {

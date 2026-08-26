@@ -15,3 +15,16 @@ export async function create(profileData) {
 export async function findByUserId(userId) {
   return DonorProfile.findOne({ userId });
 }
+
+/**
+ * Applies a partial patch to the DonorProfile owned by userId, returning the
+ * updated document. `runValidators` is required because Mongoose skips schema
+ * validators on findOneAndUpdate by default (e.g. the GeoJSON location shape).
+ * Returns null if no profile matches.
+ */
+export async function updateByUserId(userId, patch) {
+  return DonorProfile.findOneAndUpdate({ userId }, patch, {
+    returnDocument: "after",
+    runValidators: true,
+  });
+}
