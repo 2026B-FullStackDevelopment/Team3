@@ -5,6 +5,7 @@ import { donorListingRoutes } from "./modules/donation/routes/donorListing.route
 import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.routes.js";
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
+import { reservationRoutes } from "./modules/reservation/routes/reservationRoutes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);
 // app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin/audit-logs", auditLogRoutes);
+app.use("/api/reservations", reservationRoutes);
 
 // TODO: mount the remaining routers (donation, reservation, feedback,
 // notification, admin) as they are implemented.
