@@ -7,3 +7,11 @@ import { DonorProfile } from "../models/DonorProfile.js";
 export async function create(profileData) {
   return DonorProfile.create(profileData);
 }
+
+/**
+ * Fetches the DonorProfile owned by a given userId (indexed). Returns null if
+ * none exists.
+ */
+export async function findByUserId(userId) {
+  return DonorProfile.findOne({ userId });
+}
