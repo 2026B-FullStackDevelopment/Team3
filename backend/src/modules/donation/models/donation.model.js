@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { foodCategory } from "../../notification/models/NotificationPreference.js";
 export const MeasurementUnit = {
@@ -9,6 +9,21 @@ export const MeasurementUnit = {
   Unit: "Unit",
   PerRequest: "PerRequest",
 };
+
+export const PerRequestDonationWarning = [
+  "Recipients may collect quantities at the discretion of the Donor",
+  "Online reservation is not available for this donation",
+  "Recipients may still visit the pickup location even after all food has been distributed",
+];
+
+export function isPerRequestMeasurementUnit(measurementUnit) {
+  return measurementUnit === MeasurementUnit.PerRequest;
+}
+
+export function allowsOnlineReservationForMeasurementUnit(measurementUnit) {
+  return !isPerRequestMeasurementUnit(measurementUnit);
+}
+
 export const DonationStatus = {
   Active: "Active",
   Paused: "Paused",

@@ -1,4 +1,5 @@
-import * as donorListingService from "../services/donorListing.js";
+import * as donorListingService from "../services/donorListing.service.js";
+import { toDonationListingResponse } from "../services/donorListing.service.js";
 
 function getDonorProfileId(req, res) {
   return (
@@ -35,14 +36,28 @@ export async function listFoodListings(req, res, next) {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) return;
 
-    const entries = await donorListingService.listDonorDonations(
+    const result = await donorListingService.listDonorDonations(
       donorProfileId,
       {
+        ...req.query,
         includeClosed: parseBoolean(req.query.includeClosed, true),
       },
     );
+    const totalPages = Math.ceil(result.total / result.limit);
 
-    res.status(200).json({ entries });
+    res.status(200).json({
+      entries: result.entries.map(toDonationListingResponse),
+      metadata: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages,
+        hasNextPage: result.page < totalPages,
+        hasPreviousPage: result.page > 1,
+        sortBy: result.sortBy,
+        sortOrder: result.sortOrder,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -59,7 +74,9 @@ export async function createFoodListing(req, res, next) {
       req.body,
     );
 
-    res.status(201).json({ listing });
+    res.status(201).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -76,7 +93,38 @@ export async function getFoodListing(req, res, next) {
       donorProfileId,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /api/donor/food-listings/:id/donations */
+export async function listFoodListingDonations(req, res, next) {
+  try {
+    const donorProfileId = requireDonorProfileId(req, res);
+    if (!donorProfileId) return;
+
+    const result = await donorListingService.listFoodListingDonations(
+      req.params.id,
+      donorProfileId,
+      req.query,
+    );
+    const totalPages = Math.ceil(result.total / result.limit);
+
+    res.status(200).json({
+      entries: result.entries,
+      metadata: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages,
+        hasNextPage: result.page < totalPages,
+        hasPreviousPage: result.page > 1,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -94,7 +142,9 @@ export async function updateFoodListing(req, res, next) {
       req.body,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -125,7 +175,9 @@ export async function updateListingStatus(req, res, next) {
       req.body?.status,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -137,13 +189,15 @@ export async function updateListingRation(req, res, next) {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) return;
 
-    const listing = await donorListingService.updateDonation(
+    const listing = await donorListingService.updateDonationRation(
       req.params.id,
       donorProfileId,
-      { ration: req.body?.ration },
+      req.body?.ration,
     );
 
-    res.status(200).json({ listing });
+    res.status(200).json({
+      listing: toDonationListingResponse(listing),
+    });
   } catch (error) {
     next(error);
   }
@@ -155,30 +209,15 @@ export async function duplicateFoodListing(req, res, next) {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) return;
 
-    const source = await donorListingService.getOwnedDonation(
+    const listing = await donorListingService.duplicateDonation(
       req.params.id,
       donorProfileId,
+      req.body,
     );
-    const sourceData =
-      typeof source.toObject === "function" ? source.toObject() : source;
 
-    const listing = await donorListingService.createDonation(donorProfileId, {
-      name: sourceData.name,
-      description: sourceData.description,
-      measurementUnit: sourceData.measurementUnit,
-      foodCategory: sourceData.foodCategory,
-      isVegetarian: sourceData.isVegetarian,
-      donationLimit: sourceData.donationLimit,
-      price: sourceData.price,
-      remainingQuantity:
-        sourceData.donationLimit > 0
-          ? sourceData.donationLimit
-          : sourceData.remainingQuantity,
-      ration: sourceData.ration,
-      ...req.body,
+    res.status(201).json({
+      listing: toDonationListingResponse(listing),
     });
-
-    res.status(201).json({ listing });
   } catch (error) {
     next(error);
   }

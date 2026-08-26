@@ -4,10 +4,10 @@ Full-stack application developed by Team 3 for the Full-Stack Development course
 
 ## Team Member
 
-- Huynh Tan Phuc - s4103131
-- Dao Tien Dung - s4088577
-- Lam Vi Tin - s4116601
-- Nguyen Nhat Minh - s4112692 
+- Huynh Tan Phuc - s4103131 - Donor Dashboard
+- Dao Tien Dung - s4088577 - Authentication & Profile
+- Lam Vi Tin - s4116601 - Recipient & Reservation History
+- Nguyen Nhat Minh - s4112692 - Admin & Notification
 
 ## Tech Stack
 
@@ -175,19 +175,19 @@ currently answers `501 Not Implemented`.
 
 ### Donor dashboard — `/api/donor/food-listings`
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/` | Dashboard list of the donor's listings (paginated, filterable) |
-| `POST` | `/` | Create a listing |
-| `GET` | `/statistics` | Dashboard totals and chart series |
-| `GET` | `/:id` | One listing |
-| `PATCH` | `/:id` | Edit listing details |
-| `DELETE` | `/:id` | Delete a listing with no records against it |
-| `POST` | `/:id/duplicate` | New listing reusing this configuration |
-| `GET` | `/:id/donations` | Donation and reservation records |
-| `POST` | `/:id/donations` | Manually record food given to a recipient |
-| `PATCH` | `/:id/status` | Publish / pause / resume / cancel / complete |
-| `PATCH` | `/:id/ration` | Set or clear the per-recipient ration limit |
+| Method   | Path             | Purpose                                                        |
+| -------- | ---------------- | -------------------------------------------------------------- |
+| `GET`    | `/`              | Dashboard list of the donor's listings (paginated, filterable) |
+| `POST`   | `/`              | Create a listing                                               |
+| `GET`    | `/statistics`    | Dashboard totals and chart series                              |
+| `GET`    | `/:id`           | One listing                                                    |
+| `PATCH`  | `/:id`           | Edit listing details                                           |
+| `DELETE` | `/:id`           | Delete a listing with no records against it                    |
+| `POST`   | `/:id/duplicate` | New listing reusing this configuration                         |
+| `GET`    | `/:id/donations` | Donation and reservation records                               |
+| `POST`   | `/:id/donations` | Manually record food given to a recipient                      |
+| `PATCH`  | `/:id/status`    | Publish / pause / resume / cancel / complete                   |
+| `PATCH`  | `/:id/ration`    | Set or clear the per-recipient ration limit                    |
 
 `/statistics` is registered before `/:id` on purpose — reorder them and Express
 matches `statistics` as an id, making the route unreachable.

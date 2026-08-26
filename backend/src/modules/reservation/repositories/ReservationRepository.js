@@ -1,44 +1,34 @@
-import { Reservation } from '../models/Reservation';
-import { Donation } from '../models/Donation';
+import { Reservation, ReservationStatus } from "../models/Reservation.js";
 
-class ReservationRepository {
-  
-  /** Create new reservation */
-  async createReservation(reservationData) {
-    const newReservation = new Reservation(reservationData);
-    return await newReservation.save();
-  }
-
-  /** Fetch reservation by recipient id */
-  async getReservationsByRecipient(recipientProfileId) {
-    return await Reservation.find({ recipientProfileId })
-      .sort({ reservedAt: -1 }) 
-      .populate('donationId', 'name foodCategory'); 
-  }
-
-  /** deduct stock after reservation */
-  async deductDonationStock(donationId, quantityToDeduct) {
-    const updatedDonation = await Donation.findOneAndUpdate(
-      { _id: donationId, remainingQuantity: { $gte: quantityToDeduct } }, 
-      { $inc: { remainingQuantity: -quantityToDeduct } },
-      { new: true } 
-    );
-
-    if (!updatedDonation) {
-      throw new Error("Insufficient stock or donation not found.");
-    }
-
-    return updatedDonation;
-  }
-
-  /** restore stock if reservation fail */
-  async restoreDonationStock(donationId, quantityToRestore) {
-    return await Donation.findByIdAndUpdate(
-      donationId,
-      { $inc: { remainingQuantity: quantityToRestore } },
-      { new: true }
-    );
-  }
+export async function cancelActiveReservationsForDonation(donationId) {
+  return Reservation.updateMany(
+    { donationId, status: ReservationStatus.Reserved },
+    { $set: { status: ReservationStatus.CancelledByDonor } },
+  );
 }
 
-export default new ReservationRepository();
+export async function findActiveReservation(donationId, recipientProfileId) {
+  return Reservation.findOne({
+    donationId,
+    recipientProfileId,
+    status: ReservationStatus.Reserved,
+  });
+}
+
+export async function findByDonationId(
+  donationId,
+  { page = 1, limit = 20 } = {},
+) {
+  const skip = (page - 1) * limit;
+  const query = { donationId };
+  const [entries, total] = await Promise.all([
+    Reservation.find(query)
+      .sort({ reservedAt: -1, collectedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("recipientProfileId", "userName"),
+    Reservation.countDocuments(query),
+  ]);
+
+  return { entries, total, page, limit };
+}
