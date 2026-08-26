@@ -4,14 +4,9 @@ export type EntityID = string;
 export interface CreateListingInput {
   name: string;
   description?: string;
-  measurementUnit: "Kg" | "g" | "L" | "ml" | "Unit" | "PerRequest";
+  measurementUnit: "KG" | "G" | "L" | "ML" | "Unit" | "PerRequest";
   foodCategory:
-    | "Fruit"
-    | "Vegetables"
-    | "Meat"
-    | "CookedDish"
-    | "BakedGoods"
-    | "Drink";
+    "Fruit" | "Vegetables" | "Meat" | "CookedDish" | "BakedGoods" | "Drink";
   isVegetarian?: boolean;
   donationLimit?: Number;
   price: Number;
