@@ -1,5 +1,5 @@
 import { Reservation } from '../models/Reservation.js';
-import { Donation } from '../../donation/models/donation.js';
+import { Donation } from '../../donation/models/donation.model.js';
 
 /** Create new reservation */
 export async function createReservation(reservationData) {

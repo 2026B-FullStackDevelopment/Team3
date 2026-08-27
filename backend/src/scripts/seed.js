@@ -42,9 +42,9 @@ import {
   AuditLogStatus,
 } from "../modules/admin/models/AuditLog.js";
 
-import { DonorReport, ReportType } from "../modules/donorReport/models/DonorReport.js";
+import { DonorReport, ReportType } from "../modules/donorReport/models/DonorReport.model.js";
 
-import { DonorReportItem } from "../modules/donorReport/models/DonorReportItem.js";
+import { DonorReportItem } from "../modules/donorReport/models/DonorReportItem.model.js";
 
 async function clearDatabase() {
   console.log("Clearing existing data...");

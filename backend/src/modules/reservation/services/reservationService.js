@@ -3,7 +3,7 @@
 import * as ReservationRepository from '../repositories/reservationRepository.js';
 import { Wallet } from '../../wallet/models/Wallet.js';  
 import { Notification } from '../../notification/models/Notification.js';
-import { Donation } from '../../donation/models/donation.js';
+import { Donation } from '../../donation/models/donation.model.js';
 
 export async function processReservation(recipientProfileId, donationId, quantity, paymentMethod, manualRecipientName = null) {
   try {
