@@ -185,13 +185,10 @@ export async function applyReservation(
     throw new ConflictError("The listing changed; retry the reservation");
   }
 
-  const closedListing = await closeListingWhenSoldOut(donationId, options);
-  const listing = closedListing ?? updatedListing;
-
   return {
-    listing,
-    soldOut: listing.status === DonationStatus.SoldOut,
-    soldOutAlert: getSoldOutAlertDataFromListing(listing),
+    listing: updatedListing,
+    soldOut: updatedListing.status === DonationStatus.SoldOut,
+    soldOutAlert: getSoldOutAlertDataFromListing(updatedListing),
   };
 }
 

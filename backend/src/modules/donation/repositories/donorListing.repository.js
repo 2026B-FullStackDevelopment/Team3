@@ -234,6 +234,8 @@ export async function addRevenue(id, amount, options = {}) {
 }
 
 export async function applyReservation(id, quantity, totalPaid, options = {}) {
+  const soldOutAt = new Date();
+
   return Donation.findOneAndUpdate(
     {
       _id: id,
@@ -242,13 +244,33 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
       remainingQuantity: { $gte: quantity },
       closedAt: null,
     },
-    {
-      $inc: {
-        remainingQuantity: -quantity,
-        revenue: totalPaid,
+    [
+      {
+        $set: {
+          remainingQuantity: { $subtract: ["$remainingQuantity", quantity] },
+          revenue: { $add: [{ $ifNull: ["$revenue", 0] }, totalPaid] },
+        },
       },
-    },
-    { new: true, runValidators: true, session: options.session },
+      {
+        $set: {
+          status: {
+            $cond: [
+              { $lte: ["$remainingQuantity", 0] },
+              DonationStatus.SoldOut,
+              "$status",
+            ],
+          },
+          closedAt: {
+            $cond: [
+              { $lte: ["$remainingQuantity", 0] },
+              soldOutAt,
+              "$closedAt",
+            ],
+          },
+        },
+      },
+    ],
+    { new: true, session: options.session },
   );
 }
 
