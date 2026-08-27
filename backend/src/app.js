@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import { authRoutes } from "./modules/identity/routes/auth.routes.js";
 import { profileRoutes } from "./modules/identity/routes/profile.routes.js";
+import { walletRoutes } from "./modules/wallet/routes/wallet.routes.js";
 import { donorListingRoutes } from "./modules/donation/routes/donorListing.js";
 import { donorListingRoutes } from "./modules/donation/routes/donorListing.routes.js";
 import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.routes.js";
@@ -35,7 +36,8 @@ app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
-app.use("/api/donor/food-listings", donorListingRoutes);  
+app.use("/api/wallet", walletRoutes);
+app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin/audit-logs", auditLogRoutes);
 
 // TODO: mount the remaining routers (donation, reservation, feedback,

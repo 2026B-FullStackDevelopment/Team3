@@ -1,43 +1,48 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { PaymentMethod } from "../../reservation/models/Reservation.js";
+
 export const TransactionType = {
   Deposit: "Deposit",
-  SubcriptionPayment: "SubscriptionPayment",
+  SubscriptionPayment: "SubscriptionPayment",
   FoodPurchase: "FoodPurchase",
 };
 
-const TransactionSchema = {
-  _id: {
-    type: String,
-    required: true,
-    default: () => uuidv4(),
+// Immutable ledger row written on every money movement. Keyed by userId to match
+// Wallet. relatedReservationId is set only for a FoodPurchase (default null).
+const TransactionSchema = new Schema(
+  {
+    _id: {
+      type: String,
+      default: () => uuidv4(),
+    },
+    userId: {
+      type: String,
+      required: true,
+      index: true,
+      ref: "User",
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: Object.values(TransactionType),
+    },
+    method: {
+      type: String,
+      enum: Object.values(PaymentMethod),
+    },
+    relatedReservationId: {
+      type: String,
+      ref: "Reservation",
+      default: null,
+    },
   },
-  recipientProfileId: {
-    type: String,
-    required: true,
-    ref: "RecipientProfile",
-  },
-  amount: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-  type: {
-    type: String,
-    enum: Object.values(TransactionType),
-  },
-  method: {
-    type: String,
-    enum: Object.values(PaymentMethod),
-  },
-  relatedReservationId: {
-    type: String,
-    ref: "Reservation",
-    default: () => uuidv4(),
-  },
-  createdAt: {
-    type: Date,
-  },
-};
+  { timestamps: true },
+);
+
 export const Transaction = mongoose.model("Transaction", TransactionSchema);
