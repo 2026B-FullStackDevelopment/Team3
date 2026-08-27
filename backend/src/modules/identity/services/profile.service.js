@@ -1,10 +1,13 @@
 import * as userRepository from "../repositories/user.repository.js";
+import * as revokedTokenRepository from "../repositories/revokedToken.repository.js";
+import * as passwordHelper from "../helpers/password.helper.js";
 import { toProfileDTO } from "../dtos/profile.dto.js";
 import { profileRepositoryFor } from "../helpers/profile.helper.js";
 import {
   ConflictError,
   NotFoundError,
   UnauthorizedError,
+  ValidationError,
 } from "../../../shared/errors/errors.js";
 
 const DUPLICATE_KEY = 11000;
@@ -58,4 +61,50 @@ export async function updateProfile(userId, patch) {
   }
 
   return toProfileDTO(user, profile);
+}
+
+/**
+ * Changes the current user's password and logs out the current device. Verifies
+ * the supplied current password against the stored hash, rejects reusing the
+ * same password, then persists the new hash and revokes the current token's jti
+ * so the just-cleared cookie can't be replayed. Other devices ride out the
+ * token's remaining lifetime. The controller clears the cookie.
+ */
+export async function changePassword(
+  userId,
+  jti,
+  tokenExpiresAt,
+  { currentPassword, newPassword },
+) {
+  const user = await userRepository.findByIdWithSecret(userId);
+  if (!user) {
+    throw new UnauthorizedError("Session is no longer valid");
+  }
+
+  const currentValid = await passwordHelper.verify(
+    currentPassword,
+    user.passwordHash,
+  );
+  if (!currentValid) {
+    throw new UnauthorizedError("Current password is incorrect");
+  }
+
+  if (newPassword === currentPassword) {
+    throw new ValidationError(
+      "New password must be different from the current one",
+    );
+  }
+
+  const passwordHash = await passwordHelper.hash(newPassword);
+  await userRepository.updatePasswordHash(userId, passwordHash);
+
+  // Revoke the current token so the cleared cookie can't be replayed. Idempotent:
+  // an already-revoked jti (duplicate key) is treated as success.
+  try {
+    await revokedTokenRepository.add({ jti, userId, expiresAt: tokenExpiresAt });
+  } catch (error) {
+    if (error?.code !== DUPLICATE_KEY) {
+      throw error;
+    }
+  }
 }

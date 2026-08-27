@@ -8,5 +8,6 @@ const router = Router();
 
 router.get("/", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.getProfile);
 router.patch("/", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.updateProfile);
+router.patch("/change-password", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.changePassword);
 
 export const profileRoutes = router;

@@ -1,3 +1,5 @@
+import { ValidationError } from "../../../shared/errors/errors.js";
+import { validateStrength } from "../helpers/password.helper.js";
 import {
   ensureNonEmpty,
   has,
@@ -54,4 +56,23 @@ export function validateDonorProfileUpdate(body = {}) {
   }
 
   return ensureNonEmpty(patch);
+}
+
+/**
+ * Change-password body: { currentPassword, newPassword }. currentPassword is a
+ * presence check only (no strength rules on the old one) and is NOT trimmed —
+ * spaces are significant, and it is compared against the stored hash as-is.
+ * newPassword must pass the shared strength rules. The "new must differ from
+ * current" check lives in the service, where the current password is verified.
+ */
+export function validateChangePassword(body = {}) {
+  const { currentPassword, newPassword } = body;
+
+  if (typeof currentPassword !== "string" || currentPassword.length === 0) {
+    throw new ValidationError("currentPassword is required");
+  }
+
+  validateStrength(newPassword);
+
+  return { currentPassword, newPassword };
 }

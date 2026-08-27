@@ -3,7 +3,10 @@ import { userRole } from "../models/User.js";
 import {
   validateRecipientProfileUpdate,
   validateDonorProfileUpdate,
+  validateChangePassword,
 } from "../validators/profile.validators.js";
+import { clearCookieOptions } from "../helpers/cookies.helper.js";
+import { env } from "../../../config/env.js";
 
 /**
  * GET /api/profile  (protected — requireAuth + requireRole member)
@@ -31,6 +34,24 @@ export async function updateProfile(req, res, next) {
         : validateDonorProfileUpdate(req.body);
     const profile = await profileService.updateProfile(req.user.userId, patch);
     res.status(200).json({ profile });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PATCH /api/profile/password  (protected — requireAuth + requireRole member)
+ * Verifies the current password, sets the new one, and logs out the current
+ * device: the current token is revoked in the service and the cookie is cleared
+ * here, so the user must log in again with the new password.
+ */
+export async function changePassword(req, res, next) {
+  try {
+    const input = validateChangePassword(req.body);
+    const { userId, jti, tokenExpiresAt } = req.user;
+    await profileService.changePassword(userId, jti, tokenExpiresAt, input);
+    res.clearCookie(env.cookie.name, clearCookieOptions());
+    res.status(200).json({ message: "Password changed. Please log in again." });
   } catch (error) {
     next(error);
   }

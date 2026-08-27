@@ -1,10 +1,10 @@
 import { userRole } from "../models/User.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
 import { asString } from "../helpers/validators.helper.js";
+import { validateStrength as validatePassword } from "../helpers/password.helper.js";
 import {
   validateDonorProfile,
   validateEmail,
-  validatePassword,
   validateRecipientProfile,
   validateRole,
 } from "../helpers/auth.helper.js";

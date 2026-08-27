@@ -22,15 +22,6 @@ const REGISTRABLE_ROLES = [userRole.Recipient, userRole.Donor];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Password strength: >=8 chars, >=1 digit, >=1 special char, >=1 uppercase.
-const MIN_PASSWORD_LENGTH = 8;
-const PASSWORD_RULES = [
-  { test: (pw) => pw.length >= MIN_PASSWORD_LENGTH, label: "at least 8 characters" },
-  { test: (pw) => /[0-9]/.test(pw), label: "at least 1 number" },
-  { test: (pw) => /[^A-Za-z0-9]/.test(pw), label: "at least 1 special character" },
-  { test: (pw) => /[A-Z]/.test(pw), label: "at least 1 uppercase letter" },
-];
-
 // Tax Code must be 10 to 13 digits.
 const TAX_CODE_RE = /^\d{10,13}$/;
 
@@ -41,25 +32,6 @@ export function validateEmail(value) {
     throw new ValidationError("A valid email is required");
   }
   return email;
-}
-
-/**
- * Validates password strength and returns the password unchanged. Deliberately
- * does NOT trim — leading/trailing spaces are significant password characters,
- * so trimming here would silently alter what the user typed and desync register
- * from login. The length rule already rejects an empty password.
- */
-export function validatePassword(value) {
-  if (typeof value !== "string") {
-    throw new ValidationError("password must be a string");
-  }
-  const unmet = PASSWORD_RULES.filter((rule) => !rule.test(value));
-  if (unmet.length > 0) {
-    throw new ValidationError(
-      `Password must contain ${unmet.map((rule) => rule.label).join(", ")}`,
-    );
-  }
-  return value;
 }
 
 /** Validates the requested role is one a member may self-register as. */

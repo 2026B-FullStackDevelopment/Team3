@@ -5,8 +5,7 @@ import { userRole } from "../models/User.js";
 import * as userRepository from "../repositories/user.repository.js";
 import * as revokedTokenRepository from "../repositories/revokedToken.repository.js";
 import * as tokenService from "../helpers/token.helper.js";
-import bcrypt from "bcrypt";
-import { env } from "../../../config/env.js";
+import * as passwordHelper from "../helpers/password.helper.js";
 import { toUserDTO } from "../dtos/user.dto.js";
 import {
   ConflictError,
@@ -26,7 +25,7 @@ export async function register({ email, password, role, profile }) {
     throw new ConflictError("Email is already registered");
   }
 
-  const passwordHash = await bcrypt.hash(password, env.auth.bcryptRounds);
+  const passwordHash = await passwordHelper.hash(password);
   const user = await userRepository.create({ email, passwordHash, role });
 
   try {
@@ -73,7 +72,7 @@ export async function login({ email, password }) {
   }
 
   // 3. Verify the password; a wrong one counts toward the lockout.
-  const passwordValid = await bcrypt.compare(password, user.passwordHash);
+  const passwordValid = await passwordHelper.verify(password, user.passwordHash);
   if (!passwordValid) {
     await userRepository.registerFailedAttempt(user._id);
     throw new UnauthorizedError("Invalid email or password");
