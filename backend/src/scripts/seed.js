@@ -2,10 +2,14 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import { connectDatabase } from "../config/database.js";
 
-import { User, userRole, AccountStatus } from "../modules/users/models/User.js";
+import {
+  User,
+  userRole,
+  AccountStatus,
+} from "../modules/identity/models/User.js";
 
-import { RecipientProfile } from "../modules/users/models/RecipientProfile.js";
-import { DonorProfile } from "../modules/users/models/DonorProfile.js";
+import { RecipientProfile } from "../modules/identity/models/RecipientProfile.js";
+import { DonorProfile } from "../modules/identity/models/DonorProfile.js";
 import {
   NotificationPreference,
   foodCategory,
@@ -16,7 +20,7 @@ import {
   Donation,
   MeasurementUnit,
   DonationStatus,
-} from "../modules/donation/models/donation.js";
+} from "../modules/donation/models/donation.model.js";
 
 import {
   Reservation,
@@ -24,11 +28,17 @@ import {
   PaymentMethod,
 } from "../modules/reservation/models/Reservation.js";
 
-import { Transaction, TransactionType } from "../modules/wallet/models/Transaction.js";
+import {
+  Transaction,
+  TransactionType,
+} from "../modules/wallet/models/Transaction.js";
 
-import { Notification, NotificationType } from "../modules/notification/models/Notification.js";
+import {
+  Notification,
+  NotificationType,
+} from "../modules/notification/models/Notification.js";
 
-import { RevokedToken } from "../modules/users/models/RevokedToken.js";
+import { RevokedToken } from "../modules/identity/models/RevokedToken.js";
 
 import {
   AuditLog,
@@ -37,9 +47,12 @@ import {
   AuditLogStatus,
 } from "../modules/admin/models/AuditLog.js";
 
-import { DonorReport, ReportType } from "../modules/donorReports/models/DonorReport.js";
+import {
+  DonorReport,
+  ReportType,
+} from "../modules/donorReport/models/DonorReport.model.js";
 
-import { DonorReportItem } from "../modules/donorReports/models/DonorReportItem.js";
+import { DonorReportItem } from "../modules/donorReport/models/DonorReportItem.model.js";
 
 async function clearDatabase() {
   console.log("Clearing existing data...");
@@ -195,21 +208,83 @@ async function seedDonations(donorProfileId) {
   };
 }
 
-async function seedReservation(donationId, recipientProfileId) {
-  console.log("7/13 Seeding Reservation...");
+async function seedReservations(donationId, recipientProfileId) {
+  console.log("7/13 Seeding Reservations...");
 
-  return Reservation.create({
-    donationId,
-    recipientProfileId,
-    manualRecipientName: "Recipient",
-    quantity: 2,
-    status: ReservationStatus.Reserved,
-    totalPaid: 0,
-    paymentMethod: PaymentMethod.Cash,
-    feedback: null,
-    reservedAt: new Date(),
-    collectedAt: null,
-  });
+  return Reservation.create([
+    {
+      donationId,
+      recipientProfileId,
+      manualRecipientName: "Recipient",
+      quantity: 2,
+      status: ReservationStatus.Reserved,
+      totalPaid: 0,
+      paymentMethod: PaymentMethod.Cash,
+      feedback: null,
+      reservedAt: new Date("2026-08-25T09:00:00.000Z"),
+      collectedAt: null,
+    },
+    {
+      donationId,
+      recipientProfileId: null,
+      manualRecipientName: "Nguyen Van An",
+      quantity: 1,
+      status: ReservationStatus.Collected,
+      totalPaid: 0,
+      paymentMethod: PaymentMethod.Cash,
+      feedback: "Fresh bread and friendly service.",
+      reservedAt: null,
+      collectedAt: new Date("2026-08-24T10:30:00.000Z"),
+    },
+    {
+      donationId,
+      recipientProfileId,
+      manualRecipientName: "Recipient",
+      quantity: 3,
+      status: ReservationStatus.CollectedByRecipient,
+      totalPaid: 0,
+      paymentMethod: PaymentMethod.Cash,
+      feedback: "Collection was quick and easy.",
+      reservedAt: new Date("2026-08-23T08:00:00.000Z"),
+      collectedAt: new Date("2026-08-23T11:00:00.000Z"),
+    },
+    {
+      donationId,
+      recipientProfileId: null,
+      manualRecipientName: "Tran Thi Binh",
+      quantity: 2,
+      status: ReservationStatus.Collected,
+      totalPaid: 0,
+      paymentMethod: PaymentMethod.Cash,
+      feedback: null,
+      reservedAt: null,
+      collectedAt: new Date("2026-08-22T14:15:00.000Z"),
+    },
+    {
+      donationId,
+      recipientProfileId,
+      manualRecipientName: "Recipient",
+      quantity: 1,
+      status: ReservationStatus.CancelledByDonor,
+      totalPaid: 0,
+      paymentMethod: PaymentMethod.Cash,
+      feedback: null,
+      reservedAt: new Date("2026-08-21T09:45:00.000Z"),
+      collectedAt: null,
+    },
+    {
+      donationId,
+      recipientProfileId: null,
+      manualRecipientName: "Le Minh Chau",
+      quantity: 4,
+      status: ReservationStatus.Collected,
+      totalPaid: 0,
+      paymentMethod: PaymentMethod.Cash,
+      feedback: "Very helpful donation.",
+      reservedAt: null,
+      collectedAt: new Date("2026-08-20T16:00:00.000Z"),
+    },
+  ]);
 }
 
 async function seedTransaction(recipientProfileId, reservationId) {
@@ -337,7 +412,11 @@ async function seed() {
     const { bread, fruit } = await seedDonations(donorProfile._id);
 
     // 7. Reservation -> Donation + RecipientProfile
-    const reservation = await seedReservation(bread._id, recipientProfile._id);
+    const reservations = await seedReservations(
+      bread._id,
+      recipientProfile._id,
+    );
+    const [reservation] = reservations;
 
     // 8. Transaction -> RecipientProfile + Reservation
     await seedTransaction(recipientProfile._id, reservation._id);
@@ -369,6 +448,7 @@ async function seed() {
     console.log(`Bread donation: ${bread._id}`);
     console.log(`Fruit donation: ${fruit._id}`);
     console.log(`Reservation: ${reservation._id}`);
+    console.log(`Bread donation records: ${reservations.length}`);
     console.log(`Donor report: ${donorReport._id}`);
   } catch (error) {
     console.error("Database seed failed:");

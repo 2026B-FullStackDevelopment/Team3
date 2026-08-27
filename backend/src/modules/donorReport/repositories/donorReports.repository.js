@@ -1,5 +1,5 @@
-import { DonorReport } from "../models/DonorReport.js";
-import * as donorReportItemsRepository from "./donorReportItemsRepository.js";
+import { DonorReport } from "../models/DonorReport.model.js";
+import * as donorReportItemsRepository from "./donorReportItems.repository.js";
 
 export async function create(data) {
   return DonorReport.create(data);

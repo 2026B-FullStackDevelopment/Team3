@@ -17,14 +17,13 @@ export const RecipientProfileSchema = new Schema({
     type: String,
     unique: true,
     index: true,
-    required: true,
   },
   city: {
     type: String,
   },
   avatarUrl: {
     type: String,
-    default:null,
+    default: null,
   },
   isPremium: {
     type: Boolean,

@@ -3,6 +3,8 @@ import cookieParser from "cookie-parser";
 import { authRoutes } from "./modules/identity/routes/auth.routes.js";
 import { profileRoutes } from "./modules/identity/routes/profile.routes.js";
 import { donorListingRoutes } from "./modules/donation/routes/donorListing.js";
+import { donorListingRoutes } from "./modules/donation/routes/donorListing.routes.js";
+import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.routes.js";
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { env } from "./config/env.js";
@@ -22,7 +24,15 @@ app.get("/api/health", (_req, res) => {
     message: "Backend is running",
   });
 });
-
+app.use((req, res, next) => {
+  const donorProfileId = req.header("x-donor-profile-id");
+  if (donorProfileId) {
+    res.locals.donorProfileId = donorProfileId;
+  }
+  next();
+});
+app.use("/api/donor/food-listings", donorListingRoutes);
+app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/donor/food-listings", donorListingRoutes);  

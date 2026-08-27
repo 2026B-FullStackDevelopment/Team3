@@ -7,7 +7,7 @@ export const ReportType = {
   DashboardSummary: "DashboardSummary",
 };
 
-const DonorReportSchema = {
+const DonorReportSchema = new Schema({
   _id: {
     type: String,
     required: true,
@@ -38,5 +38,5 @@ const DonorReportSchema = {
   generatedAt: {
     type: Date,
   },
-};
+});
 export const DonorReport = mongoose.model("DonorReport", DonorReportSchema);

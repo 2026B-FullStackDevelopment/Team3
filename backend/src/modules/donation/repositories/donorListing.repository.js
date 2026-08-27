@@ -1,8 +1,16 @@
-import { Donation, DonationStatus } from "../models/donation.js";
+import {
+  Donation,
+  DonationStatus,
+  MeasurementUnit,
+} from "../models/donation.model.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function normalizePage(value) {
   const page = Number(value);
@@ -60,8 +68,8 @@ function buildDonationQuery(filters = {}) {
   }
 
   if (search !== undefined && String(search).trim() !== "") {
-    const searchRegex = new RegExp(String(search).trim(), "i");
-    query.$or = [{ name: searchRegex }, { description: searchRegex }];
+    const searchRegex = new RegExp(escapeRegExp(String(search).trim()), "i");
+    query.name = searchRegex;
   }
 
   if (!includeClosed) {
@@ -90,12 +98,12 @@ export async function findOwnedDonation(id, donorProfileId) {
 export async function findDonationsByDonor(donorProfileId, options = {}) {
   const { includeClosed = true, sort = { createdAt: -1 } } = options;
 
-  return Donation.find(
-    buildDonationQuery({
-      donorProfileId,
-      includeClosed,
-    }),
-  ).sort(sort);
+  return findAll({
+    ...options,
+    donorProfileId,
+    includeClosed,
+    sort,
+  });
 }
 
 export async function findActiveDonations(filters = {}) {
@@ -112,6 +120,8 @@ export async function findAll(filters = {}) {
     page = DEFAULT_PAGE,
     limit = DEFAULT_LIMIT,
     sort = { createdAt: -1 },
+    sortBy,
+    sortOrder,
   } = filters;
 
   const normalizedPage = normalizePage(page);
@@ -129,6 +139,8 @@ export async function findAll(filters = {}) {
     total,
     page: normalizedPage,
     limit: normalizedLimit,
+    sortBy,
+    sortOrder,
   };
 }
 
@@ -165,6 +177,14 @@ export async function updateDonationStatus(id, donorProfileId, status) {
   return updateOwnedDonation(id, donorProfileId, update);
 }
 
+export async function updateDonationRation(id, donorProfileId, ration) {
+  return Donation.findOneAndUpdate(
+    { _id: id, donorProfileId },
+    { $set: { ration } },
+    { new: true, runValidators: true },
+  );
+}
+
 export async function markPendingCancellation(id, donorProfileId) {
   return updateDonationStatus(
     id,
@@ -186,6 +206,7 @@ export async function decrementRemainingQuantity(id, quantity) {
     {
       _id: id,
       status: DonationStatus.Active,
+      measurementUnit: { $ne: MeasurementUnit.PerRequest },
       remainingQuantity: { $gte: quantity },
       closedAt: null,
     },
@@ -215,6 +236,7 @@ export async function applyReservation(id, quantity, totalPaid) {
     {
       _id: id,
       status: DonationStatus.Active,
+      measurementUnit: { $ne: MeasurementUnit.PerRequest },
       remainingQuantity: { $gte: quantity },
       closedAt: null,
     },
