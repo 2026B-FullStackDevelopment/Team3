@@ -4,6 +4,10 @@ import * as passwordHelper from "../helpers/password.helper.js";
 import { toProfileDTO } from "../dtos/profile.dto.js";
 import { profileRepositoryFor } from "../helpers/profile.helper.js";
 import {
+  avatarUrlFor,
+  deleteAvatar,
+} from "../../../shared/upload/services/storage.js";
+import {
   ConflictError,
   NotFoundError,
   UnauthorizedError,
@@ -107,4 +111,81 @@ export async function changePassword(
       throw error;
     }
   }
+}
+
+/**
+ * Sets the current user's avatar to a just-uploaded file and returns the updated
+ * profile DTO. The file is already on disk (multer). Reads the old avatarUrl so
+ * the replaced file can be cleaned up, persists the new URL, then best-effort
+ * deletes the old file. If anything fails before the URL is persisted, the
+ * newly-written file is removed so a failed upload never orphans a file.
+ */
+export async function updateAvatar(userId, role, file) {
+  const avatarUrl = avatarUrlFor(file.filename);
+
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    await deleteAvatar(avatarUrl);
+    throw new UnauthorizedError("Session is no longer valid");
+  }
+
+  const repo = profileRepositoryFor(role);
+  const existing = await repo.findByUserId(userId);
+  if (!existing) {
+    await deleteAvatar(avatarUrl);
+    throw new NotFoundError("Profile not found");
+  }
+  const oldAvatarUrl = existing.avatarUrl ?? null;
+
+  let profile;
+  try {
+    profile = await repo.updateByUserId(userId, { avatarUrl });
+  } catch (error) {
+    await deleteAvatar(avatarUrl);
+    throw error;
+  }
+  if (!profile) {
+    await deleteAvatar(avatarUrl);
+    throw new NotFoundError("Profile not found");
+  }
+
+  // Replaced file is now unreferenced — best-effort remove it.
+  if (oldAvatarUrl && oldAvatarUrl !== avatarUrl) {
+    await deleteAvatar(oldAvatarUrl);
+  }
+
+  return toProfileDTO(user, profile);
+}
+
+/**
+ * Clears the current user's avatar and returns the updated profile DTO.
+ * Idempotent: with no avatar set it's a no-op that still returns the profile.
+ * Persists `avatarUrl = null` first, then best-effort deletes the backing file
+ * so a failed unlink can't leave a dangling DB reference.
+ */
+export async function removeAvatar(userId, role) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new UnauthorizedError("Session is no longer valid");
+  }
+
+  const repo = profileRepositoryFor(role);
+  const existing = await repo.findByUserId(userId);
+  if (!existing) {
+    throw new NotFoundError("Profile not found");
+  }
+
+  const oldAvatarUrl = existing.avatarUrl ?? null;
+  if (!oldAvatarUrl) {
+    return toProfileDTO(user, existing); // nothing to remove
+  }
+
+  const profile = await repo.updateByUserId(userId, { avatarUrl: null });
+  if (!profile) {
+    throw new NotFoundError("Profile not found");
+  }
+
+  await deleteAvatar(oldAvatarUrl);
+
+  return toProfileDTO(user, profile);
 }

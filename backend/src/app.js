@@ -5,11 +5,16 @@ import { profileRoutes } from "./modules/identity/routes/profile.routes.js";
 import { donorListingRoutes } from "./modules/donation/routes/donorListing.js";
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
+import { env } from "./config/env.js";
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve uploaded images (avatars) as static files. Filenames are
+// server-generated; the DB stores only these URLs. Unauthenticated by design.
+app.use("/upload", express.static(env.upload.dir));
 
 app.get("/api/health", (_req, res) => {
   res.json({
