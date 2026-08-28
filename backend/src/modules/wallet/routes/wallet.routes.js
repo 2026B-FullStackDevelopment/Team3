@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as walletController from "../controllers/wallet.controller.js";
 import { requireAuth } from "../../../middleware/auth.js";
 import { requireRole } from "../../../middleware/role.js";
-import { userRole } from "../../identity/models/User.js";
+import { userRole } from "../../identity/index.js";
 
 const router = Router();
 

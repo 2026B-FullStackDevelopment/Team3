@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { PaymentMethod } from "../../reservation/models/Reservation.js";
+import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 
 export const TransactionType = {
   Deposit: "Deposit",
