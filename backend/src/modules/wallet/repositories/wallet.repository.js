@@ -4,11 +4,11 @@ import { Wallet } from "../models/Wallet.js";
  * Returns the user's wallet, creating it (balance 0) on first access. Upsert is
  * atomic, so concurrent first-touches can't create two wallets (userId unique).
  */
-export async function getOrCreate(userId) {
+export async function getOrCreate(userId, session) {
   return Wallet.findOneAndUpdate(
     { userId },
     { $setOnInsert: { userId } },
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true, session },
   );
 }
 
@@ -22,11 +22,11 @@ export async function findByUserId(userId) {
  * Upserts so a first-ever deposit also creates the wallet. Never a
  * read-modify-write (DATA_MODEL §2).
  */
-export async function incrementBalance(userId, amount) {
+export async function incrementBalance(userId, amount, session) {
   return Wallet.findOneAndUpdate(
     { userId },
     { $inc: { balance: amount } },
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true, session },
   );
 }
 
@@ -36,10 +36,10 @@ export async function incrementBalance(userId, amount) {
  * operation, so two concurrent debits can't overdraw. Returns the updated
  * document, or null when funds are insufficient (or no wallet exists).
  */
-export async function decrementBalance(userId, amount) {
+export async function decrementBalance(userId, amount, session) {
   return Wallet.findOneAndUpdate(
     { userId, balance: { $gte: amount } },
     { $inc: { balance: -amount } },
-    { returnDocument: "after" },
+    { returnDocument: "after", session },
   );
 }

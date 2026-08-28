@@ -30,10 +30,10 @@ export async function register({ email, password, role, profile }) {
 
   try {
     if (role === userRole.Recipient) {
-        recipientProfileRepository.create({ userId: user._id, ...profile });
+        await recipientProfileRepository.create({ userId: user._id, ...profile });
       }
     else{
-      donorProfileRepository.create({ userId: user._id, ...profile });
+      await donorProfileRepository.create({ userId: user._id, ...profile });
     }
   } catch (error) {
     await userRepository.deleteById(user._id); // Delete user if the create user profile failed.

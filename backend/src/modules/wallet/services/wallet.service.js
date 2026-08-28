@@ -5,7 +5,7 @@ import { toTransactionDTO, toTransactionDTOList } from "../dtos/transaction.dto.
 import { TransactionType } from "../models/Transaction.js";
 import { PaymentMethod } from "../../reservation/models/Reservation.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
-import { assertPositive } from "../helpers/wallet.helper.js";
+import { assertPositive, runInTransaction } from "../helpers/wallet.helper.js";
 
 /** Current balance for the user's wallet (created on first access). */
 export async function getBalance(userId) {
@@ -19,14 +19,17 @@ export async function getBalance(userId) {
  * defaults to Card, representing an external top-up.
  */
 export async function deposit(userId, amount, method = PaymentMethod.Card) {
-  const wallet = await walletRepository.incrementBalance(userId, amount);
-  const transaction = await transactionRepository.create({
-    userId,
-    amount,
-    type: TransactionType.Deposit,
-    method,
+  return runInTransaction(async (session) => {
+    const wallet = await walletRepository.incrementBalance(userId, amount, session);
+    const transaction = await transactionRepository.create(
+      { userId, amount, type: TransactionType.Deposit, method },
+      session,
+    );
+    return {
+      wallet: toWalletDTO(wallet),
+      transaction: toTransactionDTO(transaction),
+    };
   });
-  return { wallet: toWalletDTO(wallet), transaction: toTransactionDTO(transaction) };
 }
 
 /** The user's transactions, newest first. */
@@ -43,9 +46,11 @@ export async function listTransactions(userId) {
  */
 export async function credit(userId, amount, meta = {}) {
   assertPositive(amount);
-  const wallet = await walletRepository.incrementBalance(userId, amount);
-  await transactionRepository.create({ userId, amount, ...meta });
-  return toWalletDTO(wallet);
+  return runInTransaction(async (session) => {
+    const wallet = await walletRepository.incrementBalance(userId, amount, session);
+    await transactionRepository.create({ userId, amount, ...meta }, session);
+    return toWalletDTO(wallet);
+  });
 }
 
 /**
@@ -55,10 +60,13 @@ export async function credit(userId, amount, meta = {}) {
  */
 export async function debit(userId, amount, meta = {}) {
   assertPositive(amount);
-  const wallet = await walletRepository.decrementBalance(userId, amount);
-  if (!wallet) {
-    throw new ValidationError("Insufficient wallet balance");
-  }
-  await transactionRepository.create({ userId, amount, ...meta });
-  return toWalletDTO(wallet);
+  return runInTransaction(async (session) => {
+    const wallet = await walletRepository.decrementBalance(userId, amount, session);
+    if (!wallet) {
+      // Aborts the transaction — no ledger row is written.
+      throw new ValidationError("Insufficient wallet balance");
+    }
+    await transactionRepository.create({ userId, amount, ...meta }, session);
+    return toWalletDTO(wallet);
+  });
 }
