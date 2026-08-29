@@ -3,7 +3,7 @@ import * as transactionRepository from "../repositories/transaction.repository.j
 import { toWalletDTO } from "../dtos/wallet.dto.js";
 import { toTransactionDTO, toTransactionDTOList } from "../dtos/transaction.dto.js";
 import { TransactionType } from "../models/Transaction.js";
-import { PaymentMethod } from "../../reservation/models/Reservation.js";
+import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
 import { assertPositive, runInTransaction } from "../helpers/wallet.helper.js";
 

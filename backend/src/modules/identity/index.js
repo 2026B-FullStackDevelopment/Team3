@@ -8,6 +8,10 @@
 import * as tokenHelper from "./helpers/token.helper.js";
 import * as revokedTokenRepository from "./repositories/revokedToken.repository.js";
 
+// Role vocabulary is part of Identity's public surface — other modules read it
+// from here (the facade), never from the internal User model.
+export { userRole } from "./models/User.js";
+
 /**
  * Verifies signature + expiry, returning the decoded payload
  * ({ userId, role, jti, iat, exp }). Throws on invalid/expired tokens.
