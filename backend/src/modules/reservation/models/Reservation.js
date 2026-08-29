@@ -1,10 +1,8 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-export const PaymentMethod = {
-  Cash: "Cash",
-  Wallet: "Wallet",
-  Card: "Card",
-};
+// PaymentMethod now lives in shared/; re-exported here so existing consumers
+// that import it from this model keep working.
+import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 export const ReservationStatus = {
   Reserved: "Reserved",
   CollectedByRecipient: "CollectedByRecipient",

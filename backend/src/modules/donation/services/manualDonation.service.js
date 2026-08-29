@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
+import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 import {
-  PaymentMethod,
   Reservation,
   ReservationStatus,
 } from "../../reservation/models/Reservation.js";

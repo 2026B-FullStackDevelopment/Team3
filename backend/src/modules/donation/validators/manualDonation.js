@@ -1,4 +1,4 @@
-import { PaymentMethod } from "../../reservation/models/Reservation.js";
+import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
 
 const MANUAL_PAYMENT_METHODS = [PaymentMethod.Cash, PaymentMethod.Wallet];
