@@ -1,6 +1,6 @@
 // backend/src/modules/reservation/services/reservationService.js
 
-import * as ReservationRepository from '../repositories/reservationRepository.js';
+import * as ReservationRepository from '../repositories/ReservationRepository.js';
 import { Wallet } from '../../wallet/models/Wallet.js';  
 import { Notification } from '../../notification/models/Notification.js';
 import { Donation } from '../../donation/models/donation.model.js';
@@ -19,6 +19,9 @@ export async function processReservation(recipientProfileId, donationId, quantit
     if (donation.measurementUnit === 'PerRequest') {
       throw new Error("Items marked 'Per Request' cannot be reserved online.");
     }
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error("Quantity must be a positive number.");
+    }
     if (donation.ration > 0 && quantity > donation.ration) {
       throw new Error(`You cannot reserve more than the allowed ration of ${donation.ration}.`);
     }
@@ -32,9 +35,12 @@ export async function processReservation(recipientProfileId, donationId, quantit
     // Handle Payments 
     const totalPaid = donation.price > 0 ? (donation.price * quantity) : 0;
     
-    if (totalPaid > 0 && paymentMethod === 'Wallet') {
-       // Interacts with Wallet Module securely via Facade
-       await Wallet.deductBalance(recipientProfileId, totalPaid);
+    if (totalPaid > 0 && paymentMethod === 'Wallet') { 
+      const wallet = await Wallet.findOneAndUpdate(
+        { recipientProfileId, balance: { $gte: totalPaid } }, 
+        { $inc: { balance: -totalPaid } }
+      );
+      if (!wallet) throw new Error("Insufficient wallet balance.");
     }
 
     // Stock Deduction
@@ -56,7 +62,13 @@ export async function processReservation(recipientProfileId, donationId, quantit
       
       // Trigger Real-Time "Sold Out" Notification if stock is depleted
       if (updatedDonation.remainingQuantity < 1) {
-        Notification.emitSoldOutAlert(donationId, donation.donorProfileId);
+        await Notification.create({
+          userId: donation.donorProfileId,
+          type: "ListingSoldOut",
+          relatedDonationId: donationId,
+          isRead: false,
+          createdAt: new Date()
+        });
       }
 
       return newReservation;
@@ -65,8 +77,11 @@ export async function processReservation(recipientProfileId, donationId, quantit
        // Restore food stock and refund wallet if the database fails to save the ticket
        await ReservationRepository.restoreDonationStock(donationId, quantity);
        if (totalPaid > 0 && paymentMethod === 'Wallet') {
-           await Wallet.refundBalance(recipientProfileId, totalPaid);
-       }
+          await Wallet.findOneAndUpdate(
+            { recipientProfileId },
+            { $inc: { balance: totalPaid } }
+          );
+        }
        throw new Error(`Failed to create reservation ticket: ${error.message}`);
       }
 

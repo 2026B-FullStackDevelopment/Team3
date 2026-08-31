@@ -41,3 +41,21 @@ export async function restoreDonationStock(donationId, quantityToRestore) {
 export async function checkExistingReservation(recipientProfileId, donationId) {
   return await Reservation.findOne({ recipientProfileId, donationId });
 }
+
+export async function findByDonationId(donationId, options = {}) {
+  const page = options.page || 1;
+  const limit = options.limit || 20;
+  const skip = (page - 1) * limit;
+  const [entries, total] = await Promise.all([
+    Reservation.find({ donationId }).skip(skip).limit(limit).populate('recipientProfileId'),
+    Reservation.countDocuments({ donationId }),
+  ]);
+  return { entries, total, page, limit };
+}
+
+export async function cancelActiveReservationsForDonation(donationId) {
+  return await Reservation.updateMany(
+    { donationId, status: "Reserved" },
+    { $set: { status: "CancelledByDonor" } }
+  );
+}
