@@ -122,6 +122,7 @@ async function seedRecipientProfile(userId) {
 
   return RecipientProfile.create({
     userId,
+    userName: "TestRecipient",
     city: "Ho Chi Minh City",
     avatarUrl: "https://example.com/images/recipient-avatar.png",
     isPremium: false,
