@@ -83,8 +83,10 @@ export async function create(data) {
   return Donation.create(data);
 }
 
-export async function findById(id) {
-  return Donation.findById(id);
+export async function findById(id, options = {}) {
+  const query = Donation.findById(id);
+  if (options.session) query.session(options.session);
+  return query;
 }
 
 export async function findDonationById(id) {
@@ -201,7 +203,7 @@ export async function markSoldOut(id, donorProfileId) {
   return updateDonationStatus(id, donorProfileId, DonationStatus.SoldOut);
 }
 
-export async function decrementRemainingQuantity(id, quantity) {
+export async function decrementRemainingQuantity(id, quantity, options = {}) {
   return Donation.findOneAndUpdate(
     {
       _id: id,
@@ -211,27 +213,29 @@ export async function decrementRemainingQuantity(id, quantity) {
       closedAt: null,
     },
     { $inc: { remainingQuantity: -quantity } },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, session: options.session },
   );
 }
 
-export async function incrementRemainingQuantity(id, quantity) {
+export async function incrementRemainingQuantity(id, quantity, options = {}) {
   return Donation.findByIdAndUpdate(
     id,
     { $inc: { remainingQuantity: quantity } },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, session: options.session },
   );
 }
 
-export async function addRevenue(id, amount) {
+export async function addRevenue(id, amount, options = {}) {
   return Donation.findByIdAndUpdate(
     id,
     { $inc: { revenue: amount } },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, session: options.session },
   );
 }
 
-export async function applyReservation(id, quantity, totalPaid) {
+export async function applyReservation(id, quantity, totalPaid, options = {}) {
+  const soldOutAt = new Date();
+
   return Donation.findOneAndUpdate(
     {
       _id: id,
@@ -240,17 +244,37 @@ export async function applyReservation(id, quantity, totalPaid) {
       remainingQuantity: { $gte: quantity },
       closedAt: null,
     },
-    {
-      $inc: {
-        remainingQuantity: -quantity,
-        revenue: totalPaid,
+    [
+      {
+        $set: {
+          remainingQuantity: { $subtract: ["$remainingQuantity", quantity] },
+          revenue: { $add: [{ $ifNull: ["$revenue", 0] }, totalPaid] },
+        },
       },
-    },
-    { new: true, runValidators: true },
+      {
+        $set: {
+          status: {
+            $cond: [
+              { $lte: ["$remainingQuantity", 0] },
+              DonationStatus.SoldOut,
+              "$status",
+            ],
+          },
+          closedAt: {
+            $cond: [
+              { $lte: ["$remainingQuantity", 0] },
+              soldOutAt,
+              "$closedAt",
+            ],
+          },
+        },
+      },
+    ],
+    { new: true, session: options.session },
   );
 }
 
-export async function closeIfSoldOut(id) {
+export async function closeIfSoldOut(id, options = {}) {
   return Donation.findOneAndUpdate(
     {
       _id: id,
@@ -263,7 +287,7 @@ export async function closeIfSoldOut(id) {
         closedAt: new Date(),
       },
     },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, session: options.session },
   );
 }
 

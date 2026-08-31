@@ -47,6 +47,23 @@ export async function findById(id) {
 }
 
 /**
+ * Fetches a user by _id with the normally-hidden passwordHash included, for
+ * verifying the current password on a change-password request. Returns null if
+ * not found.
+ */
+export async function findByIdWithSecret(id) {
+  return User.findById(id).select("+passwordHash");
+}
+
+/**
+ * Sets a new passwordHash on a user. Atomic single-field update; the caller
+ * supplies the already-hashed value — this layer never sees plaintext.
+ */
+export async function updatePasswordHash(id, passwordHash) {
+  return User.updateOne({ _id: id }, { $set: { passwordHash } });
+}
+
+/**
  * Records a failed login atomically: increments failedLoginAttempts, stamps
  * lastFailedLoginAt, and — in the SAME update — locks the account when the
  * (post-increment) count reaches the threshold. Uses an aggregation-pipeline

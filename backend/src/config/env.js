@@ -1,4 +1,13 @@
 import "dotenv/config";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Backend root, resolved from this file (src/config/env.js) so upload paths
+// don't depend on process.cwd().
+const backendRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)), // Give the URL of the current file.
+  "../..",
+);
 
 function required(name) {
   const value = process.env[name];
@@ -21,6 +30,7 @@ function int(name, fallback) {
 }
 
 export const env = {
+  dbUri: required("MONGODB_URI"),
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction: process.env.NODE_ENV === "production",
 
@@ -38,5 +48,14 @@ export const env = {
     lockoutThreshold: int("LOCKOUT_THRESHOLD", 5),
     lockoutDurationMs: int("LOCKOUT_DURATION_MS", 60_000),
     bcryptRounds: int("BCRYPT_ROUNDS", 12),
+  },
+
+  upload: {
+    // Absolute path where uploaded images are stored, referenced by URL in Mongo.
+    // Defaults to <backend>/upload; override with UPLOAD_DIR (relative values are
+    // resolved against the backend root).
+    dir: process.env.UPLOAD_DIR
+      ? path.resolve(backendRoot, process.env.UPLOAD_DIR)
+      : path.join(backendRoot, "upload"),
   },
 };

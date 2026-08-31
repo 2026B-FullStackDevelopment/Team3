@@ -7,3 +7,24 @@ import { DonorProfile } from "../models/DonorProfile.js";
 export async function create(profileData) {
   return DonorProfile.create(profileData);
 }
+
+/**
+ * Fetches the DonorProfile owned by a given userId (indexed). Returns null if
+ * none exists.
+ */
+export async function findByUserId(userId) {
+  return DonorProfile.findOne({ userId });
+}
+
+/**
+ * Applies a partial patch to the DonorProfile owned by userId, returning the
+ * updated document. `runValidators` is required because Mongoose skips schema
+ * validators on findOneAndUpdate by default (e.g. the GeoJSON location shape).
+ * Returns null if no profile matches.
+ */
+export async function updateByUserId(userId, patch) {
+  return DonorProfile.findOneAndUpdate({ userId }, patch, {
+    returnDocument: "after",
+    runValidators: true,
+  });
+}
