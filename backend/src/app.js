@@ -38,7 +38,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/donor/food-listings", donorListingRoutes);
-app.use("/api/admin/audit-logs", auditLogRoutes);
+app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
 
 // TODO: mount the remaining routers (donation, reservation, feedback,

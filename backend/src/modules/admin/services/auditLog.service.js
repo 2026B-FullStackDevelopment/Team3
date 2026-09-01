@@ -1,6 +1,11 @@
 import * as auditLogRepository from "../repositories/auditLog.repository.js";
 import { AdminActionType, AuditTargetType, AuditLogStatus } from "../models/AuditLog.js";
 import { NotFoundError, ValidationError, ConflictError, NotImplementedError } from "../../../shared/errors/errors.js";
+import { env } from "../../../config/env.js";
+// Cross-module calls go through each module's public facade/interface only
+// (SRS A.3.1) -- never that module's Service layer directly.
+import * as identity from "../../identity/index.js";
+import * as donation from "../../donation/interfaces/donorListing.interface.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -217,4 +222,98 @@ export async function finalizeExpiredEntries() {
   );
 
   return finalized.map(toAuditLogDTO);
+}
+
+// --- SRS 7.1.1, 7.2.1, 7.2.2 ------------------------------------------------
+// The three admin actions below all go through the same shape: read the
+// target's current state through its module's facade (for previousState),
+// perform the mutation through that same facade, then log it here with an
+// undo window. Listing accounts is a read, not an action, so it skips the
+// audit log entirely.
+
+function computeUndoDeadline() {
+  return new Date(Date.now() + env.admin.undoWindowMs);
+}
+
+/**
+ * Paginated list of Recipient/Donor accounts for the Admin UI (SRS 7.1.1).
+ * Pure passthrough to Identity's facade -- nothing here is Admin-module
+ * business logic, so there's no reason to duplicate validation that
+ * identity.listAccounts already does.
+ */
+export async function listAccounts(filters = {}) {
+  return identity.listAccounts(filters);
+}
+
+/** Deactivates a Recipient or Donor account and logs it (SRS 7.2.1). */
+export async function deactivateUserAccount(adminId, userId) {
+  if (!isNonEmptyString(adminId)) {
+    throw new ValidationError("adminId is required");
+  }
+  if (!isNonEmptyString(userId)) {
+    throw new ValidationError("userId is required");
+  }
+
+  const before = await identity.getAccountById(userId);
+  const after = await identity.deactivateAccount(userId);
+
+  await createAuditLog({
+    adminId,
+    action: AdminActionType.DeactivateUser,
+    targetType: AuditTargetType.User,
+    targetId: userId,
+    previousState: before,
+    undoDeadline: computeUndoDeadline(),
+  });
+
+  return after;
+}
+
+/** Reactivates a previously deactivated Recipient or Donor account and logs it (SRS 7.2.1). */
+export async function reactivateUserAccount(adminId, userId) {
+  if (!isNonEmptyString(adminId)) {
+    throw new ValidationError("adminId is required");
+  }
+  if (!isNonEmptyString(userId)) {
+    throw new ValidationError("userId is required");
+  }
+
+  const before = await identity.getAccountById(userId);
+  const after = await identity.reactivateAccount(userId);
+
+  await createAuditLog({
+    adminId,
+    action: AdminActionType.ReactivateUser,
+    targetType: AuditTargetType.User,
+    targetId: userId,
+    previousState: before,
+    undoDeadline: computeUndoDeadline(),
+  });
+
+  return after;
+}
+
+/** Cancels any Active food listing and logs it (SRS 7.2.2). */
+export async function cancelDonation(adminId, donationId) {
+  if (!isNonEmptyString(adminId)) {
+    throw new ValidationError("adminId is required");
+  }
+  if (!isNonEmptyString(donationId)) {
+    throw new ValidationError("donationId is required");
+  }
+
+  const beforeDonation = await donation.readDonationById(donationId);
+  const before = donation.toDonationSummaryDTO(beforeDonation);
+  const after = await donation.adminCancelDonation(donationId);
+
+  await createAuditLog({
+    adminId,
+    action: AdminActionType.CancelDonation,
+    targetType: AuditTargetType.Donation,
+    targetId: donationId,
+    previousState: before,
+    undoDeadline: computeUndoDeadline(),
+  });
+
+  return after;
 }
