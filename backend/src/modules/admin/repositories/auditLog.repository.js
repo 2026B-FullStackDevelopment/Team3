@@ -3,12 +3,14 @@ import { AuditLog, AuditLogStatus } from "../models/AuditLog.js";
 
 /**
  * Inserts a new audit log entry when an admin takes an action.
- * Straight passthrough to AuditLog.create — the schema already owns
- * defaults (status: Pending, createdAt: now), so we don't restate them
- * here; callers only pass fields that vary per action.
+ * Uses the array form of AuditLog.create so an optional session can be
+ * attached (Mongoose requires the array form for that) -- the schema still
+ * owns defaults (status: Pending, createdAt: now) for anything the caller
+ * doesn't pass.
  */
-export async function create(entryData) {
-  return AuditLog.create(entryData);
+export async function create(entryData, options = {}) {
+  const [created] = await AuditLog.create([entryData], { session: options.session });
+  return created;
 }
 
 /**
@@ -38,12 +40,16 @@ export async function findExpiredPending() {
  * Transitions an entry's status (e.g. Pending -> Finalized on sweep,
  * Pending -> Undone on manual undo), stamping undoneAt/undoneBy when given.
  */
-export async function updateStatus(id, newStatus, undoneAt, undoneBy) {
+export async function updateStatus(id, newStatus, undoneAt, undoneBy, options = {}) {
   const update = { status: newStatus };
   if (undoneAt !== undefined) update.undoneAt = undoneAt;
   if (undoneBy !== undefined) update.undoneBy = undoneBy;
 
-  return AuditLog.findByIdAndUpdate(id, { $set: update }, { new: true });
+  return AuditLog.findByIdAndUpdate(
+    id,
+    { $set: update },
+    { new: true, session: options.session },
+  );
 }
 
 /**

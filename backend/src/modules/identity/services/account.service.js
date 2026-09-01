@@ -34,12 +34,12 @@ function normalizeLimit(value) {
 }
 
 /** Looks up the profile matching a user's role; Admins have no profile row. */
-async function findProfileForUser(user) {
+async function findProfileForUser(user, options = {}) {
   if (user.role === userRole.Recipient) {
-    return recipientProfileRepository.findByUserId(user._id);
+    return recipientProfileRepository.findByUserId(user._id, options);
   }
   if (user.role === userRole.Donor) {
-    return donorProfileRepository.findByUserId(user._id);
+    return donorProfileRepository.findByUserId(user._id, options);
   }
   return null;
 }
@@ -93,13 +93,15 @@ export async function listAccounts(filters = {}) {
 /**
  * Fetches one account by id, DTO-shaped. Used both directly and by the Admin
  * module to snapshot "previous state" before deactivating/reactivating.
+ * Accepts an optional Mongo session so that snapshot read can join the same
+ * transaction as the mutation and audit-log write that follow it.
  */
-export async function getAccountById(userId) {
-  const user = await userRepository.findById(userId);
+export async function getAccountById(userId, options = {}) {
+  const user = await userRepository.findById(userId, options);
   if (!user) {
     throw new NotFoundError(`Account ${userId} not found`);
   }
-  const profile = await findProfileForUser(user);
+  const profile = await findProfileForUser(user, options);
   return toAccountSummaryDTO(user, profile);
 }
 
@@ -107,10 +109,12 @@ export async function getAccountById(userId) {
  * Shared guard for deactivate/reactivate: loads the user, rejects Admin
  * targets (SRS 7.2.1 only covers Recipient/Donor accounts), and rejects a
  * no-op transition -- same style as donorListing.service.changeDonationStatus
- * rejecting an invalid status transition.
+ * rejecting an invalid status transition. Threads an optional session through
+ * every read/write so a caller (e.g. the Admin module) can make this part of
+ * a larger all-or-nothing transaction with its own audit-log write.
  */
-async function transitionAccountStatus(userId, targetStatus) {
-  const user = await userRepository.findById(userId);
+async function transitionAccountStatus(userId, targetStatus, options = {}) {
+  const user = await userRepository.findById(userId, options);
   if (!user) {
     throw new NotFoundError(`Account ${userId} not found`);
   }
@@ -121,17 +125,17 @@ async function transitionAccountStatus(userId, targetStatus) {
     throw new ConflictError(`Account is already ${targetStatus}`);
   }
 
-  const updated = await userRepository.updateAccountStatus(userId, targetStatus);
-  const profile = await findProfileForUser(updated);
+  const updated = await userRepository.updateAccountStatus(userId, targetStatus, options);
+  const profile = await findProfileForUser(updated, options);
   return toAccountSummaryDTO(updated, profile);
 }
 
 /** Deactivates a Recipient or Donor account (SRS 7.2.1). Blocks login until reactivated. */
-export async function deactivateAccount(userId) {
-  return transitionAccountStatus(userId, AccountStatus.Deactivated);
+export async function deactivateAccount(userId, options = {}) {
+  return transitionAccountStatus(userId, AccountStatus.Deactivated, options);
 }
 
 /** Reactivates a previously deactivated Recipient or Donor account (SRS 7.2.1). */
-export async function reactivateAccount(userId) {
-  return transitionAccountStatus(userId, AccountStatus.Active);
+export async function reactivateAccount(userId, options = {}) {
+  return transitionAccountStatus(userId, AccountStatus.Active, options);
 }

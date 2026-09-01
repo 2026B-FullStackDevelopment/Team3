@@ -12,8 +12,10 @@ export async function create(profileData) {
  * Fetches the RecipientProfile owned by a given userId (uniquely indexed).
  * Returns null if none exists.
  */
-export async function findByUserId(userId) {
-  return RecipientProfile.findOne({ userId });
+export async function findByUserId(userId, options = {}) {
+  const query = RecipientProfile.findOne({ userId });
+  if (options.session) query.session(options.session);
+  return query;
 }
 
 /**

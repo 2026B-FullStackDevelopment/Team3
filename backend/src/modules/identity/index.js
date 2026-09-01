@@ -33,17 +33,20 @@ export function listAccounts(filters) {
   return accountService.listAccounts(filters);
 }
 
-/** Fetches one account by id, DTO-shaped. */
-export function getAccountById(userId) {
-  return accountService.getAccountById(userId);
+/**
+ * Fetches one account by id, DTO-shaped. `options.session` lets a caller
+ * (e.g. the Admin module) fold this read into its own Mongo transaction.
+ */
+export function getAccountById(userId, options) {
+  return accountService.getAccountById(userId, options);
 }
 
 /** Deactivates a Recipient or Donor account; they can no longer log in until reactivated. */
-export function deactivateAccount(userId) {
-  return accountService.deactivateAccount(userId);
+export function deactivateAccount(userId, options) {
+  return accountService.deactivateAccount(userId, options);
 }
 
 /** Reactivates a previously deactivated Recipient or Donor account. */
-export function reactivateAccount(userId) {
-  return accountService.reactivateAccount(userId);
+export function reactivateAccount(userId, options) {
+  return accountService.reactivateAccount(userId, options);
 }

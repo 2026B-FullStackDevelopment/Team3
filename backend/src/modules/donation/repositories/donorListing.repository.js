@@ -146,11 +146,11 @@ export async function findAll(filters = {}) {
   };
 }
 
-export async function updateById(id, data) {
+export async function updateById(id, data, options = {}) {
   return Donation.findByIdAndUpdate(
     id,
     { $set: data },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, session: options.session },
   );
 }
 

@@ -42,8 +42,10 @@ export async function findByEmailWithSecret(email) {
  * Fetches a user by _id. passwordHash stays hidden (select: false), so this is
  * safe to map straight to a DTO. Returns null if not found.
  */
-export async function findById(id) {
-  return User.findById(id);
+export async function findById(id, options = {}) {
+  const query = User.findById(id);
+  if (options.session) query.session(options.session);
+  return query;
 }
 
 /**
@@ -138,6 +140,10 @@ export async function findAll({ roles, page = 1, limit = 20 } = {}) {
  * reason as auditLog.repository.updateStatus: no window where stale
  * in-memory state could overwrite a concurrent change.
  */
-export async function updateAccountStatus(id, accountStatus) {
-  return User.findByIdAndUpdate(id, { $set: { accountStatus } }, { new: true });
+export async function updateAccountStatus(id, accountStatus, options = {}) {
+  return User.findByIdAndUpdate(
+    id,
+    { $set: { accountStatus } },
+    { new: true, session: options.session },
+  );
 }

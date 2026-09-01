@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import * as auditLogRepository from "../repositories/auditLog.repository.js";
 import { AdminActionType, AuditTargetType, AuditLogStatus } from "../models/AuditLog.js";
 import { NotFoundError, ValidationError, ConflictError, NotImplementedError } from "../../../shared/errors/errors.js";
@@ -47,9 +48,19 @@ function isNonEmptyString(value) {
  * would just re-prove something already proven, and risks rejecting a
  * legitimate log entry if the target is deleted in the tiny window between
  * the action and the log write.
+ *
+ * `input.status` defaults to Pending (the schema default) but callers may
+ * pass Finalized directly for an action that has no undo path at all --
+ * see cancelDonation below -- so the entry never sits in a Pending state
+ * with a live-looking undo window it can't actually honor.
+ *
+ * `options.session` lets the caller (the three action functions below) fold
+ * this write into the same Mongo transaction as the mutation it's logging,
+ * so a failure here rolls back the mutation too instead of leaving an
+ * unlogged change.
  */
-export async function createAuditLog(input) {
-  const { adminId, action, targetType, targetId, previousState, undoDeadline } = input;
+export async function createAuditLog(input, options = {}) {
+  const { adminId, action, targetType, targetId, previousState, undoDeadline, status } = input;
 
   if (!isNonEmptyString(adminId)) {
     throw new ValidationError("adminId is required");
@@ -67,6 +78,14 @@ export async function createAuditLog(input) {
     throw new ValidationError("previousState is required");
   }
 
+  let normalizedStatus = AuditLogStatus.Pending;
+  if (status !== undefined) {
+    if (!Object.values(AuditLogStatus).includes(status)) {
+      throw new ValidationError(`status must be one of: ${Object.values(AuditLogStatus).join(", ")}`);
+    }
+    normalizedStatus = status;
+  }
+
   let normalizedUndoDeadline;
   if (undoDeadline !== undefined && undoDeadline !== null) {
     const deadline = new Date(undoDeadline);
@@ -79,14 +98,18 @@ export async function createAuditLog(input) {
     normalizedUndoDeadline = deadline;
   }
 
-  const created = await auditLogRepository.create({
-    adminId,
-    action,
-    targetType,
-    targetId,
-    previousState,
-    ...(normalizedUndoDeadline !== undefined && { undoDeadline: normalizedUndoDeadline }),
-  });
+  const created = await auditLogRepository.create(
+    {
+      adminId,
+      action,
+      targetType,
+      targetId,
+      previousState,
+      status: normalizedStatus,
+      ...(normalizedUndoDeadline !== undefined && { undoDeadline: normalizedUndoDeadline }),
+    },
+    options,
+  );
 
   return toAuditLogDTO(created);
 }
@@ -180,11 +203,16 @@ export async function listAuditLogs(filters = {}) {
  * Attempts to undo a Pending admin action within its undo window.
  * Validates the entry is actually undoable (still Pending, deadline not
  * passed) before anything else, since that check is real regardless of
- * what undo eventually does. It stops short of reverting the target
- * User/Donation record: per A.3.1, that has to go through that module's own
- * service interface, and User/Donation don't expose one yet. Throwing here
- * instead of flipping the entry to Undone avoids reporting a successful
- * undo that didn't actually undo anything.
+ * what undo eventually does.
+ *
+ * DeactivateUser and ReactivateUser are genuinely invertible -- undoing one
+ * is just calling the identity facade's opposite method -- so those revert
+ * for real here, inside a transaction with the AuditLog status flip, so a
+ * failed revert never gets recorded as a successful undo. CancelDonation
+ * has no inverse anywhere in the SRS (no "un-cancel a listing" feature), so
+ * cancelDonation() below never creates a Pending entry for it in the first
+ * place; the `else` branch here is a defensive guard for a state that
+ * should be unreachable, not a real code path.
  */
 export async function undoAction(auditLogId, actorId) {
   if (!isNonEmptyString(auditLogId)) {
@@ -203,9 +231,30 @@ export async function undoAction(auditLogId, actorId) {
     throw new ConflictError(`Audit log ${auditLogId}'s undo window has expired`);
   }
 
-  throw new NotImplementedError(
-    "Undo is not available yet: reverting the target record requires the User/Donation module service interfaces, which are not implemented."
-  );
+  const session = await mongoose.startSession();
+  try {
+    let reverted;
+    await session.withTransaction(async () => {
+      if (entry.action === AdminActionType.DeactivateUser) {
+        reverted = await identity.reactivateAccount(entry.targetId, { session });
+      } else if (entry.action === AdminActionType.ReactivateUser) {
+        reverted = await identity.deactivateAccount(entry.targetId, { session });
+      } else {
+        throw new NotImplementedError(`Undo is not available for ${entry.action}`);
+      }
+
+      await auditLogRepository.updateStatus(
+        entry.id,
+        AuditLogStatus.Undone,
+        new Date(),
+        actorId,
+        { session },
+      );
+    });
+    return reverted;
+  } finally {
+    await session.endSession();
+  }
 }
 
 /**
@@ -245,7 +294,13 @@ export async function listAccounts(filters = {}) {
   return identity.listAccounts(filters);
 }
 
-/** Deactivates a Recipient or Donor account and logs it (SRS 7.2.1). */
+/**
+ * Deactivates a Recipient or Donor account and logs it (SRS 7.2.1).
+ * The read of the pre-change state, the mutation, and the audit-log write
+ * all run inside one Mongo transaction: if createAuditLog fails, the whole
+ * thing rolls back instead of leaving a real change with no audit record
+ * (and no undo deadline) behind it.
+ */
 export async function deactivateUserAccount(adminId, userId) {
   if (!isNonEmptyString(adminId)) {
     throw new ValidationError("adminId is required");
@@ -254,22 +309,35 @@ export async function deactivateUserAccount(adminId, userId) {
     throw new ValidationError("userId is required");
   }
 
-  const before = await identity.getAccountById(userId);
-  const after = await identity.deactivateAccount(userId);
+  const session = await mongoose.startSession();
+  try {
+    let after;
+    await session.withTransaction(async () => {
+      const before = await identity.getAccountById(userId, { session });
+      after = await identity.deactivateAccount(userId, { session });
 
-  await createAuditLog({
-    adminId,
-    action: AdminActionType.DeactivateUser,
-    targetType: AuditTargetType.User,
-    targetId: userId,
-    previousState: before,
-    undoDeadline: computeUndoDeadline(),
-  });
-
-  return after;
+      await createAuditLog(
+        {
+          adminId,
+          action: AdminActionType.DeactivateUser,
+          targetType: AuditTargetType.User,
+          targetId: userId,
+          previousState: before,
+          undoDeadline: computeUndoDeadline(),
+        },
+        { session },
+      );
+    });
+    return after;
+  } finally {
+    await session.endSession();
+  }
 }
 
-/** Reactivates a previously deactivated Recipient or Donor account and logs it (SRS 7.2.1). */
+/**
+ * Reactivates a previously deactivated Recipient or Donor account and logs
+ * it (SRS 7.2.1). Same single-transaction shape as deactivateUserAccount.
+ */
 export async function reactivateUserAccount(adminId, userId) {
   if (!isNonEmptyString(adminId)) {
     throw new ValidationError("adminId is required");
@@ -278,22 +346,43 @@ export async function reactivateUserAccount(adminId, userId) {
     throw new ValidationError("userId is required");
   }
 
-  const before = await identity.getAccountById(userId);
-  const after = await identity.reactivateAccount(userId);
+  const session = await mongoose.startSession();
+  try {
+    let after;
+    await session.withTransaction(async () => {
+      const before = await identity.getAccountById(userId, { session });
+      after = await identity.reactivateAccount(userId, { session });
 
-  await createAuditLog({
-    adminId,
-    action: AdminActionType.ReactivateUser,
-    targetType: AuditTargetType.User,
-    targetId: userId,
-    previousState: before,
-    undoDeadline: computeUndoDeadline(),
-  });
-
-  return after;
+      await createAuditLog(
+        {
+          adminId,
+          action: AdminActionType.ReactivateUser,
+          targetType: AuditTargetType.User,
+          targetId: userId,
+          previousState: before,
+          undoDeadline: computeUndoDeadline(),
+        },
+        { session },
+      );
+    });
+    return after;
+  } finally {
+    await session.endSession();
+  }
 }
 
-/** Cancels any Active food listing and logs it (SRS 7.2.2). */
+/**
+ * Cancels any Active food listing and logs it (SRS 7.2.2). Same
+ * single-transaction shape as the two account actions above -- the
+ * transaction also covers adminCancelDonation's own internal listing +
+ * reservations writes, since it accepts and joins this same session instead
+ * of opening its own.
+ *
+ * Logged straight to Finalized, with no undoDeadline: there is no
+ * "un-cancel a listing" feature anywhere in the SRS, so this action has no
+ * real inverse. Giving it a live undo window would let the Admin UI offer
+ * an undo button that can never do anything but 501.
+ */
 export async function cancelDonation(adminId, donationId) {
   if (!isNonEmptyString(adminId)) {
     throw new ValidationError("adminId is required");
@@ -302,18 +391,28 @@ export async function cancelDonation(adminId, donationId) {
     throw new ValidationError("donationId is required");
   }
 
-  const beforeDonation = await donation.readDonationById(donationId);
-  const before = donation.toDonationSummaryDTO(beforeDonation);
-  const after = await donation.adminCancelDonation(donationId);
+  const session = await mongoose.startSession();
+  try {
+    let after;
+    await session.withTransaction(async () => {
+      const beforeDonation = await donation.readDonationById(donationId, { session });
+      const before = donation.toDonationSummaryDTO(beforeDonation);
+      after = await donation.adminCancelDonation(donationId, { session });
 
-  await createAuditLog({
-    adminId,
-    action: AdminActionType.CancelDonation,
-    targetType: AuditTargetType.Donation,
-    targetId: donationId,
-    previousState: before,
-    undoDeadline: computeUndoDeadline(),
-  });
-
-  return after;
+      await createAuditLog(
+        {
+          adminId,
+          action: AdminActionType.CancelDonation,
+          targetType: AuditTargetType.Donation,
+          targetId: donationId,
+          previousState: before,
+          status: AuditLogStatus.Finalized,
+        },
+        { session },
+      );
+    });
+    return after;
+  } finally {
+    await session.endSession();
+  }
 }
