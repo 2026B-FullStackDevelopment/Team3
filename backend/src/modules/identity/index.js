@@ -7,6 +7,7 @@
  */
 import * as tokenHelper from "./helpers/token.helper.js";
 import * as revokedTokenRepository from "./repositories/revokedToken.repository.js";
+import * as accountService from "./services/account.service.js";
 
 // Role vocabulary is part of Identity's public surface — other modules read it
 // from here (the facade), never from the internal User model.
@@ -23,4 +24,29 @@ export function verifyAccessToken(token) {
 /** True if the token with this jti has been revoked (e.g. via logout). */
 export function isRevoked(jti) {
   return revokedTokenRepository.existsByJti(jti);
+}
+
+// --- Admin account management (SRS 7.1.1, 7.2.1) ---------------------------
+
+/** Paginated list of Recipient/Donor accounts for the Admin account listing. */
+export function listAccounts(filters) {
+  return accountService.listAccounts(filters);
+}
+
+/**
+ * Fetches one account by id, DTO-shaped. `options.session` lets a caller
+ * (e.g. the Admin module) fold this read into its own Mongo transaction.
+ */
+export function getAccountById(userId, options) {
+  return accountService.getAccountById(userId, options);
+}
+
+/** Deactivates a Recipient or Donor account; they can no longer log in until reactivated. */
+export function deactivateAccount(userId, options) {
+  return accountService.deactivateAccount(userId, options);
+}
+
+/** Reactivates a previously deactivated Recipient or Donor account. */
+export function reactivateAccount(userId, options) {
+  return accountService.reactivateAccount(userId, options);
 }

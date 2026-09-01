@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import * as donationRepository from "../repositories/donorListing.repository.js";
 import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
 import {
@@ -8,9 +9,11 @@ import {
   DonationSchema,
 } from "../models/donation.model.js";
 import {
+  ConflictError,
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/errors.js";
+import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -331,9 +334,9 @@ export async function duplicateDonation(
   });
 }
 //READ/LOOKUP
-export async function getDonationById(id) {
+export async function getDonationById(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const donation = await donationRepository.findById(donationId);
+  const donation = await donationRepository.findById(donationId, options);
 
   if (!donation) {
     throw new NotFoundError("Donation not found");
@@ -550,6 +553,63 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
   }
 
   return updated;
+}
+
+/**
+ * Cancels any Active food listing regardless of owner (SRS 7.2.2, Admin-only).
+ * Unlike the donor's own changeDonationStatus, this has no ownership filter --
+ * getDonationById, not getOwnedDonation. Only Active -> Cancelled is allowed
+ * here: 7.2.2's wording is "cancel any active food listing," narrower than the
+ * donor-facing 4.2.3 (which also allows cancelling from Paused).
+ *
+ * Closing the listing and cancelling its active reservations are two separate
+ * writes, so they're wrapped in one Mongo transaction (same
+ * options.session-or-own-session shape as manualDonation.service.js) --
+ * otherwise a failure between the two steps could leave a Cancelled listing
+ * with reservations still stuck as Reserved. Accepting an externally-supplied
+ * session also lets a caller (the Admin module) fold this into its own larger
+ * transaction alongside the audit-log write.
+ */
+export async function adminCancelDonation(id, options = {}) {
+  const donationId = requireNonEmptyString(id, "donationId");
+  const session = options.session ?? (await mongoose.startSession());
+  const ownsSession = !options.session;
+
+  const execute = async () => {
+    const donation = await getDonationById(donationId, { session });
+
+    if (donation.status !== DonationStatus.Active) {
+      throw new ConflictError(
+        `Donation is ${donation.status}, not Active -- it cannot be cancelled`,
+      );
+    }
+
+    const updated = await donationRepository.updateById(
+      donationId,
+      { status: DonationStatus.Cancelled, closedAt: new Date() },
+      { session },
+    );
+    if (!updated) {
+      throw new NotFoundError("Donation not found");
+    }
+
+    await reservationRepository.cancelActiveReservationsForDonation(donationId, {
+      session,
+    });
+
+    return toDonationSummaryDTO(updated);
+  };
+
+  try {
+    if (!ownsSession) return await execute();
+    let result;
+    await session.withTransaction(async () => {
+      result = await execute();
+    });
+    return result;
+  } finally {
+    if (ownsSession) await session.endSession();
+  }
 }
 //ADD DELETION
 export async function deleteDonation(id, donorProfileId) {

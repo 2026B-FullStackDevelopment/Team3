@@ -50,6 +50,12 @@ export const env = {
     bcryptRounds: int("BCRYPT_ROUNDS", 12),
   },
 
+  admin: {
+    // Window an Admin has to undo a Deactivate/Reactivate/Cancel action
+    // before the audit log entry finalizes (see AuditLog.undoDeadline).
+    undoWindowMs: int("ADMIN_UNDO_WINDOW_MS", 5 * 60_000),
+  },
+
   upload: {
     // Absolute path where uploaded images are stored, referenced by URL in Mongo.
     // Defaults to <backend>/upload; override with UPLOAD_DIR (relative values are

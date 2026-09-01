@@ -42,8 +42,10 @@ export async function findByEmailWithSecret(email) {
  * Fetches a user by _id. passwordHash stays hidden (select: false), so this is
  * safe to map straight to a DTO. Returns null if not found.
  */
-export async function findById(id) {
-  return User.findById(id);
+export async function findById(id, options = {}) {
+  const query = User.findById(id);
+  if (options.session) query.session(options.session);
+  return query;
 }
 
 /**
@@ -107,5 +109,41 @@ export async function resetLockout(id) {
     {
       $set: { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
     },
+  );
+}
+
+/**
+ * Paginated list of Users restricted to the given roles (the Admin account
+ * listing only ever asks for Recipient/Donor, never Admin). Runs find() and
+ * countDocuments() concurrently via Promise.all, same as
+ * donorListing.repository.findAll / auditLog.repository.findAll.
+ */
+export async function findAll({ roles, page = 1, limit = 20 } = {}) {
+  const query = {};
+  if (Array.isArray(roles) && roles.length > 0) {
+    query.role = { $in: roles };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [entries, total] = await Promise.all([
+    User.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    User.countDocuments(query),
+  ]);
+
+  return { entries, total };
+}
+
+/**
+ * Sets a user's accountStatus (Admin deactivate/reactivate). findByIdAndUpdate
+ * is one atomic round-trip instead of findById() + save(), for the same
+ * reason as auditLog.repository.updateStatus: no window where stale
+ * in-memory state could overwrite a concurrent change.
+ */
+export async function updateAccountStatus(id, accountStatus, options = {}) {
+  return User.findByIdAndUpdate(
+    id,
+    { $set: { accountStatus } },
+    { new: true, session: options.session },
   );
 }
