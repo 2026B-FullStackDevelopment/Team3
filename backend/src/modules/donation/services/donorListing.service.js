@@ -8,9 +8,11 @@ import {
   DonationSchema,
 } from "../models/donation.model.js";
 import {
+  ConflictError,
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/errors.js";
+import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -550,6 +552,36 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
   }
 
   return updated;
+}
+
+/**
+ * Cancels any Active food listing regardless of owner (SRS 7.2.2, Admin-only).
+ * Unlike the donor's own changeDonationStatus, this has no ownership filter --
+ * getDonationById, not getOwnedDonation. Only Active -> Cancelled is allowed
+ * here: 7.2.2's wording is "cancel any active food listing," narrower than the
+ * donor-facing 4.2.3 (which also allows cancelling from Paused).
+ */
+export async function adminCancelDonation(id) {
+  const donationId = requireNonEmptyString(id, "donationId");
+  const donation = await getDonationById(donationId);
+
+  if (donation.status !== DonationStatus.Active) {
+    throw new ConflictError(
+      `Donation is ${donation.status}, not Active -- it cannot be cancelled`,
+    );
+  }
+
+  const updated = await donationRepository.updateById(donationId, {
+    status: DonationStatus.Cancelled,
+    closedAt: new Date(),
+  });
+  if (!updated) {
+    throw new NotFoundError("Donation not found");
+  }
+
+  await reservationRepository.cancelActiveReservationsForDonation(donationId);
+
+  return toDonationSummaryDTO(updated);
 }
 //ADD DELETION
 export async function deleteDonation(id, donorProfileId) {
