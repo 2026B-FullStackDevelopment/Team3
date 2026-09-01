@@ -17,6 +17,14 @@ export async function findByUserId(userId) {
 }
 
 /**
+ * Batch fetch of DonorProfiles for a page of userIds (Admin account listing) —
+ * one $in query instead of one findByUserId per row.
+ */
+export async function findByUserIds(userIds) {
+  return DonorProfile.find({ userId: { $in: userIds } });
+}
+
+/**
  * Applies a partial patch to the DonorProfile owned by userId, returning the
  * updated document. `runValidators` is required because Mongoose skips schema
  * validators on findOneAndUpdate by default (e.g. the GeoJSON location shape).

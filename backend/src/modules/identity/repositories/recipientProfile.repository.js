@@ -17,6 +17,14 @@ export async function findByUserId(userId) {
 }
 
 /**
+ * Batch fetch of RecipientProfiles for a page of userIds (Admin account
+ * listing) — one $in query instead of one findByUserId per row.
+ */
+export async function findByUserIds(userIds) {
+  return RecipientProfile.find({ userId: { $in: userIds } });
+}
+
+/**
  * Applies a partial patch to the RecipientProfile owned by userId, returning the
  * updated document. `runValidators` is required because Mongoose skips schema
  * validators on findOneAndUpdate by default. A duplicate userName surfaces as a
