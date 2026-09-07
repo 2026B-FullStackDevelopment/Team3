@@ -1,9 +1,9 @@
 import { userRole } from "../models/User.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
+import { isVietnamCity } from "../../../shared/constants/vietnamCities.js";
 import {
   optionalString,
   requireNonEmptyString,
-  requireString,
   validateCompanyName,
   validateLocation,
 } from "./validators.helper.js";
@@ -21,17 +21,56 @@ import {
 const REGISTRABLE_ROLES = [userRole.Recipient, userRole.Donor];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_MAX_LENGTH = 255;
+const PROHIBITED_EMAIL_CHARS = ["(", ")", ";", ":"];
 
 // Tax Code must be 10 to 13 digits.
 const TAX_CODE_RE = /^\d{10,13}$/;
 
-/** Validates an email and returns it lowercased. Must be a non-empty, well-formed address. */
+// Username: English letters, digits, underscore and hyphen only (SRS 1A.2.3).
+const USERNAME_RE = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Validates an email and returns it lowercased (SRS 1A.2.2 / 1B.2.2): well-formed
+ * (one '@', a '.' after it, no spaces), under 255 chars, and free of the
+ * prohibited characters ( ) ; : .
+ */
 export function validateEmail(value) {
   const email = requireNonEmptyString(value, "email").toLowerCase();
+  if (email.length >= EMAIL_MAX_LENGTH) {
+    throw new ValidationError("email must be shorter than 255 characters");
+  }
+  if (PROHIBITED_EMAIL_CHARS.some((ch) => email.includes(ch))) {
+    throw new ValidationError(
+      "email must not contain the characters ( ) ; : — e.g. jane.doe@example.com",
+    );
+  }
   if (!EMAIL_RE.test(email)) {
-    throw new ValidationError("A valid email is required");
+    throw new ValidationError("A valid email is required — e.g. jane.doe@example.com");
   }
   return email;
+}
+
+/** Validates username syntax (SRS 1A.2.3): non-empty, letters/digits/underscore/hyphen only. */
+export function validateUserName(value) {
+  const userName = requireNonEmptyString(value, "userName");
+  if (!USERNAME_RE.test(userName)) {
+    throw new ValidationError(
+      "userName may contain only English letters, numbers, underscore (_) and hyphen (-) — e.g. jane_doe-01",
+    );
+  }
+  return userName;
+}
+
+/** Validates that city is a known Vietnamese province/municipality (SRS 1A.1.4 / 1B.1.4). */
+export function validateCity(value) {
+  const city = requireNonEmptyString(value, "city");
+  if (!isVietnamCity(city)) {
+    throw new ValidationError(
+      "city must be a valid Vietnamese province/municipality — e.g. Ho Chi Minh City",
+    );
+  }
+  return city;
 }
 
 /** Validates the requested role is one a member may self-register as. */
@@ -52,11 +91,11 @@ export function validateTaxCode(value) {
   return taxCode;
 }
 
-/** Builds the Recipient profile sub-object. userName required; city optional. */
+/** Builds the Recipient profile sub-object. userName + city required and syntax-checked. */
 export function validateRecipientProfile(body) {
   return {
-    userName: requireNonEmptyString(body.userName, "userName"),
-    city: requireString(body.city, "city"),
+    userName: validateUserName(body.userName),
+    city: validateCity(body.city),
   };
 }
 
@@ -70,7 +109,7 @@ export function validateDonorProfile(body) {
     taxCode: validateTaxCode(body.taxCode),
     location: validateLocation(body.location),
     companyName: validateCompanyName(body.companyName, "companyName"),
-    city: requireString(body.city, "city"),
+    city: validateCity(body.city),
     address: optionalString(body.address, "address"),
   };
 }

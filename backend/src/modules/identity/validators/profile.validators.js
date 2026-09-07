@@ -1,9 +1,13 @@
 import { ValidationError } from "../../../shared/errors/errors.js";
 import { validateStrength } from "../helpers/password.helper.js";
 import {
+  validateCity,
+  validateEmail,
+  validateUserName,
+} from "../helpers/auth.helper.js";
+import {
   ensureNonEmpty,
   has,
-  requireNonEmptyString,
   requireString,
   validateCompanyName,
   validateLocation,
@@ -23,12 +27,14 @@ import {
 export function validateRecipientProfileUpdate(body = {}) {
   const patch = {};
 
-  if (has(body, "userName")) {
-    patch.userName = requireNonEmptyString(body.userName, "userName");
+  if (has(body, "email")) {
+    patch.email = validateEmail(body.email);
   }
-
+  if (has(body, "userName")) {
+    patch.userName = validateUserName(body.userName);
+  }
   if (has(body, "city")) {
-    patch.city = requireString(body.city, "city");
+    patch.city = validateCity(body.city);
   }
 
   return ensureNonEmpty(patch);
@@ -42,11 +48,14 @@ export function validateRecipientProfileUpdate(body = {}) {
 export function validateDonorProfileUpdate(body = {}) {
   const patch = {};
 
+  if (has(body, "email")) {
+    patch.email = validateEmail(body.email);
+  }
   if (has(body, "companyName")) {
     patch.companyName = validateCompanyName(body.companyName, "companyName");
   }
   if (has(body, "city")) {
-    patch.city = requireNonEmptyString(body.city, "city");
+    patch.city = validateCity(body.city);
   }
   if (has(body, "address")) {
     patch.address = requireString(body.address, "address");
