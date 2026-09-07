@@ -105,6 +105,25 @@ export async function getCurrentUser(userId) {
 }
 
 /**
+ * Lean auth-state read for the auth middleware: the minimum needed to authorize
+ * a request against *current* account state — fresh `role` (so a stale role in
+ * an old token can't be trusted) and `accountStatus` (so an admin deactivation
+ * takes effect immediately, without waiting for the token to expire). Returns
+ * `null` when the user no longer exists; the middleware maps that to a 401.
+ */
+export async function getAuthUser(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    return null;
+  }
+  return {
+    userId: user._id,
+    role: user.role,
+    accountStatus: user.accountStatus,
+  };
+}
+
+/**
  * Logs a user out by revoking the current token's jti. expiresAt mirrors the
  * token expiry so the revocation row self-expires via the TTL index. Idempotent:
  * revoking an already-revoked jti (duplicate key) is treated as success.
