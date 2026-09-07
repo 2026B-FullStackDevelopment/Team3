@@ -58,9 +58,9 @@ export async function credit(userId, amount, meta = {}) {
  * transaction. Used by the facade for food purchases / premium billing. The
  * guarded atomic decrement prevents overdraft; insufficient funds → 400.
  */
-export async function debit(userId, amount, meta = {}) {
+export async function debit(userId, amount, meta = {}, options = {}) {
   assertPositive(amount);
-  return runInTransaction(async (session) => {
+  const work = async (session) => {
     const wallet = await walletRepository.decrementBalance(userId, amount, session);
     if (!wallet) {
       // Aborts the transaction — no ledger row is written.
@@ -68,5 +68,12 @@ export async function debit(userId, amount, meta = {}) {
     }
     await transactionRepository.create({ userId, amount, ...meta }, session);
     return toWalletDTO(wallet);
-  });
+  };
+  // When a caller supplies its own session, join that transaction so the debit
+  // commits or rolls back atomically with the caller's other writes (e.g. the
+  // premium claim). Otherwise run standalone in a fresh transaction.
+  if (options.session) {
+    return work(options.session);
+  }
+  return runInTransaction(work);
 }

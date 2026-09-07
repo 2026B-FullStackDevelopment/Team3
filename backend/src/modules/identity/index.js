@@ -8,10 +8,12 @@
 import * as tokenHelper from "./helpers/token.helper.js";
 import * as revokedTokenRepository from "./repositories/revokedToken.repository.js";
 import * as accountService from "./services/account.service.js";
+import * as authService from "./services/auth.service.js";
 
-// Role vocabulary is part of Identity's public surface — other modules read it
-// from here (the facade), never from the internal User model.
-export { userRole } from "./models/User.js";
+// Role + account-status vocabulary is part of Identity's public surface — other
+// modules and the auth middleware read it from here (the facade), never from the
+// internal User model.
+export { userRole, AccountStatus } from "./models/User.js";
 
 /**
  * Verifies signature + expiry, returning the decoded payload
@@ -24,6 +26,16 @@ export function verifyAccessToken(token) {
 /** True if the token with this jti has been revoked (e.g. via logout). */
 export function isRevoked(jti) {
   return revokedTokenRepository.existsByJti(jti);
+}
+
+/**
+ * Current auth state for a userId: `{ userId, role, accountStatus }`, or `null`
+ * if the user no longer exists. The auth middleware calls this each request so a
+ * deactivation (or deletion) takes effect immediately rather than lingering for
+ * the token's remaining lifetime.
+ */
+export function loadAuthUser(userId) {
+  return authService.getAuthUser(userId);
 }
 
 // --- Admin account management (SRS 7.1.1, 7.2.1) ---------------------------

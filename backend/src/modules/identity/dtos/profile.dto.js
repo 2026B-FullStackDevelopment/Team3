@@ -1,4 +1,5 @@
 import { userRole } from "../models/User.js";
+import { isPremiumActive } from "../helpers/premium.helper.js";
 
 /**
  * Maps a User + its role-specific profile to the safe shape returned across a
@@ -24,7 +25,7 @@ export function toProfileDTO(user, profile) {
       userName: profile.userName,
       city: profile.city ?? null,
       avatarUrl: profile.avatarUrl ?? null,
-      isPremium: profile.isPremium,
+      isPremium: isPremiumActive(profile),
       premiumExpiryDate: profile.premiumExpiryDate ?? null,
     };
   }

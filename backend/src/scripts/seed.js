@@ -292,7 +292,7 @@ async function seedTransaction(recipientProfileId, reservationId) {
   console.log("8/13 Seeding Transaction...");
 
   return Transaction.create({
-    recipientProfileId,
+    recipientProfileId, 
     type: TransactionType.FoodPurchase,
     amount: 0,
     method: PaymentMethod.Cash,

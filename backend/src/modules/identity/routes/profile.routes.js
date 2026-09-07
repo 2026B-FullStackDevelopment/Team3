@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as profileController from "../controllers/profile.controller.js";
+import * as subscriptionController from "../controllers/subscription.controller.js";
 import { requireAuth } from "../../../middleware/auth.js";
 import { requireRole } from "../../../middleware/role.js";
 import { avatarUpload } from "../../../middleware/upload.js";
@@ -12,5 +13,7 @@ router.patch("/", requireAuth, requireRole(userRole.Recipient, userRole.Donor), 
 router.patch("/change-password", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.changePassword);
 router.post("/avatar", requireAuth, requireRole(userRole.Recipient, userRole.Donor), avatarUpload, profileController.uploadAvatar);
 router.delete("/avatar", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.removeAvatar);
+
+router.post("/subscribe", requireAuth, requireRole(userRole.Recipient), subscriptionController.subscribe);
 
 export const profileRoutes = router;

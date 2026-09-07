@@ -38,3 +38,29 @@ export async function updateByUserId(userId, patch) {
     runValidators: true,
   });
 }
+
+/**
+ * Atomically flips a recipient to premium with `newExpiryDate`, but ONLY if the
+ * profile is not already an ACTIVE premium (active = `isPremium` true AND
+ * `premiumExpiryDate` still in the future). The "not active" guard lives in the
+ * filter, so concurrent or duplicated subscribe calls can't both succeed:
+ * MongoDB re-evaluates the filter under the per-document write lock, so the
+ * second caller matches nothing and gets `null`. This is the idempotency + race
+ * guard for premium billing (a stale `isPremium` flag on an expired date still
+ * counts as inactive and is allowed to re-subscribe). Returns the updated
+ * document, or `null` when already active (or no such profile).
+ */
+export async function activatePremiumIfInactive(userId, newExpiryDate, now = new Date(), options = {}) {
+  return RecipientProfile.findOneAndUpdate(
+    {
+      userId,
+      $or: [
+        { isPremium: { $ne: true } },
+        { premiumExpiryDate: null },
+        { premiumExpiryDate: { $lte: now } },
+      ],
+    },
+    { isPremium: true, premiumExpiryDate: newExpiryDate },
+    { returnDocument: "after", runValidators: true, session: options.session },
+  );
+}
