@@ -26,6 +26,8 @@ function normalizeLimit(value) {
 function buildDonationQuery(filters = {}) {
   const {
     donorProfileId,
+    donorProfileIds,
+    donationId,
     status,
     statuses,
     foodCategory,
@@ -42,7 +44,21 @@ function buildDonationQuery(filters = {}) {
 
   const query = {};
 
-  if (donorProfileId !== undefined) query.donorProfileId = donorProfileId;
+  if (donationId !== undefined) query._id = donationId;
+  // donorProfileIds (plural) comes from an Admin donor-name search resolved
+  // in another module (SRS 7.3.2). If an explicit donorProfileId is ALSO
+  // given, AND them together (only keep it if it's actually one of the name
+  // matches) instead of either one silently overriding the other -- an
+  // empty $in correctly matches zero documents rather than "no filter."
+  if (Array.isArray(donorProfileIds) && donorProfileIds.length > 0) {
+    const ids =
+      donorProfileId !== undefined
+        ? donorProfileIds.filter((id) => id === donorProfileId)
+        : donorProfileIds;
+    query.donorProfileId = { $in: ids };
+  } else if (donorProfileId !== undefined) {
+    query.donorProfileId = donorProfileId;
+  }
   if (status !== undefined) query.status = status;
   if (Array.isArray(statuses) && statuses.length > 0) {
     query.status = { $in: statuses };

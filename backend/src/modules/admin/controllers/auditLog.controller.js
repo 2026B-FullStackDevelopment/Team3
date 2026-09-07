@@ -69,6 +69,15 @@ export async function reactivateUserAccount(req, res) {
 }
 
 /**
+ * GET /api/admin/donations
+ * Query: donorName, donorProfileId, donationId, page, limit
+ */
+export async function listAllFoodListings(req, res) {
+  const result = await auditLogService.listAllFoodListings(req.query);
+  res.status(200).json(result);
+}
+
+/**
  * PATCH /api/admin/donations/:donationId/cancel
  */
 export async function cancelDonation(req, res) {

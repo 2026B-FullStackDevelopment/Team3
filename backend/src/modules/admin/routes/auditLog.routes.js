@@ -25,5 +25,6 @@ auditLogRoutes.get("/accounts", auditLogController.listAccounts);
 auditLogRoutes.patch("/accounts/:userId/deactivate", auditLogController.deactivateUserAccount);
 auditLogRoutes.patch("/accounts/:userId/reactivate", auditLogController.reactivateUserAccount);
 
-// Food listing moderation (SRS 7.2.2)
+// Food listing moderation and system-wide listing view (SRS 7.2.2, 7.3.1, 7.3.2)
+auditLogRoutes.get("/donations", auditLogController.listAllFoodListings);
 auditLogRoutes.patch("/donations/:donationId/cancel", auditLogController.cancelDonation);
