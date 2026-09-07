@@ -5,11 +5,8 @@ import {
   Reservation,
   ReservationStatus,
 } from "../../reservation/models/Reservation.js";
-import {
-  Transaction,
-  TransactionType,
-} from "../../wallet/models/Transaction.js";
-import { Wallet } from "../../wallet/models/Wallet.js";
+import * as identity from "../../identity/index.js";
+import * as wallet from "../../wallet/index.js";
 import {
   ConflictError,
   ForbiddenError,
@@ -54,6 +51,7 @@ export async function createManualDonation(
     let paymentMethod = data.paymentMethod;
     let amountReceived = data.amountReceived;
     let change = 0;
+    let recipientUserId;
 
     if (totalPrice === 0) {
       paymentMethod = undefined;
@@ -78,6 +76,14 @@ export async function createManualDonation(
           "recipientProfileId is required for wallet payment",
         );
       }
+      const recipientProfile = await identity.loadRecipientProfileById(
+        data.recipientProfileId,
+        { session },
+      );
+      if (!recipientProfile) {
+        throw new NotFoundError("Recipient profile not found");
+      }
+      recipientUserId = String(recipientProfile.userId);
       amountReceived = totalPrice;
     }
 
@@ -119,28 +125,14 @@ export async function createManualDonation(
     );
 
     if (paymentMethod === PaymentMethod.Wallet) {
-      const wallet = await Wallet.findOneAndUpdate(
+      await wallet.debit(
+        recipientUserId,
+        totalPrice,
         {
-          recipientProfileId: data.recipientProfileId,
-          balance: { $gte: totalPrice },
+          type: wallet.TransactionType.FoodPurchase,
+          method: PaymentMethod.Wallet,
+          relatedReservationId: reservation._id,
         },
-        { $inc: { balance: -totalPrice } },
-        { new: true, session },
-      );
-      if (!wallet)
-        throw new ConflictError("Recipient wallet has insufficient funds");
-
-      await Transaction.create(
-        [
-          {
-            recipientProfileId: data.recipientProfileId,
-            amount: totalPrice,
-            type: TransactionType.FoodPurchase,
-            method: PaymentMethod.Wallet,
-            relatedReservationId: reservation._id,
-            createdAt: new Date(),
-          },
-        ],
         { session },
       );
     }

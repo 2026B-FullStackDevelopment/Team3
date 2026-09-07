@@ -8,6 +8,7 @@
 import * as tokenHelper from "./helpers/token.helper.js";
 import * as revokedTokenRepository from "./repositories/revokedToken.repository.js";
 import * as donorProfileRepository from "./repositories/donorProfile.repository.js";
+import * as recipientProfileRepository from "./repositories/recipientProfile.repository.js";
 import * as accountService from "./services/account.service.js";
 import * as authService from "./services/auth.service.js";
 
@@ -42,6 +43,11 @@ export function loadAuthUser(userId) {
 /** Returns the DonorProfile linked to an authenticated User, or null. */
 export function loadDonorProfile(userId) {
   return donorProfileRepository.findByUserId(userId);
+}
+
+/** Returns a RecipientProfile by id so other modules can resolve its User. */
+export function loadRecipientProfileById(recipientProfileId, options) {
+  return recipientProfileRepository.findById(recipientProfileId, options);
 }
 
 // --- Admin account management (SRS 7.1.1, 7.2.1) ---------------------------
