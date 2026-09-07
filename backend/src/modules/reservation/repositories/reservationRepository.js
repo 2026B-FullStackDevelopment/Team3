@@ -53,10 +53,9 @@ export async function findByDonationId(donationId, options = {}) {
   return { entries, total, page, limit };
 }
 
-export async function cancelActiveReservationsForDonation(donationId, options = {}) {
+export async function cancelActiveReservationsForDonation(donationId) {
   return await Reservation.updateMany(
     { donationId, status: "Reserved" },
-    { $set: { status: "CancelledByDonor" } },
-    { session: options.session }
+    { $set: { status: "CancelledByDonor" } }
   );
 }

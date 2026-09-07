@@ -1,5 +1,10 @@
 import { Router } from "express";
 
+import { requireAuth } from "../../../middleware/auth.js";
+import { loadDonorProfile } from "../../../middleware/donorProfile.js";
+import { requireRole } from "../../../middleware/role.js";
+import { userRole } from "../../identity/index.js";
+
 import {
   createFoodListing,
   deleteFoodListing,
@@ -14,6 +19,12 @@ import {
 import { manualDonationRoutes } from "./manualDonation.routes.js";
 
 export const donorListingRoutes = Router();
+
+donorListingRoutes.use(
+  requireAuth,
+  requireRole(userRole.Donor),
+  loadDonorProfile,
+);
 
 donorListingRoutes.route("/").get(listFoodListings).post(createFoodListing);
 

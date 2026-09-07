@@ -18,6 +18,13 @@ export async function findByUserId(userId, options = {}) {
   return query;
 }
 
+/** Fetches a RecipientProfile by its public profile id. */
+export async function findById(recipientProfileId, options = {}) {
+  const query = RecipientProfile.findById(recipientProfileId);
+  if (options.session) query.session(options.session);
+  return query;
+}
+
 /**
  * Batch fetch of RecipientProfiles for a page of userIds (Admin account
  * listing) — one $in query instead of one findByUserId per row.
@@ -50,7 +57,12 @@ export async function updateByUserId(userId, patch) {
  * counts as inactive and is allowed to re-subscribe). Returns the updated
  * document, or `null` when already active (or no such profile).
  */
-export async function activatePremiumIfInactive(userId, newExpiryDate, now = new Date(), options = {}) {
+export async function activatePremiumIfInactive(
+  userId,
+  newExpiryDate,
+  now = new Date(),
+  options = {},
+) {
   return RecipientProfile.findOneAndUpdate(
     {
       userId,

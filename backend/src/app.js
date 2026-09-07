@@ -25,13 +25,6 @@ app.get("/api/health", (_req, res) => {
     message: "Backend is running",
   });
 });
-app.use((req, res, next) => {
-  const donorProfileId = req.header("x-donor-profile-id");
-  if (donorProfileId) {
-    res.locals.donorProfileId = donorProfileId;
-  }
-  next();
-});
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);

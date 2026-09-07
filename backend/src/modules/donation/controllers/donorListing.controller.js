@@ -1,16 +1,12 @@
 import * as donorListingService from "../services/donorListing.service.js";
 import { toDonationListingResponse } from "../services/donorListing.service.js";
 
-function getDonorProfileId(req, res) {
-  return (
-    req.user?.donorProfileId ??
-    req.auth?.donorProfileId ??
-    res.locals?.donorProfileId
-  );
+function getDonorProfileId(req) {
+  return req.user?.donorProfileId;
 }
 
 function requireDonorProfileId(req, res) {
-  const donorProfileId = getDonorProfileId(req, res);
+  const donorProfileId = getDonorProfileId(req);
 
   if (!donorProfileId) {
     res.status(401).json({
