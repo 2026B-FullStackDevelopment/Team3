@@ -372,6 +372,55 @@ export async function reactivateUserAccount(adminId, userId) {
 }
 
 /**
+ * Lists all active food listings system-wide with each one's Donor Name
+ * attached (SRS 7.3.1), with optional search by Donor Name, Donor ID
+ * (donorProfileId), or Donation ID (SRS 7.3.2). Donor Name lives in the
+ * identity module (DonorProfile.companyName) but a food listing only
+ * stores donorProfileId, so both the search-by-name resolution and the
+ * display join happen here rather than inside the donation module, which
+ * has no reason to know what a DonorProfile's company name is.
+ */
+export async function listAllFoodListings(filters = {}) {
+  const { donorName, donorProfileId, donationId, page, limit } = filters;
+
+  let donorProfileIds;
+  if (isNonEmptyString(donorName)) {
+    donorProfileIds = await identity.findDonorProfileIdsByName(donorName);
+    if (donorProfileIds.length === 0) {
+      return {
+        listings: [],
+        total: 0,
+        page: normalizePage(page),
+        limit: normalizeLimit(limit),
+      };
+    }
+  }
+
+  const { entries, total, page: resolvedPage, limit: resolvedLimit } =
+    await donation.listActiveListingsForAdmin({
+      page,
+      limit,
+      donationId,
+      donorProfileId,
+      donorProfileIds,
+    });
+
+  const uniqueDonorProfileIds = [...new Set(entries.map((entry) => entry.donorProfileId))];
+  const donorProfiles = await identity.getDonorProfilesByIds(uniqueDonorProfileIds);
+  const donorNameById = new Map(donorProfiles.map((profile) => [profile._id, profile.companyName]));
+
+  return {
+    listings: entries.map((entry) => {
+      const summary = donation.toDonationSummaryDTO(entry);
+      return { ...summary, donorName: donorNameById.get(summary.donorProfileId) ?? null };
+    }),
+    total,
+    page: resolvedPage,
+    limit: resolvedLimit,
+  };
+}
+
+/**
  * Cancels any Active food listing and logs it (SRS 7.2.2). Same
  * single-transaction shape as the two account actions above -- the
  * transaction also covers adminCancelDonation's own internal listing +

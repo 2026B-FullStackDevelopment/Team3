@@ -139,3 +139,19 @@ export async function deactivateAccount(userId, options = {}) {
 export async function reactivateAccount(userId, options = {}) {
   return transitionAccountStatus(userId, AccountStatus.Active, options);
 }
+
+/**
+ * Batch-fetches DonorProfiles by their own id (not a User account), for the
+ * Admin module to join company names onto its food-listing views (SRS
+ * 7.3.1/7.3.2). Kept separate from listAccounts/getAccountById since a
+ * DonorProfile isn't a User account -- this is "look up a donor's public
+ * info," not "manage a user's account."
+ */
+export async function getDonorProfilesByIds(donorProfileIds, options = {}) {
+  return donorProfileRepository.findByIds(donorProfileIds, options);
+}
+
+/** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */
+export async function findDonorProfileIdsByName(namePattern) {
+  return donorProfileRepository.findIdsByCompanyNameLike(namePattern);
+}

@@ -1,5 +1,8 @@
 import * as donationRepository from "../repositories/donorListing.repository.js";
-import { adminCancelDonation } from "../services/donorListing.service.js";
+import {
+  adminCancelDonation,
+  listActiveListingsForAdmin,
+} from "../services/donorListing.service.js";
 import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
 import { buildSoldOutAlert } from "../services/soldOutAlert.service.js";
 import {
@@ -270,5 +273,6 @@ export {
   MeasurementUnit,
   RESERVATION_BLOCK_REASONS as ReservationBlockReasons,
   adminCancelDonation,
+  listActiveListingsForAdmin,
   toDonationSummaryDTO,
 };

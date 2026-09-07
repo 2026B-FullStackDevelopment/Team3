@@ -368,6 +368,28 @@ export async function listActiveDonations(filters = {}) {
   });
 }
 
+/**
+ * Admin-wide view of active food listings (SRS 7.3.1), reusing the same
+ * query as listActiveDonations (the Recipient browse page) plus exact
+ * donationId/donorProfileId(s) filters for the Admin search box (SRS
+ * 7.3.2) -- filters a Recipient has no reason to use, so they're kept out
+ * of normalizeListingQuery and added only here.
+ */
+export async function listActiveListingsForAdmin(filters = {}) {
+  const normalizedFilters = normalizeListingQuery(filters);
+
+  if (isNonEmptyString(filters.donationId)) {
+    normalizedFilters.donationId = filters.donationId.trim();
+  }
+  if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
+    normalizedFilters.donorProfileIds = filters.donorProfileIds;
+  } else if (isNonEmptyString(filters.donorProfileId)) {
+    normalizedFilters.donorProfileId = filters.donorProfileId.trim();
+  }
+
+  return donationRepository.findActiveDonations(normalizedFilters);
+}
+
 export async function listDonorDonations(donorProfileId, options = {}) {
   const ownerId = requireNonEmptyString(donorProfileId, "donorProfileId");
   const normalizedFilters = normalizeListingQuery(options);
