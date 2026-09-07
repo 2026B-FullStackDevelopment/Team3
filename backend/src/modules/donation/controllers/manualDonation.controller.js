@@ -1,17 +1,13 @@
 import * as manualDonationService from "../services/manualDonation.service.js";
 
-function getDonorProfileId(req, res) {
-  return (
-    req.user?.donorProfileId ??
-    req.auth?.donorProfileId ??
-    res.locals?.donorProfileId
-  );
+function getDonorProfileId(req) {
+  return req.user?.donorProfileId;
 }
 
 /** POST /api/donor/food-listings/:id/manual-donations */
 export async function createManualDonation(req, res, next) {
   try {
-    const donorProfileId = getDonorProfileId(req, res);
+    const donorProfileId = getDonorProfileId(req);
     if (!donorProfileId) {
       return res.status(401).json({
         error: "UNAUTHENTICATED",
