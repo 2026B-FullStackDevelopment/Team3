@@ -48,7 +48,8 @@ export async function findByIds(ids, options = {}) {
  * search (donorListing.repository.buildDonationQuery).
  */
 export async function findIdsByCompanyNameLike(namePattern) {
-  const regex = new RegExp(escapeRegExp(namePattern), "i");
+  const trimmedPattern = String(namePattern).trim();
+  const regex = new RegExp(escapeRegExp(trimmedPattern), "i");
   const profiles = await DonorProfile.find({ companyName: regex }).select("_id");
   return profiles.map((profile) => profile._id);
 }

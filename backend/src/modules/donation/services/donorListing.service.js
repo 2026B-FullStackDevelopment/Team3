@@ -374,6 +374,10 @@ export async function listActiveDonations(filters = {}) {
  * donationId/donorProfileId(s) filters for the Admin search box (SRS
  * 7.3.2) -- filters a Recipient has no reason to use, so they're kept out
  * of normalizeListingQuery and added only here.
+ *
+ * donorProfileId and donorProfileIds are both passed through independently
+ * (not one-or-the-other) -- buildDonationQuery is the one place that
+ * decides how they combine (it ANDs them) if a caller supplies both.
  */
 export async function listActiveListingsForAdmin(filters = {}) {
   const normalizedFilters = normalizeListingQuery(filters);
@@ -381,10 +385,11 @@ export async function listActiveListingsForAdmin(filters = {}) {
   if (isNonEmptyString(filters.donationId)) {
     normalizedFilters.donationId = filters.donationId.trim();
   }
+  if (isNonEmptyString(filters.donorProfileId)) {
+    normalizedFilters.donorProfileId = filters.donorProfileId.trim();
+  }
   if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
     normalizedFilters.donorProfileIds = filters.donorProfileIds;
-  } else if (isNonEmptyString(filters.donorProfileId)) {
-    normalizedFilters.donorProfileId = filters.donorProfileId.trim();
   }
 
   return donationRepository.findActiveDonations(normalizedFilters);
