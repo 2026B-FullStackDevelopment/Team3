@@ -1,7 +1,7 @@
 import { open, unlink } from "node:fs/promises";
 import multer from "multer";
 import { ValidationError } from "../shared/errors/errors.js";
-import { AVATAR_DIR } from "../shared/upload/services/storage.js";
+import { AVATAR_DIR, processAvatar } from "../shared/upload/services/storage.js";
 import {
   ALLOWED_IMAGE_MIMES,
   MIME_EXTENSION,
@@ -88,6 +88,12 @@ export function avatarUpload(req, res, next) {
       return next(); // controller handles the no-file case
     }
 
-    assertImageContent(req.file).then(() => next(), next);
+    assertImageContent(req.file)
+      .then(() => processAvatar(req.file.path, req.file.mimetype))
+      .then(() => next())
+      .catch(async (err) => {
+        await unlink(req.file.path).catch(() => {});
+        next(err);
+      });
   });
 }

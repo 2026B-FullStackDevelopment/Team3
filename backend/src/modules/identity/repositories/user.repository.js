@@ -66,6 +66,15 @@ export async function updatePasswordHash(id, passwordHash) {
 }
 
 /**
+ * Sets a new email on a user, returning the updated document. Relies on the
+ * unique index on `email`; a clash surfaces as Mongo E11000 for the service to
+ * map to a 409. `runValidators` keeps schema-level email rules in force.
+ */
+export async function updateEmail(id, email) {
+  return User.findByIdAndUpdate(id, { email }, { returnDocument: "after", runValidators: true });
+}
+
+/**
  * Records a failed login atomically: increments failedLoginAttempts, stamps
  * lastFailedLoginAt, and — in the SAME update — locks the account when the
  * (post-increment) count reaches the threshold. Uses an aggregation-pipeline

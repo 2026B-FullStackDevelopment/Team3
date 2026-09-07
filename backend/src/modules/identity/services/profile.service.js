@@ -39,10 +39,10 @@ export async function getProfile(userId) {
 }
 
 /**
- * Applies a validated partial patch to the current user's role profile and
- * returns the updated composite DTO. The patch is already role-appropriate
- * (validated in the controller); the role's repo is chosen off the DB User doc.
- * A duplicate userName surfaces as E11000 and is mapped to a 409.
+ * Applies a validated partial patch to the current user and returns the updated
+ * composite DTO. `email` lives on User (not the role profile), so it's applied
+ * separately; the remaining fields go to the role's profile repo. A duplicate
+ * email or userName surfaces as E11000 and is mapped to a 409.
  */
 export async function updateProfile(userId, patch) {
   const user = await userRepository.findById(userId);
@@ -50,21 +50,46 @@ export async function updateProfile(userId, patch) {
     throw new UnauthorizedError("Session is no longer valid");
   }
 
-  let profile;
-  try {
-    profile = await profileRepositoryFor(user.role).updateByUserId(userId, patch);
-  } catch (error) {
-    if (error?.code === DUPLICATE_KEY) {
-      throw new ConflictError("userName is already in use");
+  const { email, ...profilePatch } = patch;
+
+  // Email lives on User (not the role profile). Apply it first; a duplicate
+  // surfaces as E11000 → 409. `updatedUser` feeds the DTO so the response
+  // reflects the new email.
+  let updatedUser = user;
+  if (email !== undefined) {
+    try {
+      updatedUser = await userRepository.updateEmail(userId, email);
+    } catch (error) {
+      if (error?.code === DUPLICATE_KEY) {
+        throw new ConflictError("email is already in use");
+      }
+      throw error;
     }
-    throw error;
   }
 
-  if (!profile) {
-    throw new NotFoundError("Profile not found");
+  // Apply any role-profile fields; a duplicate userName surfaces as E11000 → 409.
+  let profile;
+  if (Object.keys(profilePatch).length > 0) {
+    try {
+      profile = await profileRepositoryFor(user.role).updateByUserId(userId, profilePatch);
+    } catch (error) {
+      if (error?.code === DUPLICATE_KEY) {
+        throw new ConflictError("userName is already in use");
+      }
+      throw error;
+    }
+    if (!profile) {
+      throw new NotFoundError("Profile not found");
+    }
+  } else {
+    // Email-only update — load the profile so the DTO is complete.
+    profile = await profileRepositoryFor(user.role).findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundError("Profile not found");
+    }
   }
 
-  return toProfileDTO(user, profile);
+  return toProfileDTO(updatedUser, profile);
 }
 
 /**

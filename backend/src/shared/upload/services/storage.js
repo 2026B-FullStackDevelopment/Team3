@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { env } from "../../../config/env.js";
+import { ValidationError } from "../../errors/errors.js";
 
 /**
  * Local filesystem storage for uploaded avatars. Owns where avatar files live
@@ -26,6 +28,30 @@ export async function ensureUploadDirs() {
 /** Public URL (stored in Mongo) for a stored avatar file. */
 export function avatarUrlFor(filename) {
   return `${AVATAR_URL_PREFIX}/${filename}`;
+}
+
+// Every stored avatar is normalized to this square size for consistent display.
+const AVATAR_SIZE = 256;
+
+/**
+ * Resizes the avatar at `filePath` to a fixed AVATAR_SIZE square (cover/crop),
+ * re-encoded to its own format, overwriting the file in place (SRS 3.2.1). sharp
+ * fully reads + processes the input into a buffer before we overwrite, so writing
+ * back to the same path is safe. A processing failure becomes a 400 (the caller
+ * deletes the file).
+ */
+export async function processAvatar(filePath, mime) {
+  const format = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpeg";
+  let buffer;
+  try {
+    buffer = await sharp(filePath)
+      .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: "cover" })
+      .toFormat(format)
+      .toBuffer();
+  } catch {
+    throw new ValidationError("Avatar image could not be processed");
+  }
+  await fs.writeFile(filePath, buffer);
 }
 
 /**
