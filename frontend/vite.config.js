@@ -14,8 +14,14 @@ export default defineConfig({
   server: {
     proxy: {
       // Backend Express app. Keeps the httpOnly auth cookie same-origin in dev.
-      '/api': { target: 'http://localhost:5000', changeOrigin: true },
-      '/upload': { target: 'http://localhost:5000', changeOrigin: true },
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
+      '/upload': { target: 'http://localhost:3000', changeOrigin: true },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.js'],
+    css: true,
   },
 })
