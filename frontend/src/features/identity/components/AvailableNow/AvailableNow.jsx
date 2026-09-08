@@ -57,7 +57,7 @@ function ListingCard({ listing }) {
   return (
     <article className="overflow-hidden rounded-card border border-khaki-strong/50 bg-surface">
       {/* Image placeholder — real photos come from the listing record later. */}
-      <div className={cn('relative h-32 bg-gradient-to-br', listing.swatch)}>
+      <div className={cn('relative h-32 bg-linear-to-br', listing.swatch)}>
         <span
           className={cn(
             'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold',

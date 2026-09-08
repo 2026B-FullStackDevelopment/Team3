@@ -30,7 +30,7 @@ function int(name, fallback) {
 }
 
 export const env = {
-  dbUri: required("MONGODB_URI_TEST"),
+  dbUri: required("MONGODB_URI"),
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction: process.env.NODE_ENV === "production",
 

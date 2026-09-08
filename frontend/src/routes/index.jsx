@@ -7,6 +7,7 @@ import { RecipientShell } from '@/layouts/RecipientShell.jsx'
 import { DonorShell } from '@/layouts/DonorShell.jsx'
 import { AdminShell } from '@/layouts/AdminShell.jsx'
 import { LandingPage } from '@/features/identity/pages/LandingPage/LandingPage.jsx'
+import { LoginPage } from '@/features/identity/pages/LoginPage/LoginPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
@@ -23,7 +24,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <LandingPage /> },
       // Identity module (public) — built in the Identity plan:
-      { path: '/login', element: <Placeholder name="Login" /> },
+      { path: '/login', element: <LoginPage /> },
       { path: '/register/donor', element: <Placeholder name="Register — Donor" /> },
       { path: '/register/recipient', element: <Placeholder name="Register — Recipient" /> },
     ],

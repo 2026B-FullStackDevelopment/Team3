@@ -15,6 +15,5 @@ export function useHeroCarousel(count, intervalMs = 7000) {
   }, [count, intervalMs, index])
 
   const goTo = useCallback((i) => setIndex(i), [])
-
   return { index, goTo }
 }
