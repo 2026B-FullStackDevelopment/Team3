@@ -1,6 +1,6 @@
-import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from '@/auth/AuthProvider.jsx'
-import { router } from '@/routes/index.jsx'
+import { ApplicationRoutes } from '@/routes/index.jsx'
+import { RouteErrorBoundary } from '@/app/RouteErrorBoundary.jsx'
 
 /**
  * App root. Global providers wrap the router so every route has access to the
@@ -8,8 +8,11 @@ import { router } from '@/routes/index.jsx'
  */
 export default function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <RouteErrorBoundary>
+      <AuthProvider>
+        <a className="skip-link" href="#main-content">Skip to main content</a>
+        <ApplicationRoutes />
+      </AuthProvider>
+    </RouteErrorBoundary>
   )
 }
