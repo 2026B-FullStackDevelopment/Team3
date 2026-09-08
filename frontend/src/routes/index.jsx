@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { useRoutes } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
 import { ProtectedRoute } from '@/auth/ProtectedRoute.jsx'
 import { RequireRole } from '@/auth/RequireRole.jsx'
@@ -16,7 +16,7 @@ import { Placeholder } from '@/routes/pages/Placeholder.jsx'
  * Placeholder targets are replaced as each module plan runs. Insertion points
  * for the in-scope modules (Identity, Wallet) are marked below.
  */
-export const router = createBrowserRouter([
+const routes = [
   // ---- Public ----
   {
     element: <PublicLayout />,
@@ -81,4 +81,8 @@ export const router = createBrowserRouter([
   // ---- System ----
   { path: '/forbidden', element: <ForbiddenPage /> },
   { path: '*', element: <NotFoundPage /> },
-])
+]
+
+export function ApplicationRoutes() {
+  return useRoutes(routes)
+}
