@@ -1,4 +1,4 @@
-import { Input } from '@/shared/components/Input/Input.jsx'
+import { Input } from '@/shared/components/Input.jsx'
 import { usePasswordInput } from './usePasswordInput.js'
 
 /**

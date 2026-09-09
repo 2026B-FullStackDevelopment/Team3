@@ -1,78 +1,58 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
-import { ProtectedRoute } from '@/auth/ProtectedRoute.jsx'
-import { RequireRole } from '@/auth/RequireRole.jsx'
-import { PublicLayout } from '@/layouts/PublicLayout.jsx'
-import { RecipientShell } from '@/layouts/RecipientShell.jsx'
-import { DonorShell } from '@/layouts/DonorShell.jsx'
-import { AdminShell } from '@/layouts/AdminShell.jsx'
-import { LandingPage } from '@/features/identity/pages/LandingPage/LandingPage.jsx'
-import { LoginPage } from '@/features/identity/pages/LoginPage/LoginPage.jsx'
+import { ProtectedRoute } from '@/routes/ProtectedRoute.jsx'
+import { RequireRole } from '@/routes/RequireRole.jsx'
+import { RoleLayout } from '@/routes/RoleLayout.jsx'
+import { LandingPage } from '@/features/identity/Page/LandingPage.jsx'
+import { LoginPage } from '@/features/identity/Page/LoginPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
 
 /**
- * Application route tree, gated by role (SRS A.2.c).
- * Placeholder targets are replaced as each module plan runs. Insertion points
- * for the in-scope modules (Identity, Wallet) are marked below.
+ * Application route tree, gated by role (SRS A.2.c). Public pages render
+ * directly (Landing owns its navbar/footer; auth pages use AuthSplitLayout).
+ * Authed pages sit under a role-aware RoleLayout. Placeholder targets are
+ * replaced as each module plan runs.
  */
 export const router = createBrowserRouter([
   // ---- Public ----
-  {
-    element: <PublicLayout />,
-    children: [
-      { path: '/', element: <LandingPage /> },
-      // Identity module (public) — built in the Identity plan:
-      { path: '/login', element: <LoginPage /> },
-      { path: '/register/donor', element: <Placeholder name="Register — Donor" /> },
-      { path: '/register/recipient', element: <Placeholder name="Register — Recipient" /> },
-    ],
-  },
+  { path: '/', element: <LandingPage /> },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <Placeholder name="Register" /> },
 
   // ---- Authenticated ----
   {
     element: <ProtectedRoute />,
     children: [
-      // Recipient area
       {
         element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
         children: [
           {
-            element: <RecipientShell />,
+            element: <RoleLayout role="recipient" />,
             children: [
-              // Identity module: Profile — built in the Identity plan
               { path: '/profile', element: <Placeholder name="Recipient Profile" /> },
-              // Wallet module — built in the Wallet plan
               { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
               { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
             ],
           },
         ],
       },
-
-      // Donor area
       {
         element: <RequireRole roles={[USER_ROLES.DONOR]} />,
         children: [
           {
-            element: <DonorShell />,
-            children: [
-              { path: '/donor/profile', element: <Placeholder name="Donor Profile" /> },
-            ],
+            element: <RoleLayout role="donor" />,
+            children: [{ path: '/donor/profile', element: <Placeholder name="Donor Profile" /> }],
           },
         ],
       },
-
-      // Admin area
       {
         element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
-            element: <AdminShell />,
-            children: [
-              { path: '/admin', element: <Placeholder name="Admin" /> },
-            ],
+            element: <RoleLayout role="admin" />,
+            children: [{ path: '/admin', element: <Placeholder name="Admin" /> }],
           },
         ],
       },
