@@ -5,6 +5,7 @@ import { RequireRole } from '@/routes/RequireRole.jsx'
 import { RoleLayout } from '@/routes/RoleLayout.jsx'
 import { LandingPage } from '@/features/identity/Page/LandingPage.jsx'
 import { LoginPage } from '@/features/identity/Page/LoginPage.jsx'
+import { RegisterPage } from '@/features/identity/Page/RegisterPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
@@ -19,7 +20,7 @@ export const router = createBrowserRouter([
   // ---- Public ----
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
-  { path: '/register', element: <Placeholder name="Register" /> },
+  { path: '/register', element: <RegisterPage /> },
 
   // ---- Authenticated ----
   {

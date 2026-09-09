@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/auth/useAuth.js'
-import { isValidEmail } from '@/shared/utils/validators.js'
+import { identityService } from '@/features/identity/Service/identityService.js'
+import {
+  isValidEmail,
+  isValidTaxCode,
+  isValidCompanyName,
+  checkPasswordRules,
+} from '@/shared/utils/validators.js'
 
 /**
  * Identity module hooks (all of them — one hook file per module, FE_ARCHITECTURE F11).
@@ -112,5 +118,204 @@ export function useLoginForm() {
       validate: (v) => isValidEmail(v) || 'Enter a valid email address',
     },
     passwordRules: { required: 'Password is required' },
+  }
+}
+
+/* ---- Register: Recipient ----------------------------------------------------- */
+
+export function useRegisterRecipientForm() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: { userName: '', email: '', city: '', password: '', confirmPassword: '' },
+  })
+
+  const [emailError, setEmailError] = useState(null)
+  const [banner, setBanner] = useState(null)
+  const password = watch('password')
+
+  const onSubmit = handleSubmit(async (values) => {
+    setEmailError(null)
+    setBanner(null)
+
+    const result = await identityService.register({
+      email: values.email.trim(),
+      password: values.password,
+      role: 'Recipient',
+      userName: values.userName.trim(),
+      city: values.city,
+    })
+
+    if (result.ok) {
+      await login({ email: values.email.trim(), password: values.password })
+      navigate('/profile', { replace: true })
+      return
+    }
+    if (result.status === 409) {
+      setEmailError(result.error?.message ?? 'This email is already registered')
+      return
+    }
+    setBanner(result.error?.message ?? 'Something went wrong. Please try again.')
+  })
+
+  return {
+    register,
+    errors,
+    isSubmitting,
+    onSubmit,
+    emailError,
+    banner,
+    password,
+    userNameRules: {
+      required: 'Username is required.',
+      pattern: {
+        value: /^[A-Za-z0-9_-]+$/,
+        message:
+          'Username may contain only English letters, numbers, underscore (_) and hyphen (-) — e.g. jane_doe-01',
+      },
+    },
+    emailRules: {
+      required: 'Email is required.',
+      validate: (v) =>
+        isValidEmail(v) ||
+        'Enter a valid email — one “@”, a “.” after it, no spaces or ( ) ; : — e.g. jane.doe@example.com',
+    },
+    cityRules: { required: 'Please select your city — e.g. Ho Chi Minh City.' },
+    passwordRules: {
+      required: 'Password is required.',
+      validate: (v) =>
+        checkPasswordRules(v).length === 0 ||
+        'Password needs 8+ characters, a number, a special character and an uppercase letter — e.g. Abcdef1!',
+    },
+    confirmRules: {
+      required: 'Please confirm your password.',
+      validate: (v, values) =>
+        v === values.password || 'Passwords do not match — re-enter the same password as above.',
+    },
+  }
+}
+
+/* ---- Register: Donor (+ geolocation) ----------------------------------------- */
+
+/** Resolves to [lng, lat]; rejects on denial/unsupported. Not exported. */
+function requestGeolocation() {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) {
+      reject(new Error('unsupported'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve([pos.coords.longitude, pos.coords.latitude]),
+      (err) => reject(err),
+      { enableHighAccuracy: false, timeout: 10000 },
+    )
+  })
+}
+
+export function useRegisterDonorForm() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      email: '',
+      companyName: '',
+      taxCode: '',
+      city: '',
+      password: '',
+      confirmPassword: '',
+    },
+  })
+
+  const [emailError, setEmailError] = useState(null)
+  const [locationError, setLocationError] = useState(null)
+  const [banner, setBanner] = useState(null)
+  const password = watch('password')
+
+  const onSubmit = handleSubmit(async (values) => {
+    setEmailError(null)
+    setLocationError(null)
+    setBanner(null)
+
+    let coordinates
+    try {
+      coordinates = await requestGeolocation()
+    } catch {
+      setLocationError(
+        'Location access is required to register as a donor. Please enable it and try again.',
+      )
+      return
+    }
+
+    const result = await identityService.register({
+      email: values.email.trim(),
+      password: values.password,
+      role: 'Donor',
+      companyName: values.companyName.trim(),
+      taxCode: values.taxCode.trim(),
+      city: values.city,
+      location: { type: 'Point', coordinates },
+    })
+
+    if (result.ok) {
+      await login({ email: values.email.trim(), password: values.password })
+      navigate('/profile', { replace: true })
+      return
+    }
+    if (result.status === 409) {
+      setEmailError(result.error?.message ?? 'This email is already registered')
+      return
+    }
+    setBanner(result.error?.message ?? 'Something went wrong. Please try again.')
+  })
+
+  return {
+    register,
+    errors,
+    isSubmitting,
+    onSubmit,
+    emailError,
+    locationError,
+    banner,
+    password,
+    emailRules: {
+      required: 'Email is required.',
+      validate: (v) =>
+        isValidEmail(v) ||
+        'Enter a valid email — one “@”, a “.” after it, no spaces or ( ) ; : — e.g. jane.doe@example.com',
+    },
+    companyNameRules: {
+      required: 'Company name is required.',
+      validate: (v) =>
+        isValidCompanyName(v) ||
+        'Company name may contain letters, numbers, spaces and hyphens only — e.g. Green Valley Foods',
+    },
+    taxCodeRules: {
+      required: 'Tax code is required.',
+      validate: (v) => isValidTaxCode(v) || 'Tax Code must be 10–13 digits — e.g. 0312345678.',
+    },
+    cityRules: { required: 'Please select your city — e.g. Ho Chi Minh City.' },
+    passwordRules: {
+      required: 'Password is required.',
+      validate: (v) =>
+        checkPasswordRules(v).length === 0 ||
+        'Password needs 8+ characters, a number, a special character and an uppercase letter — e.g. Abcdef1!',
+    },
+    confirmRules: {
+      required: 'Please confirm your password.',
+      validate: (v, values) =>
+        v === values.password || 'Passwords do not match — re-enter the same password as above.',
+    },
   }
 }
