@@ -1,4 +1,4 @@
-import { StatusAlert } from '@/components/ui/status-alert.jsx'
+import { StatusAlert } from '@/shared/components/status-alert.jsx'
 
 export function AppLoadingState() {
   return (
