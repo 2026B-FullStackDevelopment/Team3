@@ -382,13 +382,16 @@ export async function listActiveDonations(filters = {}) {
 /**
  * Admin-wide view of active food listings (SRS 7.3.1), reusing the same
  * query as listActiveDonations (the Recipient browse page) plus exact
- * donationId/donorProfileId(s) filters for the Admin search box (SRS
+ * donationId/donorProfileId filters and the combined search box (SRS
  * 7.3.2) -- filters a Recipient has no reason to use, so they're kept out
  * of normalizeListingQuery and added only here.
  *
  * donorProfileId and donorProfileIds are both passed through independently
  * (not one-or-the-other) -- buildDonationQuery is the one place that
  * decides how they combine (it ANDs them) if a caller supplies both.
+ * searchDonorProfileIds is a separate, distinctly-named field: it's ORed
+ * with the `search` text match (grocery name OR account/donor name), not
+ * ANDed like donorProfileIds above.
  */
 export async function listActiveListingsForAdmin(filters = {}) {
   const normalizedFilters = normalizeListingQuery(filters);
@@ -401,6 +404,9 @@ export async function listActiveListingsForAdmin(filters = {}) {
   }
   if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
     normalizedFilters.donorProfileIds = filters.donorProfileIds;
+  }
+  if (Array.isArray(filters.searchDonorProfileIds)) {
+    normalizedFilters.searchDonorProfileIds = filters.searchDonorProfileIds;
   }
 
   return donationRepository.findActiveDonations(normalizedFilters);

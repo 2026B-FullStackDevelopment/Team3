@@ -84,3 +84,13 @@ export function getDonorProfilesByIds(donorProfileIds, options) {
 export function findDonorProfileIdsByName(namePattern) {
   return accountService.findDonorProfileIdsByName(namePattern);
 }
+
+/** Batch-fetches Users by id, for the Admin module's Audit Log admin-email join. */
+export function getUsersByIds(userIds, options) {
+  return accountService.getUsersByIds(userIds, options);
+}
+
+/** Finds Admin user ids whose email matches a search term (Audit Log search). */
+export function findAdminIdsByEmailLike(emailPattern) {
+  return accountService.findAdminIdsByEmailLike(emailPattern);
+}

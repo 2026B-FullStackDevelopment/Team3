@@ -1,0 +1,177 @@
+import { useAuditLog } from '@/features/admin/hooks/useAuditLog.js'
+import { Pagination } from '@/shared/components/Pagination.jsx'
+import { cn } from '@/shared/utils/cn.js'
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'Status' },
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Finalized', label: 'Finalised' },
+  { value: 'Undone', label: 'Undone' },
+]
+
+// Mirrors the backend's AdminActionType enum (admin/models/AuditLog.js) --
+// there's no shared frontend constant for this yet.
+const ACTION_TYPE_OPTIONS = [
+  { value: '', label: 'Action Type' },
+  { value: 'DeactivateUser', label: 'Deactivate User' },
+  { value: 'ReactivateUser', label: 'Reactivate User' },
+  { value: 'CancelDonation', label: 'Cancel Donation' },
+]
+
+// The backend's status enum spells it "Finalized"; the design's copy is
+// "Finalised" (British spelling). Display-only, same as the Deactivated ->
+// "Inactive" mapping on the User Management page.
+const STATUS_DISPLAY = {
+  Pending: 'Pending',
+  Finalized: 'Finalised',
+  Undone: 'Undone',
+}
+
+const STATUS_STYLES = {
+  Pending: 'text-amber-700',
+  Finalized: 'text-muted',
+  Undone: 'text-blue-600',
+}
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+const timeFormatter = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+/** "2026-08-05T14:32:00Z" -> "Aug 5, 2026 - 14:32". Local to this page --
+ * shared/utils/format.js's formatShortDate has no year or time component. */
+function formatLogTimestamp(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return `${dateFormatter.format(date)} - ${timeFormatter.format(date)}`
+}
+
+/** Audit Log page (SRS §8). Query/filter UI only -- the Undo button
+ * renders but does nothing yet. */
+export function AuditLogPage() {
+  const {
+    entries,
+    loading,
+    error,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    actionTypeFilter,
+    setActionTypeFilter,
+    currentPage,
+    totalPages,
+    goToPage,
+  } = useAuditLog()
+
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold text-ink">Audit Log</h1>
+      <p className="mt-1 text-muted">Review admin activity and undo recent actions within the allowed time window.</p>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        <input
+          type="text"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by Admin Username, Target ID, or Action Type..."
+          className="min-w-64 flex-1 rounded-card bg-surface px-4 py-2 text-ink placeholder:text-muted"
+        />
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="rounded-card bg-surface px-4 py-2 text-ink"
+        >
+          {STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={actionTypeFilter}
+          onChange={(event) => setActionTypeFilter(event.target.value)}
+          className="rounded-card bg-surface px-4 py-2 text-ink"
+        >
+          {ACTION_TYPE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mt-6 overflow-x-auto rounded-card">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-primary text-white">
+              <th className="px-4 py-3 font-semibold">Log ID</th>
+              <th className="px-4 py-3 font-semibold">Admin</th>
+              <th className="px-4 py-3 font-semibold">Action</th>
+              <th className="px-4 py-3 font-semibold">Target</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold">Timestamp</th>
+              <th className="px-4 py-3 font-semibold">Undo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="bg-surface px-4 py-6 text-center text-muted">
+                  Loading…
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={7} className="bg-surface px-4 py-6 text-center text-danger">
+                  Couldn't load audit logs.
+                </td>
+              </tr>
+            ) : entries.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="bg-surface px-4 py-6 text-center text-muted">
+                  No audit log entries found.
+                </td>
+              </tr>
+            ) : (
+              entries.map((entry, index) => (
+                <tr key={entry.id} className={index % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
+                  <td className="px-4 py-3 text-ink">{entry.id}</td>
+                  {/* Admin has no username field at all (only email) -- see
+                      SESSION_NOTES.md for why this joins to email, not a
+                      fabricated display name. */}
+                  <td className="px-4 py-3 text-ink">{entry.adminEmail ?? entry.adminId}</td>
+                  <td className="px-4 py-3 text-ink">{ACTION_TYPE_OPTIONS.find((o) => o.value === entry.action)?.label ?? entry.action}</td>
+                  <td className="px-4 py-3 text-ink">
+                    {entry.targetType}: {entry.targetId}
+                  </td>
+                  <td className={cn('px-4 py-3 font-semibold', STATUS_STYLES[entry.status] ?? 'text-ink')}>
+                    {STATUS_DISPLAY[entry.status] ?? entry.status}
+                  </td>
+                  <td className="px-4 py-3 text-ink">{formatLogTimestamp(entry.createdAt)}</td>
+                  <td className="px-4 py-3">
+                    {entry.status === 'Pending' ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Wired up once the undo mutation endpoint is in scope.
+                        }}
+                        className="rounded-card bg-amber-600 px-4 py-1.5 text-sm font-medium text-white"
+                      >
+                        Undo
+                      </button>
+                    ) : entry.status === 'Undone' ? (
+                      <span className="text-muted">Already Undone</span>
+                    ) : (
+                      <span className="text-muted">Expired</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={goToPage} />
+    </div>
+  )
+}
