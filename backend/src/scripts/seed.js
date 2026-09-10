@@ -25,8 +25,8 @@ import {
 import {
   Reservation,
   ReservationStatus,
-  PaymentMethod,
 } from "../modules/reservation/models/Reservation.js";
+import { PaymentMethod } from "../shared/constants/paymentMethod.js";
 
 import {
   Transaction,
@@ -163,11 +163,11 @@ async function seedNotificationPreference(recipientProfileId) {
   });
 }
 
-async function seedWallet(recipientProfileId) {
+async function seedWallet(userId) {
   console.log("5/13 Seeding Wallet...");
 
   return Wallet.create({
-    recipientProfileId,
+    userId,
     balance: 500000,
   });
 }
@@ -179,6 +179,7 @@ async function seedDonations(donorProfileId) {
     donorProfileId,
     name: "Fresh Bread",
     description: "Fresh bread available for same-day collection.",
+    imageUrl: "https://example.com/images/fresh-bread.jpg",
     measurementUnit: MeasurementUnit.Unit,
     foodCategory: foodCategory.BakedGoods,
     isVegetarian: true,
@@ -193,6 +194,7 @@ async function seedDonations(donorProfileId) {
     donorProfileId,
     name: "Mixed Fresh Fruit",
     description: "Mixed apples, bananas, and oranges.",
+    imageUrl: "https://example.com/images/mixed-fresh-fruit.jpg",
     measurementUnit: MeasurementUnit.KG,
     foodCategory: foodCategory.Fruit,
     isVegetarian: true,
@@ -406,8 +408,8 @@ async function seed() {
     // 4. NotificationPreference -> RecipientProfile
     await seedNotificationPreference(recipientProfile._id);
 
-    // 5. Wallet -> RecipientProfile
-    await seedWallet(recipientProfile._id);
+    // 5. Wallet -> User
+    await seedWallet(recipient._id);
 
     // 6. Donation -> DonorProfile
     const { bread, fruit } = await seedDonations(donorProfile._id);

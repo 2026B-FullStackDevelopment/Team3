@@ -3,6 +3,7 @@ import { Router } from "express";
 import { requireAuth } from "../../../middleware/auth.js";
 import { loadDonorProfile } from "../../../middleware/donorProfile.js";
 import { requireRole } from "../../../middleware/role.js";
+import { imageUpload } from "../../../middleware/imageUpload.js";
 import { userRole } from "../../identity/index.js";
 
 import {
@@ -26,7 +27,18 @@ donorListingRoutes.use(
   loadDonorProfile,
 );
 
-donorListingRoutes.route("/").get(listFoodListings).post(createFoodListing);
+// Donation creation is multipart/form-data and must include one `image` file.
+donorListingRoutes
+  .route("/")
+  .get(listFoodListings)
+  .post(
+    imageUpload({
+      fieldName: "image",
+      subdirectory: "donations",
+      required: true,
+    }),
+    createFoodListing,
+  );
 
 donorListingRoutes.post("/:id/duplicate", duplicateFoodListing);
 donorListingRoutes.get("/:id/donations", listFoodListingDonations);

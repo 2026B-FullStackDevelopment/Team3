@@ -335,6 +335,8 @@ async function createDonations(donorProfileId) {
 
     description: "Database entity test donation A",
 
+    imageUrl: "https://example.com/images/test-bread.jpg",
+
     measurementUnit: MeasurementUnit.Unit,
 
     foodCategory: foodCategory.BakedGoods,
@@ -366,6 +368,8 @@ async function createDonations(donorProfileId) {
     name: `Test Fruit ${runId}`,
 
     description: "Database entity test donation B",
+
+    imageUrl: "https://example.com/images/test-fruit.jpg",
 
     measurementUnit: MeasurementUnit.KG,
 
