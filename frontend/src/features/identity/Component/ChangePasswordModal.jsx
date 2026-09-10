@@ -25,7 +25,7 @@ export function ChangePasswordModal() {
 
   return (
     <>
-      <Button variant="ghost" size="md" onClick={open}>
+      <Button variant="secondary" size="md" onClick={open}>
         Change password
       </Button>
 

@@ -48,12 +48,24 @@ export function EditProfileForm({ profile, onSaved, onCancel }) {
             )}
           </div>
           <p className="mt-2 text-xs text-muted">
-            {f.fileName ? `${f.fileName} · ` : ''}JPG or PNG. Auto-resized to 256×256 for display.
+            {f.fileName ? `${f.fileName} · ` : ''}JPEG, PNG or WebP up to 2&nbsp;MB. Auto-resized to
+            256×256 for display.
           </p>
+          {f.avatarError && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-danger">
+              <span
+                aria-hidden="true"
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white"
+              >
+                !
+              </span>
+              {f.avatarError}
+            </p>
+          )}
           <input
             ref={fileRef}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/png,image/jpeg,image/webp"
             className="hidden"
             onChange={(e) => f.onPickFile(e.target.files?.[0])}
           />

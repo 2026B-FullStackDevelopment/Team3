@@ -3,7 +3,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/auth/useAuth.js'
 import { identityService } from '@/features/identity/Service/identityService.js'
-import { USER_ROLES } from '@/config/constants.js'
+import { USER_ROLES, AVATAR_ALLOWED_MIME_TYPES, AVATAR_MAX_BYTES } from '@/config/constants.js'
 import { homePathForRole } from '@/shared/utils/routing.js'
 import {
   isValidEmail,
@@ -368,17 +368,30 @@ export function useEditProfileForm(profile, onSaved) {
   })
 
   const [banner, setBanner] = useState(null)
+  const [avatarError, setAvatarError] = useState(null)
   const [file, setFile] = useState(null) // File to upload, 'REMOVE' to clear, or null
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl ?? null)
   const [fileName, setFileName] = useState(null)
 
   const onPickFile = (picked) => {
     if (!picked) return
+    // Validate on pick (mirrors the backend) — a non-image or oversized file is
+    // rejected here so it never gets staged/uploaded.
+    if (!AVATAR_ALLOWED_MIME_TYPES.includes(picked.type)) {
+      setAvatarError('Please choose a JPEG, PNG or WebP image.')
+      return
+    }
+    if (picked.size > AVATAR_MAX_BYTES) {
+      setAvatarError('Image must be 2 MB or smaller.')
+      return
+    }
+    setAvatarError(null)
     setFile(picked)
     setFileName(picked.name)
     setAvatarPreview(URL.createObjectURL(picked))
   }
   const onRemoveAvatar = () => {
+    setAvatarError(null)
     setFile('REMOVE')
     setFileName(null)
     setAvatarPreview(null)
@@ -386,6 +399,7 @@ export function useEditProfileForm(profile, onSaved) {
 
   const onSubmit = handleSubmit(async (values) => {
     setBanner(null)
+    setAvatarError(null)
 
     const patch = isDonor
       ? {
@@ -405,10 +419,20 @@ export function useEditProfileForm(profile, onSaved) {
 
     if (file === 'REMOVE') {
       const r = await identityService.removeAvatar()
-      if (r.ok) updated = r.data.profile ?? r.data
+      if (!r.ok) {
+        setAvatarError(r.error?.message ?? 'Could not remove your photo. Please try again.')
+        return
+      }
+      updated = r.data.profile ?? r.data
     } else if (file) {
       const r = await identityService.uploadAvatar(file)
-      if (r.ok) updated = r.data.profile ?? r.data
+      if (!r.ok) {
+        // Surface the failure (e.g. non-image / too large) instead of silently
+        // reporting success.
+        setAvatarError(r.error?.message ?? 'Could not upload your photo. Please try again.')
+        return
+      }
+      updated = r.data.profile ?? r.data
     }
 
     // Re-hydrate the session so the navbar (name + avatar from /api/auth/me)
@@ -423,6 +447,7 @@ export function useEditProfileForm(profile, onSaved) {
     isSubmitting,
     onSubmit,
     banner,
+    avatarError,
     avatarPreview,
     fileName,
     onPickFile,
