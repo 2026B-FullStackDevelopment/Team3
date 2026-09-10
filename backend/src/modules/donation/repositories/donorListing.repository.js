@@ -96,6 +96,8 @@ function buildDonationQuery(filters = {}) {
 }
 
 export async function create(data) {
+  // imageUrl is part of the complete service-validated payload and is enforced
+  // again by the Donation schema before MongoDB persistence.
   return Donation.create(data);
 }
 
