@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
 import { ProtectedRoute } from '@/routes/guards/ProtectedRoute.jsx'
 import { GuestOnlyRoute } from '@/routes/guards/GuestOnlyRoute.jsx'
@@ -37,9 +37,7 @@ export const router = createBrowserRouter([
 
   // ---- Authenticated ----
   {
-    // TESTING ONLY — auth guard bypassed. Restore before merging:
-    // element: <ProtectedRoute />,
-    element: <Outlet />,
+    element: <ProtectedRoute />,
     children: [
       {
         element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
@@ -68,9 +66,7 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // TESTING ONLY — role guard bypassed. Restore before merging:
-        // element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
-        element: <Outlet />,
+        element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
             element: <RoleLayout role="admin" />,
