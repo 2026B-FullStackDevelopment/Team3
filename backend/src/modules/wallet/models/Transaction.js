@@ -20,7 +20,7 @@ const TransactionSchema = new Schema(
       type: String,
       required: true,
       index: true,
-      ref: "RecipientProfile",
+      ref: "User",
     },
     amount: {
       type: Number,

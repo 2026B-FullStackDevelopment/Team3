@@ -9,6 +9,13 @@ const WalletSchema = new Schema(
       type: String,
       default: () => uuidv4(),
     },
+    userId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      ref: "User",
+    },
     balance: {
       type: Number,
       default: 0,

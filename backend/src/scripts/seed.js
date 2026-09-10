@@ -163,11 +163,11 @@ async function seedNotificationPreference(recipientProfileId) {
   });
 }
 
-async function seedWallet(recipientProfileId) {
+async function seedWallet(userId) {
   console.log("5/13 Seeding Wallet...");
 
   return Wallet.create({
-    recipientProfileId,
+    userId,
     balance: 500000,
   });
 }
@@ -408,8 +408,8 @@ async function seed() {
     // 4. NotificationPreference -> RecipientProfile
     await seedNotificationPreference(recipientProfile._id);
 
-    // 5. Wallet -> RecipientProfile
-    await seedWallet(recipientProfile._id);
+    // 5. Wallet -> User
+    await seedWallet(recipient._id);
 
     // 6. Donation -> DonorProfile
     const { bread, fruit } = await seedDonations(donorProfile._id);
