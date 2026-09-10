@@ -63,7 +63,11 @@ export function useAccounts() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      setError(result.error)
+      // result.error can be an empty string when the failed response has no
+      // body (e.g. a proxy error page) — that's falsy, so fall back to a
+      // fixed message rather than letting the page treat "no error text" as
+      // "no error at all".
+      setError(result.error || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, statusFilter, roleFilter, currentPage])

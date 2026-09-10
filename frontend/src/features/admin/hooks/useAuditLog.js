@@ -61,7 +61,9 @@ export function useAuditLog() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      setError(result.error)
+      // See useAccounts.js: an empty error body is falsy, so fall back to a
+      // fixed message rather than treating "no error text" as "no error".
+      setError(result.error || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, statusFilter, actionTypeFilter, currentPage])
