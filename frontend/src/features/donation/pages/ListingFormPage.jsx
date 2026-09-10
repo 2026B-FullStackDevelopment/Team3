@@ -14,7 +14,7 @@ import {
   MeasurementUnit,
   UNIT_LABELS,
 } from "@/lib/donation.js";
-import { StatusAlert } from "@/components/ui/status-alert.jsx";
+import { StatusAlert } from "@/shared/components/status-alert.jsx";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
 
 const schema = z

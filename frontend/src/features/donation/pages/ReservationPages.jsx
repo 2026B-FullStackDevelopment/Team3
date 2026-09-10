@@ -14,7 +14,7 @@ import {
   DonationPageHeader,
   ListingCard,
 } from "@/features/donation/components/DonationUI.jsx";
-import { StatusAlert } from "@/components/ui/status-alert.jsx";
+import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
 export function ReservationSelectorPage() {
   const [search, setSearch] = useState("");

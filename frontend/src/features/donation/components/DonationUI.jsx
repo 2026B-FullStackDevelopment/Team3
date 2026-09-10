@@ -27,7 +27,7 @@ import {
   formatQuantityWithUnit,
   formatVnd,
 } from "@/lib/formatters.js";
-import { StatusAlert } from "@/components/ui/status-alert.jsx";
+import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
 export function DonationPageHeader({ eyebrow, title, description, actions }) {
   return (

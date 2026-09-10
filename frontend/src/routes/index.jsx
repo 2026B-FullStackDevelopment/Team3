@@ -24,7 +24,7 @@ import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx'
  * Authed pages sit under a role-aware RoleLayout. Placeholder targets are
  * replaced as each module plan runs.
  */
-const routes = [
+export const router = createBrowserRouter([
   // ---- Public ----
   { path: '/', element: <LandingPage /> },
 
@@ -41,7 +41,9 @@ const routes = [
   // TODO(auth): Move this branch back beneath ProtectedRoute/RequireRole when
   // Login is implemented. Backend ownership remains server-scoped in dev.
   {
-    element: <DonorShell />,
+    // The former DonorShell was removed during reconstruction. Reuse the
+    // shared role-aware layout so donation pages retain navigation and spacing.
+    element: <RoleLayout role="donor" />,
     children: [
       { path: '/donor', element: <Navigate to="/donor/dashboard" replace /> },
       { path: '/donor/dashboard', element: <DonationDashboardPage /> },
@@ -105,8 +107,4 @@ const routes = [
   // ---- System ----
   { path: '/forbidden', element: <ForbiddenPage /> },
   { path: '*', element: <NotFoundPage /> },
-]
-
-export function ApplicationRoutes() {
-  return useRoutes(routes)
-}
+])

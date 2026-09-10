@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Plus, HandCoins } from "lucide-react";
 import { useDonationList } from "@/features/donation/hooks/useDonationData.js";
 import { DonationStatus } from "@/lib/donation.js";
-import { StatusAlert } from "@/components/ui/status-alert.jsx";
+import { StatusAlert } from "@/shared/components/status-alert.jsx";
 import {
   DonationFilters,
   DonationPageHeader,

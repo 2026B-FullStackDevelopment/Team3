@@ -8,7 +8,7 @@ import { useDonationList } from "@/features/donation/hooks/useDonationData.js";
 import { DonationStatus, MeasurementUnit } from "@/lib/donation.js";
 import { formatQuantityWithUnit, formatVnd } from "@/lib/formatters.js";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
-import { StatusAlert } from "@/components/ui/status-alert.jsx";
+import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
 export function ManualDonationPage() {
   const [searchParams, setSearchParams] = useSearchParams();

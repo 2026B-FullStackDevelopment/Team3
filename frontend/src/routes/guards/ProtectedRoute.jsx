@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '@/auth/useAuth.js'
+import { useAuth } from '@/context/auth/useAuth.js'
 import { AppLoadingState } from '@/app/AppLoadingState.jsx'
 
 /**
