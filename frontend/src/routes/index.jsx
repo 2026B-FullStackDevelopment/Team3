@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
 import { ProtectedRoute } from '@/auth/ProtectedRoute.jsx'
 import { RequireRole } from '@/auth/RequireRole.jsx'
@@ -34,7 +34,9 @@ export const router = createBrowserRouter([
 
   // ---- Authenticated ----
   {
-    element: <ProtectedRoute />,
+    // TESTING ONLY — auth guard bypassed. Restore before merging:
+    // element: <ProtectedRoute />,
+    element: <Outlet />,
     children: [
       // Recipient area
       {
@@ -68,7 +70,9 @@ export const router = createBrowserRouter([
 
       // Admin area
       {
-        element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
+        // TESTING ONLY — role guard bypassed. Restore before merging:
+        // element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
+        element: <Outlet />,
         children: [
           {
             element: <AdminShell />,
