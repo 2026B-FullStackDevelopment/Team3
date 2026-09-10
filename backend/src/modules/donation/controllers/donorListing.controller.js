@@ -1,5 +1,6 @@
 import * as donorListingService from "../services/donorListing.service.js";
 import { toDonationListingResponse } from "../services/donorListing.service.js";
+import { removeUploadedImage } from "../../../middleware/imageUpload.js";
 
 function getDonorProfileId(req) {
   return req.user?.donorProfileId;
@@ -61,19 +62,27 @@ export async function listFoodListings(req, res, next) {
 
 /** POST /api/donor/food-listings */
 export async function createFoodListing(req, res, next) {
+  let listing;
   try {
     const donorProfileId = requireDonorProfileId(req, res);
-    if (!donorProfileId) return;
+    if (!donorProfileId) {
+      await removeUploadedImage(req.file);
+      return;
+    }
 
-    const listing = await donorListingService.createDonation(
-      donorProfileId,
-      req.body,
-    );
+    // imageUrl comes only from the server-controlled upload result; a caller
+    // cannot bypass the required file by putting an arbitrary URL in req.body.
+    listing = await donorListingService.createDonation(donorProfileId, {
+      ...req.body,
+      imageUrl: req.file.publicUrl,
+    });
 
     res.status(201).json({
       listing: toDonationListingResponse(listing),
     });
   } catch (error) {
+    // If validation or persistence failed, the uploaded file has no DB owner.
+    if (!listing) await removeUploadedImage(req.file);
     next(error);
   }
 }

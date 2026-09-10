@@ -10,7 +10,8 @@ import * as auditLogService from "../services/auditLog.service.js";
 
 /**
  * GET /api/admin/audit-logs
- * Query: targetType, status, adminId, startDate, endDate, page, limit
+ * Query: targetType, status, adminId, search, startDate, endDate, page, limit
+ * `search` matches the acting admin's email (substring, case-insensitive).
  */
 export async function listAuditLogs(req, res) {
   const result = await auditLogService.listAuditLogs(req.query);
@@ -66,6 +67,17 @@ export async function reactivateUserAccount(req, res) {
     req.params.userId,
   );
   res.status(200).json(account);
+}
+
+/**
+ * GET /api/admin/donations
+ * Query: search, donorProfileId, donationId, page, limit
+ * `search` matches EITHER the listing's grocery name OR the donor's
+ * account (company) name.
+ */
+export async function listAllFoodListings(req, res) {
+  const result = await auditLogService.listAllFoodListings(req.query);
+  res.status(200).json(result);
 }
 
 /**

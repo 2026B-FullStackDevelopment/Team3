@@ -60,6 +60,45 @@ test("findAll filters by role and paginates via skip/limit", async () => {
   assert.deepEqual(result, { entries, total: 1 });
 });
 
+test("findByIds queries with $in on _id", async () => {
+  const entries = [{ _id: "admin-1", email: "alee@example.com" }];
+  let findQuery;
+
+  User.find = (query) => {
+    findQuery = query;
+    return Promise.resolve(entries);
+  };
+
+  const result = await userRepository.findByIds(["admin-1", "admin-2"]);
+
+  assert.deepEqual(findQuery, { _id: { $in: ["admin-1", "admin-2"] } });
+  assert.equal(result, entries);
+});
+
+test("findAdminIdsByEmailLike scopes to role Admin and matches case-insensitively", async () => {
+  const matches = [{ _id: "admin-1" }, { _id: "admin-2" }];
+  let findQuery;
+  let selectArg;
+
+  User.find = (query) => {
+    findQuery = query;
+    return {
+      select(arg) {
+        selectArg = arg;
+        return Promise.resolve(matches);
+      },
+    };
+  };
+
+  const result = await userRepository.findAdminIdsByEmailLike("alee");
+
+  assert.equal(findQuery.role, userRole.Admin);
+  assert.ok(findQuery.email instanceof RegExp);
+  assert.equal(findQuery.email.test("ALEE@example.com"), true);
+  assert.equal(selectArg, "_id");
+  assert.deepEqual(result, ["admin-1", "admin-2"]);
+});
+
 test("updateAccountStatus is a single atomic findByIdAndUpdate", async () => {
   let receivedArgs;
   const updated = { _id: "user-1", accountStatus: AccountStatus.Deactivated };

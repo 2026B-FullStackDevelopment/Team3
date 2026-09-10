@@ -1,12 +1,10 @@
 import { Router } from "express";
 
-import { loadDonationDevelopmentDonor } from "../../../middleware/donationDevelopmentAccess.js";
-
-// TODO(auth): Restore these imports with the protected middleware block below.
-// import { requireAuth } from "../../../middleware/auth.js";
-// import { loadDonorProfile } from "../../../middleware/donorProfile.js";
-// import { requireRole } from "../../../middleware/role.js";
-// import { userRole } from "../../identity/index.js";
+import { requireAuth } from "../../../middleware/auth.js";
+import { loadDonorProfile } from "../../../middleware/donorProfile.js";
+import { requireRole } from "../../../middleware/role.js";
+import { imageUpload } from "../../../middleware/imageUpload.js";
+import { userRole } from "../../identity/index.js";
 
 import {
   createFoodListing,
@@ -23,11 +21,24 @@ import { manualDonationRoutes } from "./manualDonation.routes.js";
 
 export const donorListingRoutes = Router();
 
-// TODO(auth): Restore this protected middleware block when Login is ready:
-// donorListingRoutes.use(requireAuth, requireRole(userRole.Donor), loadDonorProfile);
-donorListingRoutes.use(loadDonationDevelopmentDonor);
+donorListingRoutes.use(
+  requireAuth,
+  requireRole(userRole.Donor),
+  loadDonorProfile,
+);
 
-donorListingRoutes.route("/").get(listFoodListings).post(createFoodListing);
+// Donation creation is multipart/form-data and must include one `image` file.
+donorListingRoutes
+  .route("/")
+  .get(listFoodListings)
+  .post(
+    imageUpload({
+      fieldName: "image",
+      subdirectory: "donations",
+      required: true,
+    }),
+    createFoodListing,
+  );
 
 donorListingRoutes.post("/:id/duplicate", duplicateFoodListing);
 donorListingRoutes.get("/:id/donations", listFoodListingDonations);

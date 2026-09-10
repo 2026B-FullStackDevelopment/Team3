@@ -59,12 +59,22 @@ export async function updateStatus(id, newStatus, undoneAt, undoneBy, options = 
  * can't avoid the second query, only avoid running it sequentially.
  */
 export async function findAll(filters = {}) {
-  const { targetType, status, adminId, startDate, endDate, page = 1, limit = 20 } = filters;
+  const { targetType, status, adminId, adminIds, startDate, endDate, page = 1, limit = 20 } = filters;
 
   const query = {};
   if (targetType !== undefined) query.targetType = targetType;
   if (status !== undefined) query.status = status;
-  if (adminId !== undefined) query.adminId = adminId;
+  if (Array.isArray(adminIds)) {
+    // adminIds (plural) comes from an Admin-email search resolved in the
+    // identity module (SRS §8's Audit Log search). If an explicit adminId is
+    // ALSO given, intersect them instead of letting either one silently
+    // override the other -- same fix as the donorProfileId/donorProfileIds
+    // bug in donorListing.repository.js's buildDonationQuery (2026-09-07).
+    const resolvedIds = adminId !== undefined ? adminIds.filter((id) => id === adminId) : adminIds;
+    query.adminId = { $in: resolvedIds };
+  } else if (adminId !== undefined) {
+    query.adminId = adminId;
+  }
   if (startDate !== undefined || endDate !== undefined) {
     const createdAt = {};
     if (startDate !== undefined) createdAt.$gte = startDate;

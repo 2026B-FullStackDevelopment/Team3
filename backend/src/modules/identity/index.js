@@ -74,3 +74,23 @@ export function deactivateAccount(userId, options) {
 export function reactivateAccount(userId, options) {
   return accountService.reactivateAccount(userId, options);
 }
+
+/** Batch-fetches DonorProfiles by id, for the Admin module's food-listing views. */
+export function getDonorProfilesByIds(donorProfileIds, options) {
+  return accountService.getDonorProfilesByIds(donorProfileIds, options);
+}
+
+/** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */
+export function findDonorProfileIdsByName(namePattern) {
+  return accountService.findDonorProfileIdsByName(namePattern);
+}
+
+/** Batch-fetches Users by id, for the Admin module's Audit Log admin-email join. */
+export function getUsersByIds(userIds, options) {
+  return accountService.getUsersByIds(userIds, options);
+}
+
+/** Finds Admin user ids whose email matches a search term (Audit Log search). */
+export function findAdminIdsByEmailLike(emailPattern) {
+  return accountService.findAdminIdsByEmailLike(emailPattern);
+}

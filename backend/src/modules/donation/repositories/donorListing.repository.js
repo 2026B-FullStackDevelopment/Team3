@@ -26,6 +26,8 @@ function normalizeLimit(value) {
 function buildDonationQuery(filters = {}) {
   const {
     donorProfileId,
+    donorProfileIds,
+    donationId,
     status,
     statuses,
     foodCategory,
@@ -35,6 +37,7 @@ function buildDonationQuery(filters = {}) {
     maxPrice,
     minRemainingQuantity,
     search,
+    searchDonorProfileIds,
     createdFrom,
     createdTo,
     includeClosed = true,
@@ -42,7 +45,21 @@ function buildDonationQuery(filters = {}) {
 
   const query = {};
 
-  if (donorProfileId !== undefined) query.donorProfileId = donorProfileId;
+  if (donationId !== undefined) query._id = donationId;
+  // donorProfileIds (plural) comes from an Admin donor-name search resolved
+  // in another module (SRS 7.3.2). If an explicit donorProfileId is ALSO
+  // given, AND them together (only keep it if it's actually one of the name
+  // matches) instead of either one silently overriding the other -- an
+  // empty $in correctly matches zero documents rather than "no filter."
+  if (Array.isArray(donorProfileIds) && donorProfileIds.length > 0) {
+    const ids =
+      donorProfileId !== undefined
+        ? donorProfileIds.filter((id) => id === donorProfileId)
+        : donorProfileIds;
+    query.donorProfileId = { $in: ids };
+  } else if (donorProfileId !== undefined) {
+    query.donorProfileId = donorProfileId;
+  }
   if (status !== undefined) query.status = status;
   if (Array.isArray(statuses) && statuses.length > 0) {
     query.status = { $in: statuses };
@@ -69,7 +86,19 @@ function buildDonationQuery(filters = {}) {
 
   if (search !== undefined && String(search).trim() !== "") {
     const searchRegex = new RegExp(escapeRegExp(String(search).trim()), "i");
-    query.name = searchRegex;
+    // searchDonorProfileIds (distinct from donorProfileIds above) signals
+    // that these ids were resolved from the SAME search term as the name
+    // match -- the Admin module's combined "grocery name or account name"
+    // box (SRS 7.3.2). OR them instead of this function's usual AND
+    // composition, so a listing matches on either field. An empty array is
+    // still correct here: zero donor-name matches just falls back to
+    // name-only matching, unlike donorProfileIds above, which is only set
+    // when there ARE ids to filter by.
+    if (Array.isArray(searchDonorProfileIds)) {
+      query.$or = [{ name: searchRegex }, { donorProfileId: { $in: searchDonorProfileIds } }];
+    } else {
+      query.name = searchRegex;
+    }
   }
 
   if (!includeClosed) {
@@ -80,6 +109,8 @@ function buildDonationQuery(filters = {}) {
 }
 
 export async function create(data) {
+  // imageUrl is part of the complete service-validated payload and is enforced
+  // again by the Donation schema before MongoDB persistence.
   return Donation.create(data);
 }
 

@@ -1,3 +1,0 @@
-fucntion handleRole
-if user.role == donor
-render navbar

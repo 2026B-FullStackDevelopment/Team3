@@ -1,6 +1,6 @@
+import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from '@/auth/AuthProvider.jsx'
-import { ApplicationRoutes } from '@/routes/index.jsx'
-import { RouteErrorBoundary } from '@/app/RouteErrorBoundary.jsx'
+import { router } from '@/routes/index.jsx'
 
 /**
  * App root. Global providers wrap the router so every route has access to the

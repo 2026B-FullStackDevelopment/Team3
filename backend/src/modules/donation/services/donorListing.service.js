@@ -76,6 +76,14 @@ function optionalString(value, fieldName) {
   return value.trim();
 }
 
+function optionalNullableBoolean(value, fieldName) {
+  if (value === undefined || value === null || value === "") return value;
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  if (value === "null") return null;
+  throw new ValidationError(`${fieldName} must be true, false or null`);
+}
+
 function requireNonNegativeNumber(value, fieldName) {
   const number = Number(value);
 
@@ -246,6 +254,7 @@ export async function createDonation(donorProfileId, input = {}) {
     "donorProfileId",
   );
   const name = requireNonEmptyString(input.name, "name");
+  const imageUrl = requireNonEmptyString(input.imageUrl, "imageUrl");
   const measurementUnit = validateEnum(
     input.measurementUnit,
     VALID_MEASUREMENT_UNIT,
@@ -273,21 +282,20 @@ export async function createDonation(donorProfileId, input = {}) {
     input.ration === undefined
       ? 0
       : requireNonNegativeNumber(input.ration, "ration");
-
-  if (
-    input.isVegetarian !== undefined &&
-    input.isVegetarian !== null &&
-    typeof input.isVegetarian !== "boolean"
-  ) {
-    throw new ValidationError("isVegetarian must be a boolean or null");
-  }
+  // Multipart form fields arrive as strings, so normalize the supported
+  // boolean values before writing the donation document.
+  const isVegetarian = optionalNullableBoolean(
+    input.isVegetarian,
+    "isVegetarian",
+  );
   return donationRepository.create({
     donorProfileId: trustedDonorProfileId,
     name,
     description: optionalString(input.description, "description"),
+    imageUrl,
     measurementUnit,
     foodCategory,
-    isVegetarian: input.isVegetarian ?? null,
+    isVegetarian: isVegetarian ?? null,
     donationLimit,
     price,
     remainingQuantity,
@@ -321,6 +329,9 @@ export async function duplicateDonation(
   return createDonation(donorProfileId, {
     name,
     description: overrides.description ?? sourceData.description,
+    // Duplication reuses the already-stored source image. The normal create
+    // route still requires a newly uploaded image before this service is called.
+    imageUrl: sourceData.imageUrl,
     measurementUnit: overrides.measurementUnit ?? sourceData.measurementUnit,
     foodCategory: overrides.foodCategory ?? sourceData.foodCategory,
     isVegetarian:
@@ -366,6 +377,39 @@ export async function listActiveDonations(filters = {}) {
     page: normalizePage(filters.page),
     limit: normalizeLimit(filters.limit),
   });
+}
+
+/**
+ * Admin-wide view of active food listings (SRS 7.3.1), reusing the same
+ * query as listActiveDonations (the Recipient browse page) plus exact
+ * donationId/donorProfileId filters and the combined search box (SRS
+ * 7.3.2) -- filters a Recipient has no reason to use, so they're kept out
+ * of normalizeListingQuery and added only here.
+ *
+ * donorProfileId and donorProfileIds are both passed through independently
+ * (not one-or-the-other) -- buildDonationQuery is the one place that
+ * decides how they combine (it ANDs them) if a caller supplies both.
+ * searchDonorProfileIds is a separate, distinctly-named field: it's ORed
+ * with the `search` text match (grocery name OR account/donor name), not
+ * ANDed like donorProfileIds above.
+ */
+export async function listActiveListingsForAdmin(filters = {}) {
+  const normalizedFilters = normalizeListingQuery(filters);
+
+  if (isNonEmptyString(filters.donationId)) {
+    normalizedFilters.donationId = filters.donationId.trim();
+  }
+  if (isNonEmptyString(filters.donorProfileId)) {
+    normalizedFilters.donorProfileId = filters.donorProfileId.trim();
+  }
+  if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
+    normalizedFilters.donorProfileIds = filters.donorProfileIds;
+  }
+  if (Array.isArray(filters.searchDonorProfileIds)) {
+    normalizedFilters.searchDonorProfileIds = filters.searchDonorProfileIds;
+  }
+
+  return donationRepository.findActiveDonations(normalizedFilters);
 }
 
 export async function listDonorDonations(donorProfileId, options = {}) {

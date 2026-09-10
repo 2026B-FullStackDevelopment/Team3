@@ -139,3 +139,35 @@ export async function deactivateAccount(userId, options = {}) {
 export async function reactivateAccount(userId, options = {}) {
   return transitionAccountStatus(userId, AccountStatus.Active, options);
 }
+
+/**
+ * Batch-fetches DonorProfiles by their own id (not a User account), for the
+ * Admin module to join company names onto its food-listing views (SRS
+ * 7.3.1/7.3.2). Kept separate from listAccounts/getAccountById since a
+ * DonorProfile isn't a User account -- this is "look up a donor's public
+ * info," not "manage a user's account."
+ */
+export async function getDonorProfilesByIds(donorProfileIds, options = {}) {
+  return donorProfileRepository.findByIds(donorProfileIds, options);
+}
+
+/** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */
+export async function findDonorProfileIdsByName(namePattern) {
+  return donorProfileRepository.findIdsByCompanyNameLike(namePattern);
+}
+
+/**
+ * Batch-fetches Users by id, for the Admin module to join the acting
+ * admin's email onto Audit Log entries (SRS §8). Users have no username
+ * field (see the 2026-09-01 entry on why the Admin account listing's
+ * "Username" column already has to fall back per-role) -- email is the
+ * only real identifying field a User (Admin included) actually has.
+ */
+export async function getUsersByIds(userIds, options = {}) {
+  return userRepository.findByIds(userIds, options);
+}
+
+/** Finds Admin user ids whose email matches a search term (audit log search). */
+export async function findAdminIdsByEmailLike(emailPattern) {
+  return userRepository.findAdminIdsByEmailLike(emailPattern);
+}

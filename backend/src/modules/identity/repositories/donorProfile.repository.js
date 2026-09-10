@@ -1,5 +1,9 @@
 import { DonorProfile } from "../models/DonorProfile.js";
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Inserts a DonorProfile linked to a User by userId. taxCode is uniquely
  * indexed; a clash surfaces as a Mongo E11000 for the service to map.
@@ -24,6 +28,30 @@ export async function findByUserId(userId, options = {}) {
  */
 export async function findByUserIds(userIds) {
   return DonorProfile.find({ userId: { $in: userIds } });
+}
+
+/**
+ * Batch fetch of DonorProfiles by their own _id (not userId) -- used by the
+ * Admin module to join company names onto its food-listing views (SRS
+ * 7.3.1/7.3.2), which only have donorProfileId to work with.
+ */
+export async function findByIds(ids, options = {}) {
+  const query = DonorProfile.find({ _id: { $in: ids } });
+  if (options.session) query.session(options.session);
+  return query;
+}
+
+/**
+ * Finds DonorProfile ids whose companyName matches a case-insensitive,
+ * substring search -- SRS 7.3.2's "search by Donor Name", same
+ * case-insensitive/pattern-based style as the donation module's own name
+ * search (donorListing.repository.buildDonationQuery).
+ */
+export async function findIdsByCompanyNameLike(namePattern) {
+  const trimmedPattern = String(namePattern).trim();
+  const regex = new RegExp(escapeRegExp(trimmedPattern), "i");
+  const profiles = await DonorProfile.find({ companyName: regex }).select("_id");
+  return profiles.map((profile) => profile._id);
 }
 
 /**
