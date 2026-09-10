@@ -1,9 +1,12 @@
 import { Router } from "express";
 
-import { requireAuth } from "../../../middleware/auth.js";
-import { loadDonorProfile } from "../../../middleware/donorProfile.js";
-import { requireRole } from "../../../middleware/role.js";
-import { userRole } from "../../identity/index.js";
+import { loadDonationDevelopmentDonor } from "../../../middleware/donationDevelopmentAccess.js";
+
+// TODO(auth): Restore these imports with the protected middleware block below.
+// import { requireAuth } from "../../../middleware/auth.js";
+// import { loadDonorProfile } from "../../../middleware/donorProfile.js";
+// import { requireRole } from "../../../middleware/role.js";
+// import { userRole } from "../../identity/index.js";
 
 import {
   createFoodListing,
@@ -20,11 +23,9 @@ import { manualDonationRoutes } from "./manualDonation.routes.js";
 
 export const donorListingRoutes = Router();
 
-donorListingRoutes.use(
-  requireAuth,
-  requireRole(userRole.Donor),
-  loadDonorProfile,
-);
+// TODO(auth): Restore this protected middleware block when Login is ready:
+// donorListingRoutes.use(requireAuth, requireRole(userRole.Donor), loadDonorProfile);
+donorListingRoutes.use(loadDonationDevelopmentDonor);
 
 donorListingRoutes.route("/").get(listFoodListings).post(createFoodListing);
 

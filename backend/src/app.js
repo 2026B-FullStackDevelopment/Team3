@@ -25,12 +25,21 @@ app.get("/api/health", (_req, res) => {
     message: "Backend is running",
   });
 });
+// Temporary browser shortcut requested for the Donation-first development
+// phase. The plural path below remains the actual JSON API contract.
+app.get("/api/donor/food-listing", (_req, res) => {
+  if (env.isProduction) {
+    return res
+      .status(404)
+      .json({ error: "NOT_FOUND", message: "Route not found" });
+  }
+  return res.redirect(302, "http://localhost:5173/donor/dashboard");
+});
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wallet", walletRoutes);
-app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
 

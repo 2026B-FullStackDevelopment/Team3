@@ -1,4 +1,4 @@
-import { useRoutes } from 'react-router-dom'
+import { Navigate, useRoutes } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
 import { ProtectedRoute } from '@/auth/ProtectedRoute.jsx'
 import { RequireRole } from '@/auth/RequireRole.jsx'
@@ -10,6 +10,10 @@ import { LandingPage } from '@/routes/pages/LandingPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
+import { DonationDashboardPage } from '@/features/donation/pages/DonationDashboardPage.jsx'
+import { ListingFormPage } from '@/features/donation/pages/ListingFormPage.jsx'
+import { ManualDonationPage } from '@/features/donation/pages/ManualDonationPage.jsx'
+import { ReservationHistoryPage, ReservationSelectorPage } from '@/features/donation/pages/ReservationPages.jsx'
 
 /**
  * Application route tree, gated by role (SRS A.2.c).
@@ -26,6 +30,24 @@ const routes = [
       { path: '/login', element: <Placeholder name="Login" /> },
       { path: '/register/donor', element: <Placeholder name="Register — Donor" /> },
       { path: '/register/recipient', element: <Placeholder name="Register — Recipient" /> },
+    ],
+  },
+
+  // ---- Donation development area ----
+  // TODO(auth): Move this branch back beneath ProtectedRoute/RequireRole when
+  // Login is implemented. Backend ownership remains server-scoped in dev.
+  {
+    element: <DonorShell />,
+    children: [
+      { path: '/donor', element: <Navigate to="/donor/dashboard" replace /> },
+      { path: '/donor/dashboard', element: <DonationDashboardPage /> },
+      { path: '/donor/listings', element: <DonationDashboardPage listingsOnly /> },
+      { path: '/donor/listings/new', element: <ListingFormPage /> },
+      { path: '/donor/listings/:listingId/edit', element: <ListingFormPage mode="edit" /> },
+      { path: '/donor/listings/:listingId/duplicate', element: <ListingFormPage mode="duplicate" /> },
+      { path: '/donor/listings/:listingId/reservations', element: <ReservationHistoryPage /> },
+      { path: '/donor/reservations', element: <ReservationSelectorPage /> },
+      { path: '/donor/manual-donations', element: <ManualDonationPage /> },
     ],
   },
 
@@ -50,18 +72,7 @@ const routes = [
         ],
       },
 
-      // Donor area
-      {
-        element: <RequireRole roles={[USER_ROLES.DONOR]} />,
-        children: [
-          {
-            element: <DonorShell />,
-            children: [
-              { path: '/donor/profile', element: <Placeholder name="Donor Profile" /> },
-            ],
-          },
-        ],
-      },
+      // TODO(auth): Restore Donation routes here with the Donor role guard.
 
       // Admin area
       {
