@@ -1,5 +1,5 @@
 import { RouterProvider } from 'react-router-dom'
-import { AuthProvider } from '@/auth/AuthProvider.jsx'
+import { AuthProvider } from '@/context/auth/AuthProvider.jsx'
 import { router } from '@/routes/index.jsx'
 
 /**

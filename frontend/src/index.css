@@ -31,6 +31,14 @@
 @layer base {
   html {
     font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  /* Respect users who prefer reduced motion — no animated jump. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {

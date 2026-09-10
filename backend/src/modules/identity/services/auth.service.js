@@ -101,7 +101,13 @@ export async function getCurrentUser(userId) {
   if (!user) {
     throw new UnauthorizedError("Session is no longer valid");
   }
-  return toUserDTO(user);
+  let profile = null;
+  if (user.role === userRole.Recipient) {
+    profile = await recipientProfileRepository.findByUserId(userId);
+  } else if (user.role === userRole.Donor) {
+    profile = await donorProfileRepository.findByUserId(userId);
+  }
+  return toUserDTO(user, profile);
 }
 
 /**
