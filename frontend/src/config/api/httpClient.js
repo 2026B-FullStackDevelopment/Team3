@@ -30,7 +30,7 @@ function buildUrl(path, params) {
   return query ? `${base}?${query}` : base
 }
 
-async function request(method, path, { body, headers, params, signal } = {}) {
+async function request(method, path, { body, headers, params, signal, suppressUnauthorized } = {}) {
   const isFormData = body instanceof FormData
   const init = {
     method,
@@ -57,7 +57,11 @@ async function request(method, path, { body, headers, params, signal } = {}) {
     ? await response.json().catch(() => null)
     : await response.text().catch(() => null)
 
-  if (response.status === 401) {
+  // A 401 normally means the session cookie is expired/revoked → notify so the
+  // AuthProvider clears the session. Callers whose 401 is a domain error (e.g.
+  // "current password incorrect" on change-password) pass `suppressUnauthorized`
+  // to opt out of that global logout.
+  if (response.status === 401 && !suppressUnauthorized) {
     unauthorizedListeners.forEach((listener) => listener())
   }
 
