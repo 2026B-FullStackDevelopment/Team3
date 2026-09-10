@@ -11,7 +11,11 @@ const FADE_MS = 500
 export function ProfileSuccessBanner({ onDismiss }) {
   const [leaving, setLeaving] = useState(false)
   const onDismissRef = useRef(onDismiss)
-  onDismissRef.current = onDismiss
+
+  // Keep the latest onDismiss without restarting the timers below.
+  useEffect(() => {
+    onDismissRef.current = onDismiss
+  }, [onDismiss])
 
   useEffect(() => {
     const fade = setTimeout(() => setLeaving(true), VISIBLE_MS)
