@@ -71,7 +71,9 @@ export async function reactivateUserAccount(req, res) {
 
 /**
  * GET /api/admin/donations
- * Query: donorName, donorProfileId, donationId, page, limit
+ * Query: search, donorProfileId, donationId, page, limit
+ * `search` matches EITHER the listing's grocery name OR the donor's
+ * account (company) name.
  */
 export async function listAllFoodListings(req, res) {
   const result = await auditLogService.listAllFoodListings(req.query);

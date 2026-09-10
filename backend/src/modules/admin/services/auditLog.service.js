@@ -404,27 +404,27 @@ export async function reactivateUserAccount(adminId, userId) {
 
 /**
  * Lists all active food listings system-wide with each one's Donor Name
- * attached (SRS 7.3.1), with optional search by Donor Name, Donor ID
- * (donorProfileId), or Donation ID (SRS 7.3.2). Donor Name lives in the
- * identity module (DonorProfile.companyName) but a food listing only
- * stores donorProfileId, so both the search-by-name resolution and the
- * display join happen here rather than inside the donation module, which
- * has no reason to know what a DonorProfile's company name is.
+ * attached (SRS 7.3.1). `search` matches EITHER the listing's own name
+ * (grocery name) OR the donor's company name (account name) -- one box,
+ * SRS 7.3.2's "search by Donor Name ... " read as an OR, not an AND, with
+ * the grocery name match the donation module already supports. Plus exact
+ * donorProfileId/donationId filters, unrelated to the `search` box.
+ *
+ * Donor Name lives in the identity module (DonorProfile.companyName) but a
+ * food listing only stores donorProfileId, so the search-by-name
+ * resolution and the display join both happen here rather than inside the
+ * donation module, which has no reason to know what a DonorProfile's
+ * company name is. Unlike a donor-name-only search, a search term that
+ * matches zero donors does NOT short-circuit to empty results here -- the
+ * listing-name half of the OR might still match, so donation.
+ * listActiveListingsForAdmin always runs.
  */
 export async function listAllFoodListings(filters = {}) {
-  const { donorName, donorProfileId, donationId, page, limit } = filters;
+  const { search, donorProfileId, donationId, page, limit } = filters;
 
-  let donorProfileIds;
-  if (isNonEmptyString(donorName)) {
-    donorProfileIds = await identity.findDonorProfileIdsByName(donorName);
-    if (donorProfileIds.length === 0) {
-      return {
-        listings: [],
-        total: 0,
-        page: normalizePage(page),
-        limit: normalizeLimit(limit),
-      };
-    }
+  let searchDonorProfileIds;
+  if (isNonEmptyString(search)) {
+    searchDonorProfileIds = await identity.findDonorProfileIdsByName(search);
   }
 
   const { entries, total, page: resolvedPage, limit: resolvedLimit } =
@@ -433,7 +433,8 @@ export async function listAllFoodListings(filters = {}) {
       limit,
       donationId,
       donorProfileId,
-      donorProfileIds,
+      search,
+      searchDonorProfileIds,
     });
 
   const uniqueDonorProfileIds = [...new Set(entries.map((entry) => entry.donorProfileId))];

@@ -9,9 +9,65 @@ import {
 import * as donorListingRepository from "../donorListing.repository.js";
 
 const originalFindOneAndUpdate = Donation.findOneAndUpdate;
+const originalFind = Donation.find;
+const originalCountDocuments = Donation.countDocuments;
 
 afterEach(() => {
   Donation.findOneAndUpdate = originalFindOneAndUpdate;
+  Donation.find = originalFind;
+  Donation.countDocuments = originalCountDocuments;
+});
+
+function stubFind(entries) {
+  let capturedQuery;
+  Donation.find = (query) => {
+    capturedQuery = query;
+    return {
+      sort() {
+        return this;
+      },
+      skip() {
+        return this;
+      },
+      limit() {
+        return Promise.resolve(entries);
+      },
+    };
+  };
+  Donation.countDocuments = () => Promise.resolve(entries.length);
+  return () => capturedQuery;
+}
+
+test("findAll ORs search against searchDonorProfileIds when both are given (Admin combined search)", async () => {
+  const getQuery = stubFind([]);
+
+  await donorListingRepository.findAll({
+    search: "rice",
+    searchDonorProfileIds: ["donor-1", "donor-2"],
+  });
+
+  assert.deepEqual(getQuery().$or, [
+    { name: /rice/i },
+    { donorProfileId: { $in: ["donor-1", "donor-2"] } },
+  ]);
+  assert.equal(getQuery().name, undefined);
+});
+
+test("findAll still matches by name alone when searchDonorProfileIds isn't given", async () => {
+  const getQuery = stubFind([]);
+
+  await donorListingRepository.findAll({ search: "rice" });
+
+  assert.deepEqual(getQuery().name, /rice/i);
+  assert.equal(getQuery().$or, undefined);
+});
+
+test("findAll's $or still applies when searchDonorProfileIds resolved to zero donors", async () => {
+  const getQuery = stubFind([]);
+
+  await donorListingRepository.findAll({ search: "rice", searchDonorProfileIds: [] });
+
+  assert.deepEqual(getQuery().$or, [{ name: /rice/i }, { donorProfileId: { $in: [] } }]);
 });
 
 test("applyReservation decrements and closes sold-out listings in one atomic update", async () => {

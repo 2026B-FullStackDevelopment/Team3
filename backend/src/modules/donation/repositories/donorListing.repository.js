@@ -37,6 +37,7 @@ function buildDonationQuery(filters = {}) {
     maxPrice,
     minRemainingQuantity,
     search,
+    searchDonorProfileIds,
     createdFrom,
     createdTo,
     includeClosed = true,
@@ -85,7 +86,19 @@ function buildDonationQuery(filters = {}) {
 
   if (search !== undefined && String(search).trim() !== "") {
     const searchRegex = new RegExp(escapeRegExp(String(search).trim()), "i");
-    query.name = searchRegex;
+    // searchDonorProfileIds (distinct from donorProfileIds above) signals
+    // that these ids were resolved from the SAME search term as the name
+    // match -- the Admin module's combined "grocery name or account name"
+    // box (SRS 7.3.2). OR them instead of this function's usual AND
+    // composition, so a listing matches on either field. An empty array is
+    // still correct here: zero donor-name matches just falls back to
+    // name-only matching, unlike donorProfileIds above, which is only set
+    // when there ARE ids to filter by.
+    if (Array.isArray(searchDonorProfileIds)) {
+      query.$or = [{ name: searchRegex }, { donorProfileId: { $in: searchDonorProfileIds } }];
+    } else {
+      query.name = searchRegex;
+    }
   }
 
   if (!includeClosed) {
