@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
 import { ProtectedRoute } from '@/auth/ProtectedRoute.jsx'
 import { RequireRole } from '@/auth/RequireRole.jsx'
@@ -70,7 +70,10 @@ export const router = createBrowserRouter([
           {
             element: <AdminShell />,
             children: [
-              { path: '/admin', element: <Placeholder name="Admin" /> },
+              { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
+              { path: '/admin/listing-moderation', element: <Placeholder name="Listing Moderation" /> },
+              { path: '/admin/user-management', element: <Placeholder name="User Management" /> },
+              { path: '/admin/audit-log', element: <Placeholder name="Audit Log" /> },
             ],
           },
         ],
