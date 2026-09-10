@@ -33,7 +33,7 @@ export function RecipientProfilePage() {
             : 'Edit contact details, upload an avatar, and manage Premium subscription status.'
         }
       />
-      {justSaved && !editing && <ProfileSuccessBanner />}
+      {justSaved && !editing && <ProfileSuccessBanner onDismiss={() => setJustSaved(false)} />}
       {editing ? (
         <EditProfileForm
           profile={profile}

@@ -35,7 +35,7 @@ export function DonorProfilePage() {
             : 'Edit your company details, address, and profile photo.'
         }
       />
-      {justSaved && !editing && <ProfileSuccessBanner />}
+      {justSaved && !editing && <ProfileSuccessBanner onDismiss={() => setJustSaved(false)} />}
       {editing ? (
         <EditProfileForm
           profile={profile}
