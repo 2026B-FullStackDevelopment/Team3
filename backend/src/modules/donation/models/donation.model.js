@@ -52,6 +52,12 @@ export const DonationSchema = {
   description: {
     type: String,
   },
+  // Every listing keeps the public URL produced by the image upload middleware.
+  imageUrl: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   measurementUnit: {
     type: String,
     enum: Object.values(MeasurementUnit),
