@@ -35,6 +35,20 @@ function toAuditLogDTO(doc) {
   };
 }
 
+/**
+ * Batch-fetches the acting admin's email for a page of AuditLog entries and
+ * stitches it on as `adminEmail`, the same join shape as `listAllFoodListings`
+ * stitching `donorName` onto listings (2026-09-07) -- AuditLog only stores
+ * `adminId`, and Users have no username field (Admins included), so email
+ * is the only real identifying value there is to join in.
+ */
+async function withAdminEmails(entries) {
+  const uniqueAdminIds = [...new Set(entries.map((entry) => entry.adminId))];
+  const admins = await identity.getUsersByIds(uniqueAdminIds);
+  const emailByAdminId = new Map(admins.map((admin) => [admin._id, admin.email]));
+  return entries.map((entry) => ({ ...entry, adminEmail: emailByAdminId.get(entry.adminId) ?? null }));
+}
+
 function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -149,9 +163,17 @@ function normalizeLimit(value) {
  * checks), so that normalization belongs here at the business layer: an
  * unrecognized status/targetType should fail loudly instead of silently
  * returning zero rows, and page/limit need sane defaults and an upper cap.
+ *
+ * `search` matches by the acting admin's email (the only real identifying
+ * field a User has -- see withAdminEmails above) -- resolved to a set of
+ * adminIds via identity.findAdminIdsByEmailLike *before* querying AuditLog,
+ * same "resolve name -> ids first, short-circuit if zero matches" shape as
+ * listAllFoodListings' donorName search, for the same reason: querying with
+ * an empty $in would either waste a query or (depending on how the query
+ * got built) behave like no filter at all and wrongly return every entry.
  */
 export async function listAuditLogs(filters = {}) {
-  const { targetType, status, adminId, startDate, endDate, page, limit } = filters;
+  const { targetType, status, adminId, search, startDate, endDate, page, limit } = filters;
 
   if (targetType !== undefined && !Object.values(AuditTargetType).includes(targetType)) {
     throw new ValidationError(`targetType must be one of: ${Object.values(AuditTargetType).join(", ")}`);
@@ -181,10 +203,19 @@ export async function listAuditLogs(filters = {}) {
   const normalizedPage = normalizePage(page);
   const normalizedLimit = normalizeLimit(limit);
 
+  let adminIds;
+  if (isNonEmptyString(search)) {
+    adminIds = await identity.findAdminIdsByEmailLike(search);
+    if (adminIds.length === 0) {
+      return { entries: [], total: 0, page: normalizedPage, limit: normalizedLimit };
+    }
+  }
+
   const { entries, total } = await auditLogRepository.findAll({
     targetType,
     status,
     adminId,
+    adminIds,
     startDate: normalizedStart,
     endDate: normalizedEnd,
     page: normalizedPage,
@@ -192,7 +223,7 @@ export async function listAuditLogs(filters = {}) {
   });
 
   return {
-    entries: entries.map(toAuditLogDTO),
+    entries: await withAdminEmails(entries.map(toAuditLogDTO)),
     total,
     page: normalizedPage,
     limit: normalizedLimit,

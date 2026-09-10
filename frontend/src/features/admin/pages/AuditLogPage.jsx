@@ -135,9 +135,10 @@ export function AuditLogPage() {
               entries.map((entry, index) => (
                 <tr key={entry.id} className={index % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
                   <td className="px-4 py-3 text-ink">{entry.id}</td>
-                  {/* adminId, not a username -- the backend DTO has no admin-username
-                      join (unlike donorName on the Listing Moderation page). */}
-                  <td className="px-4 py-3 text-ink">{entry.adminId}</td>
+                  {/* Admin has no username field at all (only email) -- see
+                      SESSION_NOTES.md for why this joins to email, not a
+                      fabricated display name. */}
+                  <td className="px-4 py-3 text-ink">{entry.adminEmail ?? entry.adminId}</td>
                   <td className="px-4 py-3 text-ink">{ACTION_TYPE_OPTIONS.find((o) => o.value === entry.action)?.label ?? entry.action}</td>
                   <td className="px-4 py-3 text-ink">
                     {entry.targetType}: {entry.targetId}
