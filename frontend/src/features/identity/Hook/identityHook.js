@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/auth/useAuth.js'
 import { identityService } from '@/features/identity/Service/identityService.js'
+import { USER_ROLES } from '@/config/constants.js'
+import { homePathForRole } from '@/shared/utils/routing.js'
 import {
   isValidEmail,
   isValidTaxCode,
@@ -41,7 +43,7 @@ export function useHeroCarousel(count, intervalMs = 7000) {
  */
 async function classifyLogin(login, credentials) {
   const result = await login(credentials)
-  if (result.ok) return { outcome: 'ok' }
+  if (result.ok) return { outcome: 'ok', role: result.data?.user?.role }
 
   const message = result.error?.message ?? result.data?.message ?? ''
   if (result.status === 401 && /lock/i.test(message)) return { outcome: 'locked', message }
@@ -74,14 +76,14 @@ export function useLoginForm() {
     setBanner(null)
     setCredentialError(null)
 
-    const { outcome, message } = await classifyLogin(login, {
+    const { outcome, message, role } = await classifyLogin(login, {
       email: values.email.trim(),
       password: values.password,
     })
 
     switch (outcome) {
       case 'ok': {
-        const to = location.state?.from ?? '/profile'
+        const to = location.state?.from ?? homePathForRole(role)
         navigate(to, { replace: true })
         return
       }
@@ -154,7 +156,7 @@ export function useRegisterRecipientForm() {
 
     if (result.ok) {
       await login({ email: values.email.trim(), password: values.password })
-      navigate('/profile', { replace: true })
+      navigate(homePathForRole(USER_ROLES.RECIPIENT), { replace: true })
       return
     }
     if (result.status === 409) {
@@ -270,7 +272,7 @@ export function useRegisterDonorForm() {
 
     if (result.ok) {
       await login({ email: values.email.trim(), password: values.password })
-      navigate('/profile', { replace: true })
+      navigate(homePathForRole(USER_ROLES.DONOR), { replace: true })
       return
     }
     if (result.status === 409) {

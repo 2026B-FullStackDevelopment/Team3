@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom'
 import { cn } from '@/shared/utils/cn.js'
 import { Brand } from '@/shared/components/Brand.jsx'
 import { Button } from '@/shared/components/Button.jsx'
+import { UserMenu } from '@/shared/components/navigation/UserMenu.jsx'
 
 /**
  * Role-aware top bar (presentation only — session data arrives via props).
  * `public` renders the marketing bar over the Landing hero (light text on the
- * dark hero); authed roles render a solid surface bar with the role's links and
- * a logout action. Tailwind classes inlined (single-file rule).
+ * dark hero); authed roles render a solid surface bar with the role's links.
+ * When a `user` is present the auth actions become the account UserMenu.
+ * Tailwind classes inlined (single-file rule).
  */
 
 // Marketing anchors for the public (Landing) bar.
@@ -29,7 +31,7 @@ const ROLE_LINKS = {
   admin: [{ label: 'Admin', to: '/admin' }],
 }
 
-function PublicBar() {
+function PublicBar({ user, home, onLogout }) {
   const link =
     'rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white'
   const linkActive = 'bg-[#c56f52] text-white hover:text-white'
@@ -44,21 +46,27 @@ function PublicBar() {
         ))}
       </nav>
       <div className="flex items-center gap-3">
-        <Link
-          to="/login"
-          className="px-2 text-sm font-medium text-white/90 transition-colors hover:text-white"
-        >
-          Log in
-        </Link>
-        <Button to="/register" size="sm">
-          Register Now
-        </Button>
+        {user ? (
+          <UserMenu user={user} home={home} onLogout={onLogout} tone="light" />
+        ) : (
+          <>
+            <Link
+              to="/login"
+              className="px-2 text-sm font-medium text-white/90 transition-colors hover:text-white"
+            >
+              Log in
+            </Link>
+            <Button to="/register" size="sm">
+              Register Now
+            </Button>
+          </>
+        )}
       </div>
     </header>
   )
 }
 
-function AuthedBar({ role, user, onLogout }) {
+function AuthedBar({ role, user, home, onLogout }) {
   const links = ROLE_LINKS[role] ?? []
   return (
     <header className="sticky top-0 z-20 border-b border-khaki-strong/50 bg-surface">
@@ -75,18 +83,13 @@ function AuthedBar({ role, user, onLogout }) {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
-          {user?.userName && <span className="text-sm text-muted">{user.userName}</span>}
-          <Button variant="secondary" size="sm" onClick={onLogout}>
-            Log out
-          </Button>
-        </div>
+        <UserMenu user={user} home={home} onLogout={onLogout} tone="dark" />
       </div>
     </header>
   )
 }
 
-export function Navbar({ role = 'public', user, onLogout }) {
-  if (role === 'public') return <PublicBar />
-  return <AuthedBar role={role} user={user} onLogout={onLogout} />
+export function Navbar({ role = 'public', user, home, onLogout }) {
+  if (role === 'public') return <PublicBar user={user} home={home} onLogout={onLogout} />
+  return <AuthedBar role={role} user={user} home={home} onLogout={onLogout} />
 }

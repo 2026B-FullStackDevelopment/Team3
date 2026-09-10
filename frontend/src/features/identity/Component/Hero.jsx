@@ -15,7 +15,7 @@ import Hero4 from '@/assets/hero-section/Hero4.avif'
 
 const SLIDES = [Hero1, Hero2, Hero3, Hero4]
 
-export function Hero() {
+export function Hero({ ctaTo = '/register', ctaLabel = 'Get Started' }) {
   const { index, goTo } = useHeroCarousel(SLIDES.length, 7000)
 
   return (
@@ -55,8 +55,8 @@ export function Hero() {
           </p>
 
           <div className="mt-8">
-            <Button to="/register" size="lg">
-              Get Started
+            <Button to={ctaTo} size="lg">
+              {ctaLabel}
             </Button>
           </div>
         </div>

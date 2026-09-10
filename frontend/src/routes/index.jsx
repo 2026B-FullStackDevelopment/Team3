@@ -1,8 +1,9 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
-import { ProtectedRoute } from '@/routes/ProtectedRoute.jsx'
-import { RequireRole } from '@/routes/RequireRole.jsx'
-import { RoleLayout } from '@/routes/RoleLayout.jsx'
+import { ProtectedRoute } from '@/routes/guards/ProtectedRoute.jsx'
+import { GuestOnlyRoute } from '@/routes/guards/GuestOnlyRoute.jsx'
+import { RequireRole } from '@/routes/guards/RequireRole.jsx'
+import { RoleLayout } from '@/routes/layouts/RoleLayout.jsx'
 import { LandingPage } from '@/features/identity/Page/LandingPage.jsx'
 import { LoginPage } from '@/features/identity/Page/LoginPage.jsx'
 import { RegisterPage } from '@/features/identity/Page/RegisterPage.jsx'
@@ -19,8 +20,15 @@ import { Placeholder } from '@/routes/pages/Placeholder.jsx'
 export const router = createBrowserRouter([
   // ---- Public ----
   { path: '/', element: <LandingPage /> },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/register', element: <RegisterPage /> },
+
+  // Auth pages — only for anonymous visitors; logged-in users go to their home.
+  {
+    element: <GuestOnlyRoute />,
+    children: [
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+    ],
+  },
 
   // ---- Authenticated ----
   {
