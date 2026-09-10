@@ -25,8 +25,8 @@ import {
 import {
   Reservation,
   ReservationStatus,
-  PaymentMethod,
 } from "../modules/reservation/models/Reservation.js";
+import { PaymentMethod } from "../shared/constants/paymentMethod.js";
 
 import {
   Transaction,

@@ -16,11 +16,11 @@ const TransactionSchema = new Schema(
       type: String,
       default: () => uuidv4(),
     },
-    userId: {
+    recipientProfileId: {
       type: String,
       required: true,
       index: true,
-      ref: "User",
+      ref: "RecipientProfile",
     },
     amount: {
       type: Number,
