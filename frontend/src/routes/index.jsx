@@ -11,6 +11,7 @@ import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
 import { UserManagementPage } from '@/features/admin/pages/UserManagementPage.jsx'
+import { ListingModerationPage } from '@/features/admin/pages/ListingModerationPage.jsx'
 
 /**
  * Application route tree, gated by role (SRS A.2.c).
@@ -72,7 +73,7 @@ export const router = createBrowserRouter([
             element: <AdminShell />,
             children: [
               { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
-              { path: '/admin/listing-moderation', element: <Placeholder name="Listing Moderation" /> },
+              { path: '/admin/listing-moderation', element: <ListingModerationPage /> },
               { path: '/admin/user-management', element: <UserManagementPage /> },
               { path: '/admin/audit-log', element: <Placeholder name="Audit Log" /> },
             ],
