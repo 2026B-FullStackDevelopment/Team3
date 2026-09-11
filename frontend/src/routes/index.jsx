@@ -10,6 +10,7 @@ import { RegisterPage } from '@/features/identity/Page/auth/RegisterPage.jsx'
 import { RecipientProfilePage } from '@/features/identity/Page/profile/RecipientProfilePage.jsx'
 import { DonorProfilePage } from '@/features/identity/Page/profile/DonorProfilePage.jsx'
 import { WalletPage } from '@/features/wallet/Page/WalletPage.jsx'
+import { AdminShell } from '@/routes/layouts/AdminShell.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
@@ -70,7 +71,7 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
-            element: <RoleLayout role="admin" />,
+            element: <AdminShell />,
             children: [
               { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
               { path: '/admin/listing-moderation', element: <ListingModerationPage /> },

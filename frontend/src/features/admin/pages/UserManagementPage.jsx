@@ -27,8 +27,10 @@ const STATUS_DISPLAY = {
   [ACCOUNT_STATUS.DEACTIVATED]: 'Inactive',
 }
 
-/** User Management page (SRS 7.1.1/7.2.1). Query/filter UI only — the
- * Deactivate/Reactivate buttons render but do nothing yet. */
+/** User Management page (SRS 7.1.1/7.2.1). Deactivate/Reactivate call
+ * straight into useAccounts's handlers -- window.confirm is enough of a
+ * safety check here (no confirm-dialog pattern exists elsewhere to reuse,
+ * and this scope doesn't call for building one). */
 export function UserManagementPage() {
   const {
     accounts,
@@ -43,6 +45,10 @@ export function UserManagementPage() {
     currentPage,
     totalPages,
     goToPage,
+    actingAccountIds,
+    accountActionErrors,
+    handleDeactivate,
+    handleReactivate,
   } = useAccounts()
 
   return (
@@ -132,23 +138,32 @@ export function UserManagementPage() {
                     {account.accountStatus === ACCOUNT_STATUS.ACTIVE ? (
                       <button
                         type="button"
+                        disabled={actingAccountIds.has(account.id)}
                         onClick={() => {
-                          // Wired up once account mutation endpoints are in scope.
+                          if (window.confirm(`Deactivate ${account.username ?? account.email}?`)) {
+                            handleDeactivate(account.id)
+                          }
                         }}
-                        className="rounded-card bg-danger px-4 py-1.5 text-sm font-medium text-white"
+                        className="rounded-card bg-danger px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Deactivate
+                        {actingAccountIds.has(account.id) ? 'Deactivating…' : 'Deactivate'}
                       </button>
                     ) : (
                       <button
                         type="button"
+                        disabled={actingAccountIds.has(account.id)}
                         onClick={() => {
-                          // Wired up once account mutation endpoints are in scope.
+                          if (window.confirm(`Reactivate ${account.username ?? account.email}?`)) {
+                            handleReactivate(account.id)
+                          }
                         }}
-                        className="rounded-card bg-primary px-4 py-1.5 text-sm font-medium text-white"
+                        className="rounded-card bg-primary px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Reactivate
+                        {actingAccountIds.has(account.id) ? 'Reactivating…' : 'Reactivate'}
                       </button>
+                    )}
+                    {accountActionErrors[account.id] && (
+                      <p className="mt-1 text-xs text-danger">{accountActionErrors[account.id]}</p>
                     )}
                   </td>
                 </tr>
