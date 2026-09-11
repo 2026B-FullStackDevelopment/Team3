@@ -5,7 +5,7 @@ import { PasswordInput } from '@/shared/components/PasswordInput/PasswordInput.j
 import { FormField } from '@/shared/components/FormField.jsx'
 import { Alert } from '@/shared/components/Alert.jsx'
 import { useChangePassword } from '@/features/identity/Hook/profileHook.js'
-import { PasswordRulesChecklist } from '@/features/identity/Component/PasswordRulesChecklist.jsx'
+import { PasswordRulesChecklist } from '@/features/identity/Component/common/PasswordRulesChecklist.jsx'
 
 /**
  * "Change password" trigger + modal. On success the backend revokes the session,
