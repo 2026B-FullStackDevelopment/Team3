@@ -9,6 +9,7 @@ import { LoginPage } from '@/features/identity/Page/auth/LoginPage.jsx'
 import { RegisterPage } from '@/features/identity/Page/auth/RegisterPage.jsx'
 import { RecipientProfilePage } from '@/features/identity/Page/profile/RecipientProfilePage.jsx'
 import { DonorProfilePage } from '@/features/identity/Page/profile/DonorProfilePage.jsx'
+import { WalletPage } from '@/features/wallet/Page/WalletPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
@@ -50,7 +51,7 @@ export const router = createBrowserRouter([
               { path: '/reservations', element: <Placeholder name="My Reservations" /> },
               { path: '/history', element: <Placeholder name="History" /> },
               { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
-              { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
+              { path: '/wallet', element: <WalletPage /> },
               { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
             ],
           },
