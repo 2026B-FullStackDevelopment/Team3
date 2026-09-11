@@ -27,7 +27,11 @@ const ROLE_LINKS = {
     { label: 'My Reservation', to: '/reservations' },
     { label: 'History', to: '/history' },
   ],
-  donor: [],
+  donor: [{ label: 'Dashboard', to: '/donor/dashboard' },
+    { label: 'My Listings', to: '/donor/listings' },
+    { label: 'Reservations', to: '/donor/reservations' },
+    { label: 'Manual Entries', to: '/donor/manual-donations' },
+    { label: 'Profile', to: '/donor/profile' },],
   admin: [],
 }
 
