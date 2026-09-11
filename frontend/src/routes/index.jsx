@@ -63,9 +63,7 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // TESTING ONLY — role guard bypassed. Restore before merging:
-        // element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
-        element: <Outlet />,
+        element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
             element: <AdminShell />,
