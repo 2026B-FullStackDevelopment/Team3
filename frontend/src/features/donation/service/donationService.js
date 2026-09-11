@@ -17,6 +17,17 @@ function unwrapListing(payload) {
   return normalizeDonationListing(payload?.listing ?? payload);
 }
 
+export function buildDonationCreateFormData(body, image) {
+  const formData = new FormData();
+  formData.append("image", image);
+  Object.entries(body).forEach(([key, value]) => {
+    if (value !== undefined) {
+      formData.append(key, value === null ? "null" : String(value));
+    }
+  });
+  return formData;
+}
+
 export const donationService = {
   async list(filters = {}, signal) {
     const payload = await apiFetch(
@@ -35,9 +46,12 @@ export const donationService = {
     );
   },
 
-  async create(body) {
+  async create(body, image) {
     return unwrapListing(
-      await apiFetch(donationRoutes.listings, { method: "POST", body }),
+      await apiFetch(donationRoutes.listings, {
+        method: "POST",
+        body: buildDonationCreateFormData(body, image),
+      }),
     );
   },
 

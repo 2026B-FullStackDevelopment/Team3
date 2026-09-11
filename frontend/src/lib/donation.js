@@ -24,6 +24,24 @@ export const FoodCategory = Object.freeze({
   DRINK: 'Drink',
 })
 
+export const MAX_DONATION_IMAGE_BYTES = 5 * 1024 * 1024
+export const DONATION_IMAGE_TYPES = Object.freeze([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+])
+
+export function validateDonationImage(file) {
+  if (!file) return 'A food image is required.'
+  if (!DONATION_IMAGE_TYPES.includes(file.type)) {
+    return 'Image must be a JPEG, PNG, or WebP file.'
+  }
+  if (file.size > MAX_DONATION_IMAGE_BYTES) {
+    return 'Image must be 5 MB or smaller.'
+  }
+  return null
+}
+
 export const STATUS_LABELS = Object.freeze({
   [DonationStatus.ACTIVE]: 'Active',
   [DonationStatus.PAUSED]: 'Paused',
@@ -63,6 +81,7 @@ function assertWireValue(value, values, field) {
  * @property {string} donorProfileId
  * @property {string} name
  * @property {string} description
+ * @property {string|null} imageUrl
  * @property {'KG'|'G'|'L'|'ML'|'Unit'|'PerRequest'} measurementUnit
  * @property {'Fruit'|'Vegetable'|'Meat'|'CookedDish'|'BakedGoods'|'Drink'} foodCategory
  * @property {boolean} isVegetarian
@@ -86,6 +105,7 @@ export function normalizeDonationListing(transport) {
     donorProfileId: String(transport.donorProfileId ?? ''),
     name: String(transport.name ?? ''),
     description: String(transport.description ?? ''),
+    imageUrl: transport.imageUrl ? String(transport.imageUrl) : null,
     measurementUnit: assertWireValue(
       transport.measurementUnit,
       Object.values(MeasurementUnit),
