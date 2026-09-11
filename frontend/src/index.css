@@ -199,7 +199,7 @@
 .donation-page-header p { margin: 0; color: var(--aff-muted); }
 .donation-eyebrow { color: var(--aff-primary) !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .donation-header-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: .75rem; }
-.donation-header-actions svg, .listing-actions svg { margin-right: .4rem; }
+.donation-header-actions svg { margin-right: .4rem; }
 .donation-filters { display: grid; grid-template-columns: minmax(220px, 1fr) 220px 220px auto; gap: .75rem; padding: 1rem; border: 1px solid var(--aff-border); border-radius: var(--aff-radius-lg); background: var(--aff-panel); }
 .donation-filters input, .donation-filters select, .history-search input, .report-heading select,
 .history-toolbar select, .listing-form input, .listing-form select, .listing-form textarea,
@@ -208,17 +208,19 @@
   background: white; padding: .72rem .85rem; color: var(--aff-text);
 }
 .button-quiet, .listing-actions > button, .pagination button { border: 1px solid var(--aff-border); border-radius: .65rem; background: transparent; padding: .6rem .8rem; color: var(--aff-text); font-weight: 700; }
-.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(310px, .65fr); gap: 1.5rem; align-items: start; }
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(260px, .7fr); gap: 1.5rem; align-items: start; }
 .dashboard-listings { display: grid; gap: 1.5rem; }
 .donation-section, .report-panel { overflow: hidden; border: 1px solid var(--aff-border); border-radius: var(--aff-radius-lg); background: var(--aff-panel); box-shadow: var(--aff-shadow); }
 .donation-section > h2 { margin: 0; padding: 1.15rem 1.35rem; background: var(--aff-primary); color: white; font-size: 1.2rem; letter-spacing: .025em; text-transform: uppercase; }
 .listing-stack { display: grid; }
-.listing-card { display: grid; grid-template-columns: 150px minmax(0, 1fr) 150px; gap: 1.25rem; padding: 1.25rem; border-bottom: 1px solid var(--aff-border); background: var(--aff-panel); }
+.listing-card { display: grid; grid-template-columns: minmax(170px, 200px) minmax(0, 1fr) 155px; gap: 1.25rem; align-items: start; padding: 1.25rem; border-bottom: 1px solid var(--aff-border); background: var(--aff-panel); }
 .listing-card:last-child { border-bottom: 0; }
-.listing-art { min-height: 150px; display: grid; place-items: center; border-radius: 1rem; background: linear-gradient(135deg, #d7b26d, #b88345); color: rgb(41 51 38 / .78); }
+.listing-art { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; display: grid; place-items: center; border-radius: 1rem; background: linear-gradient(135deg, #d7b26d, #b88345); color: rgb(41 51 38 / .78); }
 .listing-art.category-Vegetable, .listing-art.category-Fruit { background: linear-gradient(135deg, #bad695, #71995f); }
 .listing-art.category-Drink { background: linear-gradient(135deg, #d9d3a3, #9e8756); }
 .listing-art svg { width: 3rem; height: 3rem; }
+.listing-art.has-image { display: block; background: #e8e8df; }
+.listing-art img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .listing-title-row { display: flex; justify-content: space-between; gap: 1rem; }
 .listing-title-row h3 { margin: .45rem 0 .2rem; font-size: 1.45rem; }
 .listing-badges { display: flex; flex-wrap: wrap; gap: .4rem; }
@@ -229,12 +231,16 @@
 .status-Paused { background: #d9e7f8; color: #29476c; }
 .status-Cancelled { background: #f4dfd6; color: #8f3f27; }
 .status-SoldOut { background: #ddd9d1; }
-.listing-metrics { display: grid; grid-template-columns: repeat(4, minmax(90px, 1fr)); gap: 1rem; margin: 1.15rem 0 0; }
+.listing-body { min-width: 0; }
+.listing-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 1rem; margin: 1.15rem 0 0; }
 .listing-metrics div { min-width: 0; }
 .listing-metrics dt { color: var(--aff-muted); font-size: .75rem; }
-.listing-metrics dd { margin: .25rem 0 0; font-weight: 700; }
-.listing-actions { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: .45rem; }
+.listing-metrics dd { min-width: 0; margin: .25rem 0 0; overflow-wrap: anywhere; font-weight: 700; }
+.listing-actions { display: flex; flex-direction: column; align-items: stretch; justify-content: start; gap: .45rem; }
+.listing-actions > * { flex: none; max-width: none; }
 .listing-actions a, .listing-actions button { width: 100%; min-height: 2.5rem; font-size: .82rem; }
+.listing-actions a, .listing-actions > button, .inline-confirm button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; line-height: 1.2; white-space: nowrap; }
+.listing-actions svg { flex: 0 0 auto; margin-right: 0; }
 .listing-actions .button-danger-outline { border-color: var(--aff-danger); color: var(--aff-danger); }
 .button-danger { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--aff-danger); border-radius: .65rem; background: var(--aff-danger); padding: .6rem .8rem; color: white; font-weight: 700; }
 .inline-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; padding: .6rem; border-radius: .65rem; background: #f3e4dc; }
@@ -268,6 +274,28 @@
 .form-grid textarea { resize: vertical; }
 .form-grid small { color: var(--aff-muted); font-weight: 400; }
 .field-error { color: #a73e2f; font-size: .78rem; font-weight: 700; }
+.donation-image-field { display: grid; gap: .45rem; }
+.donation-image-label { color: var(--aff-text); font-weight: 700; }
+.donation-image-label span { color: var(--aff-danger); }
+.donation-image-dropzone { min-height: 220px; overflow: hidden; display: grid; place-items: center; border: 2px dashed #aeb5a3; border-radius: 1rem; background: #faf9f2; cursor: pointer; transition: border-color .2s ease, background .2s ease, box-shadow .2s ease; }
+.donation-image-dropzone:hover, .donation-image-dropzone:focus-visible, .donation-image-dropzone.is-dragging { border-color: var(--aff-primary); background: #f1f4e9; box-shadow: 0 0 0 3px rgb(60 138 98 / .14); outline: 0; }
+.donation-image-dropzone.has-error { border-color: var(--aff-danger); background: #fff9f7; }
+.donation-image-dropzone.has-preview { grid-template-rows: auto auto; padding: 0; border-style: solid; }
+.donation-image-dropzone > img { width: min(100%, 800px); height: auto; aspect-ratio: 4 / 3; justify-self: center; display: block; object-fit: cover; }
+.donation-image-empty { display: grid; justify-items: center; gap: .45rem; padding: 2rem; color: var(--aff-muted); text-align: center; }
+.donation-image-empty svg { width: 2.5rem; height: 2.5rem; color: var(--aff-primary); }
+.donation-image-empty strong { color: var(--aff-text); }
+.donation-image-preview-copy { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .8rem 1rem; background: white; }
+.donation-image-preview-copy > svg { color: var(--aff-primary); }
+.donation-image-preview-copy span { min-width: 0; display: grid; }
+.donation-image-preview-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.donation-image-preview-copy small { color: var(--aff-muted); }
+.donation-image-preview-copy button { display: inline-flex; align-items: center; gap: .3rem; }
+.donation-image-preview-copy button svg { width: 1rem; height: 1rem; }
+.existing-listing-image { display: grid; gap: .7rem; }
+.existing-listing-image img, .existing-listing-image-fallback { width: 100%; max-height: 420px; min-height: 220px; border-radius: 1rem; object-fit: cover; }
+.existing-listing-image-fallback { display: grid; place-items: center; border: 1px dashed var(--aff-border); background: #f0ede4; color: var(--aff-muted); }
+.existing-listing-image p { margin: 0; color: var(--aff-muted); font-size: .85rem; }
 .form-actions { display: flex; justify-content: end; gap: .75rem; padding-top: 1rem; border-top: 1px solid var(--aff-border); }
 .manual-grid { display: grid; grid-template-columns: minmax(280px, .75fr) minmax(420px, 1.25fr); gap: 1.5rem; align-items: start; }
 .manual-selector, .manual-form { display: grid; gap: 1rem; }
@@ -303,9 +331,7 @@
   .dashboard-grid { grid-template-columns: 1fr; }
   .report-panel { position: static; }
   .donation-filters { grid-template-columns: 1fr 1fr; }
-  .listing-card { grid-template-columns: 120px minmax(0, 1fr); }
-  .listing-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
-  .listing-actions > * { flex: 1 1 125px; }
+  .listing-card { grid-template-columns: minmax(160px, 190px) minmax(0, 1fr) 150px; }
   .selector-grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -320,7 +346,10 @@
   .donation-header-actions, .donation-header-actions > * { width: 100%; }
   .donation-filters, .form-grid, .manual-grid, .selector-grid { grid-template-columns: 1fr; }
   .listing-card { grid-template-columns: 1fr; }
-  .listing-art { min-height: 120px; }
+  .listing-art { min-height: 0; }
+  .listing-art img { min-height: 0; max-height: none; }
+  .donation-image-preview-copy { grid-template-columns: auto minmax(0, 1fr); }
+  .donation-image-preview-copy button { grid-column: 1 / -1; width: 100%; justify-content: center; }
   .listing-title-row { align-items: start; }
   .listing-metrics { grid-template-columns: 1fr 1fr; }
   .listing-actions { grid-column: auto; display: grid; grid-template-columns: 1fr 1fr; }

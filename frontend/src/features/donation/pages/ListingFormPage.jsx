@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -16,51 +16,66 @@ import {
 } from "@/lib/donation.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
+import { DonationImageUpload } from "@/features/donation/components/DonationImageUpload.jsx";
+import { validateDonationImage } from "@/lib/donation.js";
 
-const schema = z
-  .object({
-    name: z.string().trim().min(1, "Listing name is required."),
-    description: z
-      .string()
-      .max(500, "Description must be 500 characters or fewer."),
-    foodCategory: z.enum(Object.values(FoodCategory)),
-    measurementUnit: z.enum(Object.values(MeasurementUnit)),
-    isVegetarian: z.enum(["unspecified", "yes", "no"]),
-    remainingQuantity: z.coerce
-      .number()
-      .positive("Quantity must be greater than zero."),
-    donationLimit: z.coerce
-      .number()
-      .min(0, "Donation limit cannot be negative."),
-    ration: z.coerce.number().min(0, "Ration cannot be negative."),
-    price: z.coerce.number().min(0, "Price cannot be negative."),
-  })
-  .superRefine((values, context) => {
-    if (
-      values.measurementUnit === MeasurementUnit.UNIT &&
-      !Number.isInteger(values.remainingQuantity)
-    ) {
-      context.addIssue({
-        code: "custom",
-        path: ["remainingQuantity"],
-        message: "Per Unit quantity must be a whole number.",
-      });
-    }
-    if (values.ration > 0 && values.ration > values.remainingQuantity) {
-      context.addIssue({
-        code: "custom",
-        path: ["ration"],
-        message: "Ration cannot exceed remaining quantity.",
-      });
-    }
-    if (values.donationLimit > 0 && values.ration > values.donationLimit) {
-      context.addIssue({
-        code: "custom",
-        path: ["ration"],
-        message: "Ration cannot exceed donation limit.",
-      });
-    }
-  });
+function createSchema(mode) {
+  return z
+    .object({
+      name: z.string().trim().min(1, "Listing name is required."),
+      description: z
+        .string()
+        .max(500, "Description must be 500 characters or fewer."),
+      foodCategory: z.enum(Object.values(FoodCategory)),
+      measurementUnit: z.enum(Object.values(MeasurementUnit)),
+      isVegetarian: z.enum(["unspecified", "yes", "no"]),
+      remainingQuantity: z.coerce
+        .number()
+        .positive("Quantity must be greater than zero."),
+      donationLimit: z.coerce
+        .number()
+        .min(0, "Donation limit cannot be negative."),
+      ration: z.coerce.number().min(0, "Ration cannot be negative."),
+      price: z.coerce.number().min(0, "Price cannot be negative."),
+      image: z.any().nullable().optional(),
+    })
+    .superRefine((values, context) => {
+      if (mode === "create") {
+        const imageError = validateDonationImage(values.image);
+        if (imageError) {
+          context.addIssue({
+            code: "custom",
+            path: ["image"],
+            message: imageError,
+          });
+        }
+      }
+      if (
+        values.measurementUnit === MeasurementUnit.UNIT &&
+        !Number.isInteger(values.remainingQuantity)
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["remainingQuantity"],
+          message: "Per Unit quantity must be a whole number.",
+        });
+      }
+      if (values.ration > 0 && values.ration > values.remainingQuantity) {
+        context.addIssue({
+          code: "custom",
+          path: ["ration"],
+          message: "Ration cannot exceed remaining quantity.",
+        });
+      }
+      if (values.donationLimit > 0 && values.ration > values.donationLimit) {
+        context.addIssue({
+          code: "custom",
+          path: ["ration"],
+          message: "Ration cannot exceed donation limit.",
+        });
+      }
+    });
+}
 
 const defaults = {
   name: "",
@@ -72,6 +87,7 @@ const defaults = {
   donationLimit: 1,
   ration: 0,
   price: 0,
+  image: null,
 };
 
 function FieldError({ error }) {
@@ -81,6 +97,7 @@ function FieldError({ error }) {
 export function ListingFormPage({ mode = "create" }) {
   const { listingId } = useParams();
   const navigate = useNavigate();
+  const validationSchema = useMemo(() => createSchema(mode), [mode]);
   const detail = useDonationDetail(mode === "create" ? null : listingId);
   const mutation = useDonationMutation(async (values) => {
     const perRequest = values.measurementUnit === MeasurementUnit.PER_REQUEST;
@@ -101,20 +118,23 @@ export function ListingFormPage({ mode = "create" }) {
     if (mode === "edit") return donationService.update(listingId, payload);
     if (mode === "duplicate")
       return donationService.duplicate(listingId, payload);
-    return donationService.create(payload);
+    return donationService.create(payload, values.image);
   });
   const {
     control,
     register,
     handleSubmit,
     reset,
+    setError,
+    setValue,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(validationSchema),
     defaultValues: defaults,
   });
   const unit = useWatch({ control, name: "measurementUnit" });
   const price = Number(useWatch({ control, name: "price" }) || 0);
+  const image = useWatch({ control, name: "image" });
 
   useEffect(() => {
     if (!detail.data) return;
@@ -122,6 +142,7 @@ export function ListingFormPage({ mode = "create" }) {
       ...detail.data,
       name: mode === "duplicate" ? "" : detail.data.name,
       isVegetarian: detail.data.isVegetarian ? "yes" : "no",
+      image: null,
     });
   }, [detail.data, mode, reset]);
 
@@ -205,6 +226,50 @@ export function ListingFormPage({ mode = "create" }) {
         </div>
         <div className="form-section-title">
           <span>2</span>
+          <div>
+            <h2>Listing photo</h2>
+            <p>Show recipients the food included in this listing.</p>
+          </div>
+        </div>
+        {mode === "create" ? (
+          <DonationImageUpload
+            file={image}
+            error={errors.image?.message}
+            disabled={mutation.isPending}
+            onChange={(file) =>
+              setValue("image", file, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+              })
+            }
+            onError={(message) => {
+              if (message) {
+                setError("image", { type: "manual", message });
+              }
+            }}
+          />
+        ) : (
+          <div className="existing-listing-image">
+            {detail.data?.imageUrl ? (
+              <img
+                src={detail.data.imageUrl}
+                alt={`${detail.data.name} donation food`}
+              />
+            ) : (
+              <div className="existing-listing-image-fallback">
+                No listing image is available.
+              </div>
+            )}
+            <p>
+              {mode === "duplicate"
+                ? "The duplicate will reuse this image."
+                : "Image replacement is not available for existing listings."}
+            </p>
+          </div>
+        )}
+        <div className="form-section-title">
+          <span>3</span>
           <div>
             <h2>Food details</h2>
             <p>Set quantity, price, and recipient limits.</p>

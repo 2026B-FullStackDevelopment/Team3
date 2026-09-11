@@ -101,6 +101,27 @@ function StatusBadge({ status }) {
   );
 }
 
+function ListingArtwork({ listing }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const fallback = !listing.imageUrl || imageFailed;
+
+  return (
+    <div
+      className={`listing-art category-${listing.foodCategory} ${fallback ? "" : "has-image"}`}
+    >
+      {fallback ? (
+        <PackageOpen aria-hidden="true" />
+      ) : (
+        <img
+          src={listing.imageUrl}
+          alt={`${listing.name} donation food`}
+          onError={() => setImageFailed(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 export function ListingCard({ listing, compact = false }) {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(null);
@@ -128,12 +149,7 @@ export function ListingCard({ listing, compact = false }) {
     <article
       className={`listing-card ${compact ? "listing-card-compact" : ""}`}
     >
-      <div
-        className={`listing-art category-${listing.foodCategory}`}
-        aria-hidden="true"
-      >
-        <PackageOpen />
-      </div>
+      <ListingArtwork listing={listing} />
       <div className="listing-body">
         <div className="listing-title-row">
           <div>
