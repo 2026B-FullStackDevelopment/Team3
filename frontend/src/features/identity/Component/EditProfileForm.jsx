@@ -7,7 +7,7 @@ import { Select } from '@/shared/components/Select.jsx'
 import { FormField } from '@/shared/components/FormField.jsx'
 import { Alert } from '@/shared/components/Alert.jsx'
 import { Avatar } from '@/shared/components/Avatar.jsx'
-import { useEditProfileForm } from '@/features/identity/Hook/identityHook.js'
+import { useEditProfileForm } from '@/features/identity/Hook/profileHook.js'
 import { ChangePasswordModal } from '@/features/identity/Component/ChangePasswordModal.jsx'
 
 /**

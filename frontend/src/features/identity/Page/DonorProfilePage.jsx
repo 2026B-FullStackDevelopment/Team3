@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PageHeader } from '@/shared/components/PageHeader.jsx'
-import { useProfile } from '@/features/identity/Hook/identityHook.js'
+import { useProfile } from '@/features/identity/Hook/profileHook.js'
 import { ProfileView } from '@/features/identity/Component/ProfileView.jsx'
 import { EditProfileForm } from '@/features/identity/Component/EditProfileForm.jsx'
 import { ProfileSuccessBanner } from '@/features/identity/Component/ProfileSuccessBanner.jsx'

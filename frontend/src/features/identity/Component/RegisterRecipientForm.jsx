@@ -6,7 +6,7 @@ import { PasswordInput } from '@/shared/components/PasswordInput/PasswordInput.j
 import { Select } from '@/shared/components/Select.jsx'
 import { FormField } from '@/shared/components/FormField.jsx'
 import { Alert } from '@/shared/components/Alert.jsx'
-import { useRegisterRecipientForm } from '@/features/identity/Hook/identityHook.js'
+import { useRegisterRecipientForm } from '@/features/identity/Hook/authHook.js'
 import { PasswordRulesChecklist } from '@/features/identity/Component/PasswordRulesChecklist.jsx'
 
 /**
