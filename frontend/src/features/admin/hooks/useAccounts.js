@@ -6,13 +6,18 @@ const PAGE_SIZE = 10
 
 /**
  * User Management data hook (SRS 7.1.1). Fetches accounts on mount and
- * whenever a filter or page changes. Read/filter state only — deactivate/
- * reactivate live on a later branch.
+ * whenever a filter or page changes, plus the deactivate/reactivate
+ * mutations themselves.
  */
 export function useAccounts() {
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Per-row action state, not global — clicking one row's button shouldn't
+  // disable or spinner every other row's button.
+  const [actingAccountIds, setActingAccountIds] = useState(() => new Set())
+  const [accountActionErrors, setAccountActionErrors] = useState({})
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -63,11 +68,10 @@ export function useAccounts() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      // result.error can be an empty string when the failed response has no
-      // body (e.g. a proxy error page) — that's falsy, so fall back to a
-      // fixed message rather than letting the page treat "no error text" as
-      // "no error at all".
-      setError(result.error || 'Something went wrong. Please try again.')
+      // httpClient's error is never a bare string -- it's the backend's
+      // { error, message } body, a raw Error on a network failure, or null
+      // when there's no body at all. Read .message, same as identityHook.js.
+      setError(result.error?.message || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, statusFilter, roleFilter, currentPage])
@@ -87,6 +91,53 @@ export function useAccounts() {
     setCurrentPage(page)
   }, [])
 
+  const setRowActing = useCallback((accountId, isActing) => {
+    setActingAccountIds((prev) => {
+      const next = new Set(prev)
+      if (isActing) next.add(accountId)
+      else next.delete(accountId)
+      return next
+    })
+  }, [])
+
+  const clearActionError = useCallback((accountId) => {
+    setAccountActionErrors((prev) => {
+      if (!(accountId in prev)) return prev
+      return Object.fromEntries(Object.entries(prev).filter(([id]) => id !== accountId))
+    })
+  }, [])
+
+  // Deactivate/reactivate take effect immediately (no limbo/undo-window
+  // state like a cancelled listing), so the server's response already IS
+  // the row's new truth — replacing that one row with it is simpler than a
+  // full refetch and can't leave the table showing a stale status.
+  const runAccountAction = useCallback(
+    async (accountId, action) => {
+      setRowActing(accountId, true)
+      clearActionError(accountId)
+      const result = await action(accountId)
+      if (result.ok) {
+        setAccounts((prev) => prev.map((account) => (account.id === accountId ? result.data : account)))
+      } else {
+        setAccountActionErrors((prev) => ({
+          ...prev,
+          [accountId]: result.error?.message || 'Something went wrong. Please try again.',
+        }))
+      }
+      setRowActing(accountId, false)
+    },
+    [clearActionError, setRowActing],
+  )
+
+  const handleDeactivate = useCallback(
+    (accountId) => runAccountAction(accountId, accountService.deactivateAccount),
+    [runAccountAction],
+  )
+  const handleReactivate = useCallback(
+    (accountId) => runAccountAction(accountId, accountService.reactivateAccount),
+    [runAccountAction],
+  )
+
   return {
     accounts,
     loading,
@@ -101,5 +152,9 @@ export function useAccounts() {
     totalPages,
     goToPage,
     refetch: fetchAccounts,
+    actingAccountIds,
+    accountActionErrors,
+    handleDeactivate,
+    handleReactivate,
   }
 }

@@ -6,14 +6,19 @@ const PAGE_SIZE = 10
 
 /**
  * Listing Moderation data hook (SRS 7.3.1/7.3.2). Fetches listings on mount
- * and whenever search or page changes. Read/filter state only — cancel
- * lives on a later branch. Only a search box exists in the design (no
- * status/role dropdowns for this view), so that's the only filter here.
+ * and whenever search or page changes, plus the cancel mutation itself.
+ * Only a search box exists in the design (no status/role dropdowns for this
+ * view), so that's the only filter here.
  */
 export function useListings() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Per-row action state, not global — clicking one row's Cancel shouldn't
+  // disable or spinner every other row's button.
+  const [actingListingIds, setActingListingIds] = useState(() => new Set())
+  const [listingActionErrors, setListingActionErrors] = useState({})
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -46,9 +51,9 @@ export function useListings() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      // See useAccounts.js: an empty error body is falsy, so fall back to a
-      // fixed message rather than treating "no error text" as "no error".
-      setError(result.error || 'Something went wrong. Please try again.')
+      // See useAccounts.js: result.error is the backend's { error, message }
+      // body (or a raw Error/null), never a bare string -- read .message.
+      setError(result.error?.message || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, currentPage])
@@ -65,6 +70,47 @@ export function useListings() {
     setCurrentPage(page)
   }, [])
 
+  const setRowActing = useCallback((listingId, isActing) => {
+    setActingListingIds((prev) => {
+      const next = new Set(prev)
+      if (isActing) next.add(listingId)
+      else next.delete(listingId)
+      return next
+    })
+  }, [])
+
+  const clearActionError = useCallback((listingId) => {
+    setListingActionErrors((prev) => {
+      if (!(listingId in prev)) return prev
+      return Object.fromEntries(Object.entries(prev).filter(([id]) => id !== listingId))
+    })
+  }, [])
+
+  // Unlike a deactivated/reactivated account, a cancelled listing doesn't
+  // land on "Cancelled" right away -- adminCancelDonation only puts it in
+  // PendingCancellation limbo, and this same query already filters to
+  // status: Active. So the correct result of a successful cancel is that
+  // the row disappears from this table, not that it gets relabelled --
+  // a refetch gets that right for free, where patching the row to a
+  // hardcoded "Cancelled" locally would show a status that isn't true yet.
+  const handleCancel = useCallback(
+    async (listingId) => {
+      setRowActing(listingId, true)
+      clearActionError(listingId)
+      const result = await donationService.cancelListing(listingId)
+      if (result.ok) {
+        await fetchListings()
+      } else {
+        setListingActionErrors((prev) => ({
+          ...prev,
+          [listingId]: result.error?.message || 'Something went wrong. Please try again.',
+        }))
+      }
+      setRowActing(listingId, false)
+    },
+    [clearActionError, setRowActing, fetchListings],
+  )
+
   return {
     listings,
     loading,
@@ -75,5 +121,8 @@ export function useListings() {
     totalPages,
     goToPage,
     refetch: fetchListings,
+    actingListingIds,
+    listingActionErrors,
+    handleCancel,
   }
 }

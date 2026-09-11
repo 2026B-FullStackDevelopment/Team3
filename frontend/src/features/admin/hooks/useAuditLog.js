@@ -6,13 +6,20 @@ const PAGE_SIZE = 10
 
 /**
  * Audit Log data hook (SRS §8). Fetches entries on mount and whenever a
- * filter or page changes. Read/filter state only — undo lives on a later
- * branch.
+ * filter or page changes, plus the undo mutation itself. The Pending ->
+ * Finalized transition is never computed here -- that's the backend's
+ * scheduled sweep's job; this hook just reflects whatever status the API
+ * returns on each fetch.
  */
 export function useAuditLog() {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Per-row action state, not global — clicking one row's Undo shouldn't
+  // disable or spinner every other row's button.
+  const [actingLogIds, setActingLogIds] = useState(() => new Set())
+  const [logActionErrors, setLogActionErrors] = useState({})
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -61,9 +68,9 @@ export function useAuditLog() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      // See useAccounts.js: an empty error body is falsy, so fall back to a
-      // fixed message rather than treating "no error text" as "no error".
-      setError(result.error || 'Something went wrong. Please try again.')
+      // See useAccounts.js: result.error is the backend's { error, message }
+      // body (or a raw Error/null), never a bare string -- read .message.
+      setError(result.error?.message || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, statusFilter, actionTypeFilter, currentPage])
@@ -80,6 +87,48 @@ export function useAuditLog() {
     setCurrentPage(page)
   }, [])
 
+  const setRowActing = useCallback((logId, isActing) => {
+    setActingLogIds((prev) => {
+      const next = new Set(prev)
+      if (isActing) next.add(logId)
+      else next.delete(logId)
+      return next
+    })
+  }, [])
+
+  const clearActionError = useCallback((logId) => {
+    setLogActionErrors((prev) => {
+      if (!(logId in prev)) return prev
+      return Object.fromEntries(Object.entries(prev).filter(([id]) => id !== logId))
+    })
+  }, [])
+
+  // auditLogService.undoAuditLogEntry's two branches return different
+  // shapes (an updated Account vs an updated AuditLog entry), so this only
+  // ever patches the one field every caller actually needs -- the row's own
+  // status -- instead of trying to reconcile those. Nothing here is
+  // computed from undoDeadline/elapsed time; it's a direct reflection of
+  // the undo call that just succeeded, same as the Deactivate/Reactivate
+  // row patch in useAccounts.js.
+  const handleUndo = useCallback(
+    async (logEntry) => {
+      const logId = logEntry.id
+      setRowActing(logId, true)
+      clearActionError(logId)
+      const result = await auditLogService.undoAuditLogEntry(logEntry)
+      if (result.ok) {
+        setEntries((prev) => prev.map((entry) => (entry.id === logId ? { ...entry, status: 'Undone' } : entry)))
+      } else {
+        setLogActionErrors((prev) => ({
+          ...prev,
+          [logId]: result.error?.message || 'Something went wrong. Please try again.',
+        }))
+      }
+      setRowActing(logId, false)
+    },
+    [clearActionError, setRowActing],
+  )
+
   return {
     entries,
     loading,
@@ -94,5 +143,8 @@ export function useAuditLog() {
     totalPages,
     goToPage,
     refetch: fetchAuditLogs,
+    actingLogIds,
+    logActionErrors,
+    handleUndo,
   }
 }

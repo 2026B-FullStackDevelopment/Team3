@@ -70,7 +70,7 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
-            element: <RoleLayout role="admin" />,
+            element: <AdminShell />,
             children: [
               { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
               { path: '/admin/listing-moderation', element: <ListingModerationPage /> },
