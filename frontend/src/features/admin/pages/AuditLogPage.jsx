@@ -44,8 +44,11 @@ function formatLogTimestamp(value) {
   return `${dateFormatter.format(date)} - ${timeFormatter.format(date)}`
 }
 
-/** Audit Log page (SRS §8). Query/filter UI only -- the Undo button
- * renders but does nothing yet. */
+/** Audit Log page (SRS §8). Undo calls straight into useAuditLog's
+ * handleUndo -- window.confirm is enough of a safety check here, same as
+ * the Deactivate/Reactivate/Cancel buttons elsewhere in Admin. Expired is
+ * never triggered from here -- that transition is the backend's scheduled
+ * sweep's job, not a user action. */
 export function AuditLogPage() {
   const {
     entries,
@@ -60,6 +63,9 @@ export function AuditLogPage() {
     currentPage,
     totalPages,
     goToPage,
+    actingLogIds,
+    logActionErrors,
+    handleUndo,
   } = useAuditLog()
 
   return (
@@ -149,17 +155,25 @@ export function AuditLogPage() {
                   <td className="px-4 py-3 text-ink">{formatLogTimestamp(entry.createdAt)}</td>
                   <td className="px-4 py-3">
                     {entry.status === 'Pending' ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Wired up once the undo mutation endpoint is in scope.
-                        }}
-                        className="rounded-card bg-amber-600 px-4 py-1.5 text-sm font-medium text-white"
-                      >
-                        Undo
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          disabled={actingLogIds.has(entry.id)}
+                          onClick={() => {
+                            if (window.confirm('Undo this action?')) {
+                              handleUndo(entry)
+                            }
+                          }}
+                          className="rounded-card bg-amber-600 px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {actingLogIds.has(entry.id) ? 'Undoing…' : 'Undo'}
+                        </button>
+                        {logActionErrors[entry.id] && (
+                          <p className="mt-1 text-xs text-danger">{logActionErrors[entry.id]}</p>
+                        )}
+                      </>
                     ) : entry.status === 'Undone' ? (
-                      <span className="text-muted">Already Undone</span>
+                      <span className="text-blue-600">Already Undone</span>
                     ) : (
                       <span className="text-muted">Expired</span>
                     )}

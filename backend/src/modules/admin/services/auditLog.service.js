@@ -64,9 +64,11 @@ function isNonEmptyString(value) {
  * the action and the log write.
  *
  * `input.status` defaults to Pending (the schema default) but callers may
- * pass Finalized directly for an action that has no undo path at all --
- * see cancelDonation below -- so the entry never sits in a Pending state
- * with a live-looking undo window it can't actually honor.
+ * pass Finalized directly for an action that has no undo path at all, so
+ * the entry never sits in a Pending state with a live-looking undo window
+ * it can't actually honor. All three action functions below currently do
+ * have an undo path, so none of them use this today -- it's here for the
+ * next action type that doesn't.
  *
  * `options.session` lets the caller (the three action functions below) fold
  * this write into the same Mongo transaction as the mutation it's logging,
@@ -240,10 +242,13 @@ export async function listAuditLogs(filters = {}) {
  * is just calling the identity facade's opposite method -- so those revert
  * for real here, inside a transaction with the AuditLog status flip, so a
  * failed revert never gets recorded as a successful undo. CancelDonation
- * has no inverse anywhere in the SRS (no "un-cancel a listing" feature), so
- * cancelDonation() below never creates a Pending entry for it in the first
- * place; the `else` branch here is a defensive guard for a state that
- * should be unreachable, not a real code path.
+ * never actually cancels anything at action time either -- cancelDonation()
+ * below only puts the listing in PendingCancellation limbo -- so its undo is
+ * just as symmetric: donation.reinstateDonation flips it back to Active. The
+ * real cancellation (and its reservation cascade) only happens later, in
+ * finalizeExpiredEntries, if undo never runs. The `else` branch here is a
+ * defensive guard for any future action added without an undo path, not a
+ * real code path today.
  */
 export async function undoAction(auditLogId, actorId) {
   if (!isNonEmptyString(auditLogId)) {
@@ -270,6 +275,8 @@ export async function undoAction(auditLogId, actorId) {
         reverted = await identity.reactivateAccount(entry.targetId, { session });
       } else if (entry.action === AdminActionType.ReactivateUser) {
         reverted = await identity.deactivateAccount(entry.targetId, { session });
+      } else if (entry.action === AdminActionType.CancelDonation) {
+        reverted = await donation.reinstateDonation(entry.targetId, { session });
       } else {
         throw new NotImplementedError(`Undo is not available for ${entry.action}`);
       }
@@ -293,13 +300,47 @@ export async function undoAction(auditLogId, actorId) {
  * Meant to be called by a scheduled job (see the Scheduled Job Worker in
  * the architecture diagram), not a user-facing route -- wiring an actual
  * cron trigger for it is a separate task.
+ *
+ * Most actions (DeactivateUser, ReactivateUser) already took full effect at
+ * action time, so finalizing one is just closing the audit record -- a
+ * plain status flip. CancelDonation is different: it only put the listing
+ * in PendingCancellation limbo, so finalizing it has to make the
+ * cancellation real (donation.finalizeCancellation, which also runs the
+ * reservation cascade) before the audit record can close, and that domain
+ * mutation must succeed together with the status flip in one transaction --
+ * same discipline as every other write in this file. That's why this loops
+ * per entry instead of one Promise.all: a plain status flip and a
+ * transaction-wrapped domain mutation aren't the same shape, and this sweep
+ * runs on a low-frequency background timer (env.admin.sweepIntervalMs), not
+ * a latency-sensitive path, so sequential is fine.
  */
 export async function finalizeExpiredEntries() {
   const expired = await auditLogRepository.findExpiredPending();
 
-  const finalized = await Promise.all(
-    expired.map((entry) => auditLogRepository.updateStatus(entry._id, AuditLogStatus.Finalized))
-  );
+  const finalized = [];
+  for (const entry of expired) {
+    if (entry.action === AdminActionType.CancelDonation) {
+      const session = await mongoose.startSession();
+      try {
+        let updated;
+        await session.withTransaction(async () => {
+          await donation.finalizeCancellation(entry.targetId, { session });
+          updated = await auditLogRepository.updateStatus(
+            entry._id,
+            AuditLogStatus.Finalized,
+            undefined,
+            undefined,
+            { session },
+          );
+        });
+        finalized.push(updated);
+      } finally {
+        await session.endSession();
+      }
+    } else {
+      finalized.push(await auditLogRepository.updateStatus(entry._id, AuditLogStatus.Finalized));
+    }
+  }
 
   return finalized.map(toAuditLogDTO);
 }
@@ -453,16 +494,18 @@ export async function listAllFoodListings(filters = {}) {
 }
 
 /**
- * Cancels any Active food listing and logs it (SRS 7.2.2). Same
- * single-transaction shape as the two account actions above -- the
- * transaction also covers adminCancelDonation's own internal listing +
- * reservations writes, since it accepts and joins this same session instead
- * of opening its own.
+ * Puts any Active food listing into cancellation limbo and logs it (SRS
+ * 7.2.2). Same single-transaction shape as the two account actions above --
+ * the transaction also covers adminCancelDonation's own status-flip write,
+ * since it accepts and joins this same session instead of opening its own.
  *
- * Logged straight to Finalized, with no undoDeadline: there is no
- * "un-cancel a listing" feature anywhere in the SRS, so this action has no
- * real inverse. Giving it a live undo window would let the Admin UI offer
- * an undo button that can never do anything but 501.
+ * Logged Pending with a live undoDeadline, same as DeactivateUser/
+ * ReactivateUser: there's still no "un-cancel a listing" feature anywhere in
+ * the UI, but the SRS's own Audit Log extra feature is the sanctioned way to
+ * reverse this within the window. adminCancelDonation only flips the
+ * listing to PendingCancellation -- the real cancellation (and its
+ * reservation cascade) only happens in finalizeExpiredEntries if the window
+ * passes without an undo.
  */
 export async function cancelDonation(adminId, donationId) {
   if (!isNonEmptyString(adminId)) {
@@ -487,7 +530,7 @@ export async function cancelDonation(adminId, donationId) {
           targetType: AuditTargetType.Donation,
           targetId: donationId,
           previousState: before,
-          status: AuditLogStatus.Finalized,
+          undoDeadline: computeUndoDeadline(),
         },
         { session },
       );

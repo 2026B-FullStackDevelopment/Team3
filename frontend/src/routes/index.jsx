@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/routes/guards/ProtectedRoute.jsx'
 import { GuestOnlyRoute } from '@/routes/guards/GuestOnlyRoute.jsx'
 import { RequireRole } from '@/routes/guards/RequireRole.jsx'
 import { RoleLayout } from '@/routes/layouts/RoleLayout.jsx'
+import { AdminShell } from '@/routes/layouts/AdminShell.jsx'
 import { LandingPage } from '@/features/identity/Page/LandingPage.jsx'
 import { LoginPage } from '@/features/identity/Page/LoginPage.jsx'
 import { RegisterPage } from '@/features/identity/Page/RegisterPage.jsx'
@@ -69,7 +70,7 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
-            element: <RoleLayout role="admin" />,
+            element: <AdminShell />,
             children: [
               { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
               { path: '/admin/listing-moderation', element: <ListingModerationPage /> },
