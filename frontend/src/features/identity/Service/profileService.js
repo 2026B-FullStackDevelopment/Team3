@@ -1,17 +1,10 @@
 import { httpClient } from '@/config/api/httpClient.js'
-import { authRoutes, profileRoutes } from '@/config/api/routes/index.js'
+import { profileRoutes } from '@/config/api/routes/index.js'
 
 /**
- * Identity module Service (SRS A.1.3) — the module's only httpClient caller.
- * One function per identity endpoint; returns the normalized
- * { data, status, headers, ok, error } result upward.
+ * Identity/profile Service — the profile sub-domain's only httpClient caller.
  */
-export const identityService = {
-  register: (payload) => httpClient.post(authRoutes.register, payload),
-  login: (credentials) => httpClient.post(authRoutes.login, credentials),
-  logout: () => httpClient.post(authRoutes.logout),
-  me: () => httpClient.get(authRoutes.me),
-
+export const profileService = {
   getProfile: () => httpClient.get(profileRoutes.get),
   updateProfile: (patch) => httpClient.patch(profileRoutes.update, patch),
   uploadAvatar: (file) => {

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/auth/useAuth.js'
-import { identityService } from '@/features/identity/Service/identityService.js'
+import { authService } from '@/features/identity/Service/authService.js'
+import { profileService } from '@/features/identity/Service/profileService.js'
 import { USER_ROLES, AVATAR_ALLOWED_MIME_TYPES, AVATAR_MAX_BYTES } from '@/config/constants.js'
 import { homePathForRole } from '@/shared/utils/routing.js'
 import {
@@ -131,7 +132,7 @@ export function useRegisterRecipientForm() {
     setEmailError(null)
     setBanner(null)
 
-    const result = await identityService.register({
+    const result = await authService.register({
       email: values.email.trim(),
       password: values.password,
       role: 'Recipient',
@@ -245,7 +246,7 @@ export function useRegisterDonorForm() {
       return
     }
 
-    const result = await identityService.register({
+    const result = await authService.register({
       email: values.email.trim(),
       password: values.password,
       role: 'Donor',
@@ -315,7 +316,7 @@ export function useProfile() {
 
   useEffect(() => {
     let active = true
-    identityService.getProfile().then(({ data, ok }) => {
+    profileService.getProfile().then(({ data, ok }) => {
       if (!active) return
       if (ok && data) {
         setProfile(data.profile ?? data)
@@ -395,7 +396,7 @@ export function useEditProfileForm(profile, onSaved) {
         }
       : { email: values.email.trim(), userName: values.userName.trim(), city: values.city }
 
-    const res = await identityService.updateProfile(patch)
+    const res = await profileService.updateProfile(patch)
     if (!res.ok) {
       setBanner(res.error?.message ?? 'Could not save your changes. Please try again.')
       return
@@ -403,14 +404,14 @@ export function useEditProfileForm(profile, onSaved) {
     let updated = res.data.profile ?? res.data
 
     if (file === 'REMOVE') {
-      const r = await identityService.removeAvatar()
+      const r = await profileService.removeAvatar()
       if (!r.ok) {
         setAvatarError(r.error?.message ?? 'Could not remove your photo. Please try again.')
         return
       }
       updated = r.data.profile ?? r.data
     } else if (file) {
-      const r = await identityService.uploadAvatar(file)
+      const r = await profileService.uploadAvatar(file)
       if (!r.ok) {
         // Surface the failure (e.g. non-image / too large) instead of silently
         // reporting success.
@@ -503,7 +504,7 @@ export function useChangePassword() {
     setCurrentError(null)
     setBanner(null)
 
-    const res = await identityService.changePassword({
+    const res = await profileService.changePassword({
       currentPassword: values.currentPassword,
       newPassword: values.newPassword,
     })
