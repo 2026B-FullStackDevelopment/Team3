@@ -68,9 +68,9 @@ export function useAuditLog() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      // See useAccounts.js: an empty error body is falsy, so fall back to a
-      // fixed message rather than treating "no error text" as "no error".
-      setError(result.error || 'Something went wrong. Please try again.')
+      // See useAccounts.js: result.error is the backend's { error, message }
+      // body (or a raw Error/null), never a bare string -- read .message.
+      setError(result.error?.message || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, statusFilter, actionTypeFilter, currentPage])
@@ -121,7 +121,7 @@ export function useAuditLog() {
       } else {
         setLogActionErrors((prev) => ({
           ...prev,
-          [logId]: result.error || 'Something went wrong. Please try again.',
+          [logId]: result.error?.message || 'Something went wrong. Please try again.',
         }))
       }
       setRowActing(logId, false)

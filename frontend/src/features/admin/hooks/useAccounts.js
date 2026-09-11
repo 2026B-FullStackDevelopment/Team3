@@ -68,11 +68,10 @@ export function useAccounts() {
       const limit = result.data?.limit ?? PAGE_SIZE
       setTotalPages(Math.max(1, Math.ceil(total / limit)))
     } else {
-      // result.error can be an empty string when the failed response has no
-      // body (e.g. a proxy error page) — that's falsy, so fall back to a
-      // fixed message rather than letting the page treat "no error text" as
-      // "no error at all".
-      setError(result.error || 'Something went wrong. Please try again.')
+      // httpClient's error is never a bare string -- it's the backend's
+      // { error, message } body, a raw Error on a network failure, or null
+      // when there's no body at all. Read .message, same as identityHook.js.
+      setError(result.error?.message || 'Something went wrong. Please try again.')
     }
     setLoading(false)
   }, [debouncedSearch, statusFilter, roleFilter, currentPage])
@@ -122,7 +121,7 @@ export function useAccounts() {
       } else {
         setAccountActionErrors((prev) => ({
           ...prev,
-          [accountId]: result.error || 'Something went wrong. Please try again.',
+          [accountId]: result.error?.message || 'Something went wrong. Please try again.',
         }))
       }
       setRowActing(accountId, false)
