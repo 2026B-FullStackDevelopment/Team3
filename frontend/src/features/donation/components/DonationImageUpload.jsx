@@ -60,6 +60,7 @@ export function DonationImageUpload({
         aria-describedby="donation-image-help donation-image-error"
         onClick={openPicker}
         onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             openPicker();
