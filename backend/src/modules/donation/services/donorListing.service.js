@@ -511,7 +511,8 @@ export async function updateDonation(id, donorProfileId, input = {}) {
 
   if (
     current.status === DonationStatus.Cancelled ||
-    current.status === DonationStatus.SoldOut
+    current.status === DonationStatus.SoldOut ||
+    current.status === DonationStatus.PendingCancellation
   ) {
     throw new ValidationError("A closed donation cannot be edited");
   }
@@ -537,6 +538,7 @@ export async function updateDonationRation(
   if (
     donation.status === DonationStatus.Cancelled ||
     donation.status === DonationStatus.SoldOut ||
+    donation.status === DonationStatus.PendingCancellation ||
     donation.closedAt
   ) {
     throw new ValidationError("A closed donation cannot be edited");
@@ -724,6 +726,11 @@ export async function deleteDonation(id, donorProfileId) {
   if (donation.revenue > 0) {
     throw new ValidationError(
       "A donation with recorded revenue cannot be deleted",
+    );
+  }
+  if (donation.status === DonationStatus.PendingCancellation) {
+    throw new ConflictError(
+      "A donation pending cancellation review cannot be deleted",
     );
   }
   const deleted = await donationRepository.deleteOwnedDonation(
