@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { donationService } from "@/features/donation/service/donationService.js";
 import { donationKeys } from "@/features/donation/service/donationKeys.js";
 
+/** Fetches and caches the donation listings that match the supplied filters. */
 export function useDonationList(filters = {}) {
   return useQuery({
     queryKey: donationKeys.list(filters),
@@ -9,6 +10,7 @@ export function useDonationList(filters = {}) {
   });
 }
 
+/** Fetches and caches one donation listing when a valid ID is available. */
 export function useDonationDetail(id) {
   return useQuery({
     queryKey: donationKeys.detail(id),
@@ -17,6 +19,7 @@ export function useDonationDetail(id) {
   });
 }
 
+/** Fetches and caches one page of donation activity for a listing. */
 export function useDonationHistory(id, page) {
   return useQuery({
     queryKey: donationKeys.history(id, page),
@@ -25,13 +28,16 @@ export function useDonationHistory(id, page) {
   });
 }
 
-export function useDonationReport(filters = {}) {
+/** Fetches and caches donation report data using optional React Query settings. */
+export function useDonationReport(filters = {}, options = {}) {
   return useQuery({
     queryKey: donationKeys.report(filters),
     queryFn: ({ signal }) => donationService.report(filters, signal),
+    ...options,
   });
 }
 
+/** Creates a mutation hook that refreshes donation caches after a successful change. */
 export function useDonationMutation(mutationFn) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -44,6 +50,7 @@ export function useDonationMutation(mutationFn) {
   });
 }
 
+/** Deletes a donation listing and refreshes all cached donation data afterward. */
 export function useDeleteDonation() {
   const queryClient = useQueryClient();
   return useMutation({

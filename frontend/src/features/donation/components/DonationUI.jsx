@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  CalendarDays,
   Copy,
   HandCoins,
   Leaf,
@@ -15,7 +14,6 @@ import { donationService } from "@/features/donation/service/donationService.js"
 import {
   useDeleteDonation,
   useDonationMutation,
-  useDonationReport,
 } from "@/features/donation/hooks/useDonationData.js";
 import {
   CATEGORY_LABELS,
@@ -331,119 +329,4 @@ export function ListingSection({ title, listings, emptyTitle, emptyCopy }) {
   );
 }
 
-function BreakdownBars({ title, entries }) {
-  const max = Math.max(
-    0,
-    ...entries.map((entry) => Number(entry.donatedQuantity ?? 0)),
-  );
-  return (
-    <section className="report-breakdown">
-      <h3>{title}</h3>
-      {entries.length ? (
-        entries.map((entry) => (
-          <div className="report-bar-row" key={entry.label}>
-            <span>{CATEGORY_LABELS[entry.label] ?? entry.label}</span>
-            <div className="report-bar">
-              <i
-                style={{
-                  width: `${max ? (entry.donatedQuantity / max) * 100 : 0}%`,
-                }}
-              />
-            </div>
-            <strong>{Number(entry.donatedQuantity).toLocaleString()}</strong>
-          </div>
-        ))
-      ) : (
-        <p className="muted-text">No breakdown data yet.</p>
-      )}
-    </section>
-  );
-}
-
-export function DonationReportPanel() {
-  const [period, setPeriod] = useState("all");
-  const today = new Date();
-  const filters =
-    period === "month"
-      ? {
-          periodStart: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`,
-          periodEnd: today.toISOString().slice(0, 10),
-        }
-      : {};
-  const report = useDonationReport(filters);
-
-  return (
-    <aside className="report-panel">
-      <div className="report-heading">
-        <div>
-          <p className="donation-eyebrow">Live overview</p>
-          <h2>Statistical Reports</h2>
-        </div>
-        <select
-          aria-label="Report period"
-          value={period}
-          onChange={(event) => setPeriod(event.target.value)}
-        >
-          <option value="all">All time</option>
-          <option value="month">This month</option>
-        </select>
-      </div>
-      {report.isLoading && (
-        <StatusAlert variant="loading" title="Loading statistics" />
-      )}
-      {report.isError && (
-        <StatusAlert
-          variant="danger"
-          title="Unable to load statistics"
-          action={<button onClick={() => report.refetch()}>Retry</button>}
-        >
-          Listings remain available while reports recover.
-        </StatusAlert>
-      )}
-      {report.data && (
-        <>
-          <div className="report-metrics">
-            <div>
-              <CalendarDays />
-              <span>Collected Donations</span>
-              <strong>{report.data.donationCount.toLocaleString()}</strong>
-            </div>
-            <div>
-              <PackageOpen />
-              <span>Total Quantity (mixed units)</span>
-              <strong>
-                {report.data.totalDonatedQuantity.toLocaleString()}
-              </strong>
-            </div>
-            <div>
-              <HandCoins />
-              <span>Total Revenue</span>
-              <strong>{formatVnd(report.data.totalRevenue)}</strong>
-            </div>
-          </div>
-          {report.data.donationCount === 0 &&
-          report.data.byCategory.length === 0 ? (
-            <div className="donation-empty">
-              <h3>No statistical data yet</h3>
-              <p>Charts appear after donations are collected.</p>
-            </div>
-          ) : (
-            <>
-              <BreakdownBars
-                title="Donations by category"
-                entries={report.data.byCategory}
-              />
-              <BreakdownBars
-                title="Top measurement units"
-                entries={report.data.byMeasurementUnit}
-              />
-            </>
-          )}
-          <p className="report-unavailable">
-            Revenue over time is not available from the reporting API.
-          </p>
-        </>
-      )}
-    </aside>
-  );
-}
+export { DonationReportPanel } from "./report/DonationReportPanel.jsx";
