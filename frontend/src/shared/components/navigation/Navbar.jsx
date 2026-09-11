@@ -48,6 +48,11 @@ const MENU_ITEMS = {
   admin: [{ label: 'Admin', to: '/admin' }],
 }
 
+function itemsForUser(user) {
+  const role = String(user?.role ?? '').toLowerCase()
+  return MENU_ITEMS[role] ?? []
+}
+
 function PublicBar({ user, onLogout }) {
   const link =
     'rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white'

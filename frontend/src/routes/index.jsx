@@ -75,7 +75,7 @@ export const router = createBrowserRouter([
               { path: '/donor/listings/:listingId/reservations', element: <ReservationHistoryPage /> },
               { path: '/donor/reservations', element: <ReservationSelectorPage /> },
               { path: '/donor/manual-donations', element: <ManualDonationPage /> },
-              { path: '/donor/profile', element: <Placeholder name="Donor Profile" /> },
+              { path: '/donor/profile', element: <DonorProfilePage /> },
             ],
           },
         ],
