@@ -64,6 +64,13 @@ function buildDonationQuery(filters = {}) {
   if (Array.isArray(statuses) && statuses.length > 0) {
     query.status = { $in: statuses };
   }
+  // No explicit status filter given -- default to hiding a listing an admin
+  // has put in cancellation limbo, same as it's already hidden from the
+  // admin/recipient views (both force an explicit status: Active upstream).
+  // An explicit ?status=PendingCancellation filter still overrides this.
+  if (query.status === undefined) {
+    query.status = { $ne: DonationStatus.PendingCancellation };
+  }
   if (foodCategory !== undefined) query.foodCategory = foodCategory;
   if (measurementUnit !== undefined) query.measurementUnit = measurementUnit;
   if (isVegetarian !== undefined) query.isVegetarian = isVegetarian;

@@ -12,9 +12,8 @@ import * as auditLogController from "../controllers/auditLog.controller.js";
  */
 export const auditLogRoutes = Router();
 
-// TESTING ONLY — auth/role guards bypassed. Restore before merging:
-// auditLogRoutes.use(requireAuth);
-// auditLogRoutes.use(requireRole(userRole.Admin));
+auditLogRoutes.use(requireAuth);
+auditLogRoutes.use(requireRole(userRole.Admin));
 
 // Audit log entries (SRS 8, extra feature)
 auditLogRoutes.get("/audit-logs", auditLogController.listAuditLogs);

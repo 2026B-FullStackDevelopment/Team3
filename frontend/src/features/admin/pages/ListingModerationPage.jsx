@@ -12,10 +12,23 @@ const STATUS_STYLES = {
   Cancelled: 'text-danger',
 }
 
-/** Listing Moderation page (SRS 7.3.1/7.3.2). Query/search UI only -- the
- * Cancel button renders but does nothing yet. */
+/** Listing Moderation page (SRS 7.3.1/7.3.2). Cancel calls straight into
+ * useListings's handleCancel -- window.confirm is enough of a safety check
+ * here, same as UserManagementPage's Deactivate/Reactivate. */
 export function ListingModerationPage() {
-  const { listings, loading, error, search, setSearch, currentPage, totalPages, goToPage } = useListings()
+  const {
+    listings,
+    loading,
+    error,
+    search,
+    setSearch,
+    currentPage,
+    totalPages,
+    goToPage,
+    actingListingIds,
+    listingActionErrors,
+    handleCancel,
+  } = useListings()
 
   return (
     <div>
@@ -83,13 +96,19 @@ export function ListingModerationPage() {
                     {listing.status !== 'Cancelled' && (
                       <button
                         type="button"
+                        disabled={actingListingIds.has(listing.id)}
                         onClick={() => {
-                          // Wired up once listing mutation endpoints are in scope.
+                          if (window.confirm(`Cancel listing "${listing.name}"?`)) {
+                            handleCancel(listing.id)
+                          }
                         }}
-                        className="rounded-card bg-danger px-4 py-1.5 text-sm font-medium text-white"
+                        className="rounded-card bg-danger px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Cancel
+                        {actingListingIds.has(listing.id) ? 'Cancelling…' : 'Cancel'}
                       </button>
+                    )}
+                    {listingActionErrors[listing.id] && (
+                      <p className="mt-1 text-xs text-danger">{listingActionErrors[listing.id]}</p>
                     )}
                   </td>
                 </tr>
