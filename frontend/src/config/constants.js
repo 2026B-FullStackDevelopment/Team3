@@ -109,3 +109,9 @@ export const PASSWORD_RULES = Object.freeze({
   requireSpecial: true,
   requireUppercase: true,
 })
+
+// Avatar upload rules — mirror the backend (middleware/upload.js): JPEG/PNG/WebP,
+// 2 MB max. The frontend validates on pick for fast feedback; the backend still
+// enforces (incl. magic-byte sniffing) as the security boundary.
+export const AVATAR_ALLOWED_MIME_TYPES = Object.freeze(['image/jpeg', 'image/png', 'image/webp'])
+export const AVATAR_MAX_BYTES = 2 * 1024 * 1024
