@@ -4,12 +4,12 @@ import { ProtectedRoute } from '@/routes/guards/ProtectedRoute.jsx'
 import { GuestOnlyRoute } from '@/routes/guards/GuestOnlyRoute.jsx'
 import { RequireRole } from '@/routes/guards/RequireRole.jsx'
 import { RoleLayout } from '@/routes/layouts/RoleLayout.jsx'
-import { AdminShell } from '@/routes/layouts/AdminShell.jsx'
-import { LandingPage } from '@/features/identity/Page/LandingPage.jsx'
-import { LoginPage } from '@/features/identity/Page/LoginPage.jsx'
-import { RegisterPage } from '@/features/identity/Page/RegisterPage.jsx'
-import { RecipientProfilePage } from '@/features/identity/Page/RecipientProfilePage.jsx'
-import { DonorProfilePage } from '@/features/identity/Page/DonorProfilePage.jsx'
+import { LandingPage } from '@/features/marketing/Page/LandingPage.jsx'
+import { LoginPage } from '@/features/identity/Page/auth/LoginPage.jsx'
+import { RegisterPage } from '@/features/identity/Page/auth/RegisterPage.jsx'
+import { RecipientProfilePage } from '@/features/identity/Page/profile/RecipientProfilePage.jsx'
+import { DonorProfilePage } from '@/features/identity/Page/profile/DonorProfilePage.jsx'
+import { WalletPage } from '@/features/wallet/Page/WalletPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
@@ -51,7 +51,7 @@ export const router = createBrowserRouter([
               { path: '/reservations', element: <Placeholder name="My Reservations" /> },
               { path: '/history', element: <Placeholder name="History" /> },
               { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
-              { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
+              { path: '/wallet', element: <WalletPage /> },
               { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
             ],
           },
