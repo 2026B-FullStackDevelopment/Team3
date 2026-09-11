@@ -2,10 +2,10 @@ import { Card } from '@/shared/components/Card.jsx'
 import { Button } from '@/shared/components/Button.jsx'
 import { Badge } from '@/shared/components/Badge.jsx'
 import { formatShortDate } from '@/shared/utils/format.js'
-import { ProfileHeader } from '@/features/identity/Component/ProfileHeader.jsx'
-import { ContactInfoList } from '@/features/identity/Component/ContactInfoList.jsx'
-import { SubscriptionCard } from '@/features/identity/Component/SubscriptionCard.jsx'
-import { PremiumUpsellCard } from '@/features/identity/Component/PremiumUpsellCard.jsx'
+import { ProfileHeader } from '@/features/identity/Component/profile/ProfileHeader.jsx'
+import { ContactInfoList } from '@/features/identity/Component/profile/ContactInfoList.jsx'
+import { SubscriptionCard } from '@/features/identity/Component/profile/SubscriptionCard.jsx'
+import { PremiumUpsellCard } from '@/features/identity/Component/profile/PremiumUpsellCard.jsx'
 
 /**
  * Shared profile card (view mode) used by RecipientProfilePage and

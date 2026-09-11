@@ -1,9 +1,9 @@
 import { Navbar } from '@/shared/components/navigation/Navbar.jsx'
 import { Footer } from '@/shared/components/navigation/Footer.jsx'
-import { Hero } from '@/features/identity/Component/Hero.jsx'
-import { AboutSection } from '@/features/identity/Component/AboutSection.jsx'
-import { HowItWorks } from '@/features/identity/Component/HowItWorks.jsx'
-import { AvailableNow } from '@/features/identity/Component/AvailableNow.jsx'
+import { Hero } from '@/features/marketing/Component/Hero.jsx'
+import { AboutSection } from '@/features/marketing/Component/AboutSection.jsx'
+import { HowItWorks } from '@/features/marketing/Component/HowItWorks.jsx'
+import { AvailableNow } from '@/features/marketing/Component/AvailableNow.jsx'
 import { useAuth } from '@/context/auth/useAuth.js'
 import { homePathForRole } from '@/shared/utils/routing.js'
 

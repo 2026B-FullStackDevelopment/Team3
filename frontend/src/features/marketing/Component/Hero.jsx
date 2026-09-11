@@ -1,6 +1,6 @@
 import { cn } from '@/shared/utils/cn.js'
 import { Button } from '@/shared/components/Button.jsx'
-import { useHeroCarousel } from '@/features/identity/Hook/identityHook.js'
+import { useHeroCarousel } from '@/features/marketing/Hook/marketingHook.js'
 import Hero1 from '@/assets/hero-section/Hero1.webp'
 import Hero2 from '@/assets/hero-section/Hero2.jpg'
 import Hero3 from '@/assets/hero-section/Hero3.webp'
