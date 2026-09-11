@@ -6,9 +6,9 @@ import { UserMenu } from '@/shared/components/navigation/UserMenu.jsx'
 
 /**
  * Role-aware top bar (presentation only — session data arrives via props).
- * `public` renders the marketing bar over the Landing hero (light text on the
- * dark hero); authed roles render a solid surface bar with the role's links.
- * When a `user` is present the auth actions become the account UserMenu.
+ * `public` renders the marketing bar over the Landing hero; authed roles render
+ * a dark-green bar with the role's links and the account UserMenu. When a `user`
+ * is present the public bar's auth actions become the UserMenu too.
  * Tailwind classes inlined (single-file rule).
  */
 
@@ -20,18 +20,31 @@ const PUBLIC_LINKS = [
   { label: 'Contact', href: '#contact' },
 ]
 
-// Authed link sets point at the current route tree (placeholders until built).
+// Center nav links per role (placeholder routes until their modules are built).
 const ROLE_LINKS = {
   recipient: [
-    { label: 'Profile', to: '/profile' },
-    { label: 'Wallet', to: '/wallet' },
-    { label: 'Premium', to: '/premium' },
+    { label: 'Browse', to: '/browse' },
+    { label: 'My Reservation', to: '/reservations' },
+    { label: 'History', to: '/history' },
   ],
-  donor: [{ label: 'Profile', to: '/donor/profile' }],
-  admin: [{ label: 'Admin', to: '/admin' }],
+  donor: [],
+  admin: [],
 }
 
-function PublicBar({ user, home, onLogout }) {
+// Account dropdown items per role.
+const MENU_ITEMS = {
+  recipient: [
+    { label: 'Profile', to: '/profile', icon: 'user' },
+    { label: 'Wallet', to: '/wallet', icon: 'wallet' },
+    { label: 'Notification Preferences', to: '/notifications', icon: 'bell' },
+  ],
+  donor: [{ label: 'Profile', to: '/donor/profile', icon: 'user' }],
+  admin: [],
+}
+
+const itemsForUser = (user) => MENU_ITEMS[user?.role?.toLowerCase()] ?? []
+
+function PublicBar({ user, onLogout }) {
   const link =
     'rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white'
   const linkActive = 'bg-[#c56f52] text-white hover:text-white'
@@ -47,7 +60,7 @@ function PublicBar({ user, home, onLogout }) {
       </nav>
       <div className="flex items-center gap-3">
         {user ? (
-          <UserMenu user={user} home={home} onLogout={onLogout} tone="light" />
+          <UserMenu user={user} items={itemsForUser(user)} onLogout={onLogout} tone="light" />
         ) : (
           <>
             <Link
@@ -66,30 +79,30 @@ function PublicBar({ user, home, onLogout }) {
   )
 }
 
-function AuthedBar({ role, user, home, onLogout }) {
+function AuthedBar({ role, user, onLogout }) {
   const links = ROLE_LINKS[role] ?? []
   return (
-    <header className="sticky top-0 z-20 border-b border-khaki-strong/50 bg-surface">
+    <header className="sticky top-0 z-20 bg-ink">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Brand tone="dark" />
+        <Brand tone="light" />
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((item) => (
             <Link
               key={item.label}
               to={item.to}
-              className="rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:bg-black/5 hover:text-ink"
+              className="rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               {item.label}
             </Link>
           ))}
         </nav>
-        <UserMenu user={user} home={home} onLogout={onLogout} tone="dark" />
+        <UserMenu user={user} items={MENU_ITEMS[role] ?? []} onLogout={onLogout} tone="light" />
       </div>
     </header>
   )
 }
 
-export function Navbar({ role = 'public', user, home, onLogout }) {
-  if (role === 'public') return <PublicBar user={user} home={home} onLogout={onLogout} />
-  return <AuthedBar role={role} user={user} home={home} onLogout={onLogout} />
+export function Navbar({ role = 'public', user, onLogout }) {
+  if (role === 'public') return <PublicBar user={user} onLogout={onLogout} />
+  return <AuthedBar role={role} user={user} onLogout={onLogout} />
 }

@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
 import { ProtectedRoute } from '@/routes/guards/ProtectedRoute.jsx'
 import { GuestOnlyRoute } from '@/routes/guards/GuestOnlyRoute.jsx'
@@ -7,6 +7,8 @@ import { RoleLayout } from '@/routes/layouts/RoleLayout.jsx'
 import { LandingPage } from '@/features/identity/Page/LandingPage.jsx'
 import { LoginPage } from '@/features/identity/Page/LoginPage.jsx'
 import { RegisterPage } from '@/features/identity/Page/RegisterPage.jsx'
+import { RecipientProfilePage } from '@/features/identity/Page/RecipientProfilePage.jsx'
+import { DonorProfilePage } from '@/features/identity/Page/DonorProfilePage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
@@ -35,9 +37,7 @@ export const router = createBrowserRouter([
 
   // ---- Authenticated ----
   {
-    // TESTING ONLY — auth guard bypassed. Restore before merging:
-    // element: <ProtectedRoute />,
-    element: <Outlet />,
+    element: <ProtectedRoute />,
     children: [
       {
         element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
@@ -45,7 +45,11 @@ export const router = createBrowserRouter([
           {
             element: <RoleLayout role="recipient" />,
             children: [
-              { path: '/profile', element: <Placeholder name="Recipient Profile" /> },
+              { path: '/profile', element: <RecipientProfilePage /> },
+              { path: '/browse', element: <Placeholder name="Browse" /> },
+              { path: '/reservations', element: <Placeholder name="My Reservations" /> },
+              { path: '/history', element: <Placeholder name="History" /> },
+              { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
               { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
               { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
             ],
@@ -57,14 +61,12 @@ export const router = createBrowserRouter([
         children: [
           {
             element: <RoleLayout role="donor" />,
-            children: [{ path: '/donor/profile', element: <Placeholder name="Donor Profile" /> }],
+            children: [{ path: '/donor/profile', element: <DonorProfilePage /> }],
           },
         ],
       },
       {
-        // TESTING ONLY — role guard bypassed. Restore before merging:
-        // element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
-        element: <Outlet />,
+        element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
             element: <RoleLayout role="admin" />,
