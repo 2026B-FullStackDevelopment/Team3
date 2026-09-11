@@ -120,8 +120,8 @@ export const donationService = {
 
   /** Records an in-person donation and returns its updated normalized listing. */
   async manualDonation(id, body) {
-    const payload = await api(
-      Fetch`${donationRoutes.listing(id)}/manual-donations`,
+    const payload = await apiFetch(
+      `${donationRoutes.listing(id)}/manual-donations`,
       {
         method: "POST",
         body,
