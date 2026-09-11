@@ -290,11 +290,11 @@ async function seedReservations(donationId, recipientProfileId) {
   ]);
 }
 
-async function seedTransaction(recipientProfileId, reservationId) {
+async function seedTransaction(userId, reservationId) {
   console.log("8/13 Seeding Transaction...");
 
   return Transaction.create({
-    recipientProfileId, 
+    userId,
     type: TransactionType.FoodPurchase,
     amount: 0,
     method: PaymentMethod.Cash,
@@ -421,8 +421,8 @@ async function seed() {
     );
     const [reservation] = reservations;
 
-    // 8. Transaction -> RecipientProfile + Reservation
-    await seedTransaction(recipientProfile._id, reservation._id);
+    // 8. Transaction -> User + Reservation
+    await seedTransaction(recipient._id, reservation._id);
 
     // 9. Notification -> User + Donation
     await seedNotification(recipient._id, fruit._id);
