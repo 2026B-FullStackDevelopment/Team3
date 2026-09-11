@@ -27,7 +27,13 @@ const ROLE_LINKS = {
     { label: 'Wallet', to: '/wallet' },
     { label: 'Premium', to: '/premium' },
   ],
-  donor: [{ label: 'Profile', to: '/donor/profile' }],
+  donor: [
+    { label: 'Dashboard', to: '/donor/dashboard' },
+    { label: 'My Listings', to: '/donor/listings' },
+    { label: 'Reservations', to: '/donor/reservations' },
+    { label: 'Manual Entries', to: '/donor/manual-donations' },
+    { label: 'Profile', to: '/donor/profile' },
+  ],
   admin: [{ label: 'Admin', to: '/admin' }],
 }
 

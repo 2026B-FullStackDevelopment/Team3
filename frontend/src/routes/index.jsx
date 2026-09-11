@@ -37,31 +37,9 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ---- Donation development area ----
-  // TODO(auth): Move this branch back beneath ProtectedRoute/RequireRole when
-  // Login is implemented. Backend ownership remains server-scoped in dev.
-  {
-    // The former DonorShell was removed during reconstruction. Reuse the
-    // shared role-aware layout so donation pages retain navigation and spacing.
-    element: <RoleLayout role="donor" />,
-    children: [
-      { path: '/donor', element: <Navigate to="/donor/dashboard" replace /> },
-      { path: '/donor/dashboard', element: <DonationDashboardPage /> },
-      { path: '/donor/listings', element: <DonationDashboardPage listingsOnly /> },
-      { path: '/donor/listings/new', element: <ListingFormPage /> },
-      { path: '/donor/listings/:listingId/edit', element: <ListingFormPage mode="edit" /> },
-      { path: '/donor/listings/:listingId/duplicate', element: <ListingFormPage mode="duplicate" /> },
-      { path: '/donor/listings/:listingId/reservations', element: <ReservationHistoryPage /> },
-      { path: '/donor/reservations', element: <ReservationSelectorPage /> },
-      { path: '/donor/manual-donations', element: <ManualDonationPage /> },
-    ],
-  },
-
   // ---- Authenticated ----
   {
-    // TESTING ONLY — auth guard bypassed. Restore before merging:
-    // element: <ProtectedRoute />,
-    element: <Outlet />,
+    element: <ProtectedRoute />,
     children: [
       {
         element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
@@ -81,7 +59,18 @@ export const router = createBrowserRouter([
         children: [
           {
             element: <RoleLayout role="donor" />,
-            children: [{ path: '/donor/profile', element: <Placeholder name="Donor Profile" /> }],
+            children: [
+              { path: '/donor', element: <Navigate to="/donor/dashboard" replace /> },
+              { path: '/donor/dashboard', element: <DonationDashboardPage /> },
+              { path: '/donor/listings', element: <DonationDashboardPage listingsOnly /> },
+              { path: '/donor/listings/new', element: <ListingFormPage /> },
+              { path: '/donor/listings/:listingId/edit', element: <ListingFormPage mode="edit" /> },
+              { path: '/donor/listings/:listingId/duplicate', element: <ListingFormPage mode="duplicate" /> },
+              { path: '/donor/listings/:listingId/reservations', element: <ReservationHistoryPage /> },
+              { path: '/donor/reservations', element: <ReservationSelectorPage /> },
+              { path: '/donor/manual-donations', element: <ManualDonationPage /> },
+              { path: '/donor/profile', element: <Placeholder name="Donor Profile" /> },
+            ],
           },
         ],
       },
