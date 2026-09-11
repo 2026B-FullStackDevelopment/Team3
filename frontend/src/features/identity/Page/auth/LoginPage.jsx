@@ -1,6 +1,6 @@
-import { AuthSplitLayout } from '@/features/identity/Component/AuthSplitLayout.jsx'
-import { BrandPanel } from '@/features/identity/Component/BrandPanel.jsx'
-import { LoginForm } from '@/features/identity/Component/LoginForm.jsx'
+import { AuthSplitLayout } from '@/features/identity/Component/auth/AuthSplitLayout.jsx'
+import { BrandPanel } from '@/features/identity/Component/auth/BrandPanel.jsx'
+import { LoginForm } from '@/features/identity/Component/auth/LoginForm.jsx'
 
 /**
  * Login page (route: /login). Thin composition: the marketing BrandPanel on the

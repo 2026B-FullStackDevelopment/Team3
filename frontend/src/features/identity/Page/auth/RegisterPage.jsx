@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { AuthSplitLayout } from '@/features/identity/Component/AuthSplitLayout.jsx'
-import { BrandPanel } from '@/features/identity/Component/BrandPanel.jsx'
-import { RegisterRecipientForm } from '@/features/identity/Component/RegisterRecipientForm.jsx'
-import { RegisterDonorForm } from '@/features/identity/Component/RegisterDonorForm.jsx'
-import { PinIcon, HeartIcon, LeafIcon } from '@/features/identity/Component/authIcons.jsx'
+import { AuthSplitLayout } from '@/features/identity/Component/auth/AuthSplitLayout.jsx'
+import { BrandPanel } from '@/features/identity/Component/auth/BrandPanel.jsx'
+import { RegisterRecipientForm } from '@/features/identity/Component/auth/RegisterRecipientForm.jsx'
+import { RegisterDonorForm } from '@/features/identity/Component/auth/RegisterDonorForm.jsx'
+import { PinIcon, HeartIcon, LeafIcon } from '@/features/identity/Component/auth/authIcons.jsx'
 
 /**
  * Register page (route: /register). Owns the role state; a single route renders

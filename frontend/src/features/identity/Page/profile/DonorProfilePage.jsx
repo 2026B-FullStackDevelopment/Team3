@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { PageHeader } from '@/shared/components/PageHeader.jsx'
 import { useProfile } from '@/features/identity/Hook/profileHook.js'
-import { ProfileView } from '@/features/identity/Component/ProfileView.jsx'
-import { EditProfileForm } from '@/features/identity/Component/EditProfileForm.jsx'
-import { ProfileSuccessBanner } from '@/features/identity/Component/ProfileSuccessBanner.jsx'
+import { ProfileView } from '@/features/identity/Component/profile/ProfileView.jsx'
+import { EditProfileForm } from '@/features/identity/Component/profile/EditProfileForm.jsx'
+import { ProfileSuccessBanner } from '@/features/identity/Component/profile/ProfileSuccessBanner.jsx'
 
 /**
  * Donor profile (route: /donor/profile). Same inline view↔edit pattern as the
@@ -19,7 +19,7 @@ export function DonorProfilePage() {
     { label: 'Company Name', value: profile.companyName },
     { label: 'Tax Code', value: profile.taxCode },
     { label: 'Email', value: profile.email },
-    { label: 'Country', value: 'Vietnam' },
+    { label: 'Country', value: profile.country },
     { label: 'City', value: profile.city },
     { label: 'Address', value: profile.address ?? '—' },
     { label: 'Password', value: '••••••••' },
