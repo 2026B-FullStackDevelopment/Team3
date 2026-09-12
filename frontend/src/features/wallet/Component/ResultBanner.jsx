@@ -1,5 +1,4 @@
 import { cn } from '@/shared/utils/cn.js'
-import { formatVND } from '@/shared/utils/format.js'
 
 const CheckIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -16,40 +15,30 @@ const AlertIcon = () => (
   </svg>
 )
 
-/** Deposit success / error banner. Wallet-owned (no cross-module import). */
-export function DepositResultBanner({ result, onDismiss }) {
-  if (!result) return null
-  const success = result.kind === 'success'
+const VARIANTS = {
+  success: { border: 'border-primary', chip: 'bg-primary-soft text-primary', title: 'text-ink', Icon: CheckIcon },
+  info: { border: 'border-primary', chip: 'bg-primary-soft text-primary', title: 'text-ink', Icon: CheckIcon },
+  error: { border: 'border-danger', chip: 'bg-danger-soft text-danger', title: 'text-danger', Icon: AlertIcon },
+}
+
+/** Wallet-module result banner (success/error/info). Used by deposit + premium. */
+export function ResultBanner({ variant = 'success', title, message, children, onDismiss }) {
+  const v = VARIANTS[variant] ?? VARIANTS.success
+  const { Icon } = v
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className={cn(
-        'mb-6 flex items-center gap-4 rounded-card border-l-4 bg-surface p-5 shadow-sm',
-        success ? 'border-primary' : 'border-danger',
-      )}
+      className={cn('mb-6 flex items-center gap-4 rounded-card border-l-4 bg-surface p-5 shadow-sm', v.border)}
     >
-      <span
-        className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-          success ? 'bg-primary-soft text-primary' : 'bg-danger-soft text-danger',
-        )}
-      >
-        {success ? <CheckIcon /> : <AlertIcon />}
+      <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', v.chip)}>
+        <Icon />
       </span>
       <div className="flex-1">
-        {success ? (
-          <>
-            <p className="font-semibold text-ink">Deposit successful</p>
-            <p className="text-sm text-muted">{formatVND(result.amount)} added to your wallet.</p>
-          </>
-        ) : (
-          <>
-            <p className="font-semibold text-danger">Deposit couldn&apos;t be processed</p>
-            <p className="text-sm text-muted">{result.message}</p>
-          </>
-        )}
+        <p className={cn('font-semibold', v.title)}>{title}</p>
+        {message && <p className="text-sm text-muted">{message}</p>}
+        {children && <div className="mt-2">{children}</div>}
       </div>
       <button
         type="button"
