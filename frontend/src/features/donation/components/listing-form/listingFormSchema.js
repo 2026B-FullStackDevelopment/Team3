@@ -18,7 +18,7 @@ export function createListingFormSchema(mode) {
       isVegetarian: z.enum(["unspecified", "yes", "no"]),
       remainingQuantity: z.coerce
         .number()
-        .positive("Quantity must be greater than zero."),
+        .min(0, "Quantity cannot be negative."),
       donationLimit: z.coerce
         .number()
         .min(0, "Donation limit cannot be negative."),
@@ -36,6 +36,19 @@ export function createListingFormSchema(mode) {
             message: imageError,
           });
         }
+      }
+
+      // Per Request listings are created/duplicated with quantity 1 by the
+      // payload builder, but an existing sold-out listing legitimately has 0.
+      if (
+        values.measurementUnit !== MeasurementUnit.PER_REQUEST &&
+        values.remainingQuantity <= 0
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["remainingQuantity"],
+          message: "Quantity must be greater than zero.",
+        });
       }
 
       if (

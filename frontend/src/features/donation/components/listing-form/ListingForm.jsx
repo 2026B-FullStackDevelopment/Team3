@@ -52,7 +52,12 @@ export function ListingForm({
     reset({
       ...listing,
       name: mode === "duplicate" ? "" : listing.name,
-      isVegetarian: listing.isVegetarian ? "yes" : "no",
+      isVegetarian:
+        listing.isVegetarian == null
+          ? "unspecified"
+          : listing.isVegetarian
+            ? "yes"
+            : "no",
       image: null,
     });
   }, [listing, mode, reset]);

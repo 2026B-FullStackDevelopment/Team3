@@ -1,3 +1,5 @@
+import { notifyUnauthorized } from '@/config/api/sessionEvents.js'
+
 export class ApiError extends Error {
   constructor({ status, code, message, details, cause }) {
     super(message, { cause })
@@ -25,7 +27,13 @@ async function readResponseBody(response) {
 }
 
 export async function apiFetch(path, options = {}) {
-  const { body, headers, signal, ...requestOptions } = options
+  const {
+    body,
+    headers,
+    signal,
+    suppressUnauthorized = false,
+    ...requestOptions
+  } = options
   const jsonBody = isJsonBody(body)
 
   let response
@@ -51,6 +59,10 @@ export async function apiFetch(path, options = {}) {
   }
 
   const payload = await readResponseBody(response)
+
+  if (response.status === 401 && !suppressUnauthorized) {
+    notifyUnauthorized()
+  }
 
   if (!response.ok) {
     const structured = payload && typeof payload === 'object' ? payload : {}

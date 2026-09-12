@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { HandCoins } from "lucide-react";
@@ -26,7 +26,8 @@ export function ManualDonationPage() {
   const total = selected ? Number(quantity || 0) * selected.price : 0;
   const change = Math.max(Number(amountReceived || 0) - total, 0);
   const mutation = useMutation({
-    mutationFn: (body) => donationService.manualDonation(selected.id, body),
+    mutationFn: ({ listingId, body }) =>
+      donationService.manualDonation(listingId, body),
     onSuccess: (result) => {
       queryClient.setQueryData(
         donationKeys.detail(result.listing.id),
@@ -35,11 +36,21 @@ export function ManualDonationPage() {
       queryClient.invalidateQueries({ queryKey: donationKeys.all });
     },
   });
+  const resetMutation = mutation.reset;
+
+  useEffect(() => {
+    // A manual entry belongs to one listing; never carry its recipient/payment
+    // details into the next selected listing.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRecipientName("");
+    setQuantity(1);
+    setPaymentMethod("Cash");
+    setAmountReceived("");
+    resetMutation();
+  }, [resetMutation, selectedId]);
 
   function selectListing(id) {
     setSearchParams(id ? { listing: id } : {});
-    setQuantity(1);
-    mutation.reset();
   }
 
   function submit(event) {
@@ -63,7 +74,7 @@ export function ManualDonationPage() {
       body.paymentMethod = paymentMethod;
       body.amountReceived = Number(amountReceived);
     }
-    mutation.mutate(body);
+    mutation.mutate({ listingId: selected.id, body });
   }
 
   const invalidQuantity =

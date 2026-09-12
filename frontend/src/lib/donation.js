@@ -85,7 +85,7 @@ function assertWireValue(value, values, field) {
  * @property {string|null} imageUrl
  * @property {'KG'|'G'|'L'|'ML'|'Unit'|'PerRequest'} measurementUnit
  * @property {'Fruit'|'Vegetable'|'Meat'|'CookedDish'|'BakedGoods'|'Drink'} foodCategory
- * @property {boolean} isVegetarian
+ * @property {boolean|null} isVegetarian
  * @property {number} donationLimit
  * @property {number} price
  * @property {number} remainingQuantity
@@ -117,7 +117,10 @@ export function normalizeDonationListing(transport) {
       Object.values(FoodCategory),
       "food category",
     ),
-    isVegetarian: Boolean(transport.isVegetarian),
+    isVegetarian:
+      transport.isVegetarian == null
+        ? null
+        : Boolean(transport.isVegetarian),
     donationLimit: Number(transport.donationLimit ?? 0),
     price: Number(transport.price ?? 0),
     remainingQuantity: Number(transport.remainingQuantity ?? 0),
