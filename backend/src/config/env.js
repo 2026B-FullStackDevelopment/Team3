@@ -67,4 +67,14 @@ export const env = {
       ? path.resolve(backendRoot, process.env.UPLOAD_DIR)
       : path.join(backendRoot, "upload"),
   },
+
+  mail: {
+    // Resend API key. When unset, the mailer no-ops and logs a skip line, so
+    // local dev runs without a key or any real sending.
+    apiKey: process.env.RESEND_API_KEY,
+    // Sender address. `onboarding@resend.dev` works before a domain is verified
+    // (Resend then delivers only to your own account email). Swap to a
+    // verified-domain sender via MAIL_FROM once DNS is set up.
+    from: process.env.MAIL_FROM ?? "AFF <onboarding@resend.dev>",
+  },
 };

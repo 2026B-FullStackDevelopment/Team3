@@ -10,6 +10,8 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../../../shared/errors/errors.js";
+import { sendMail } from "../../../shared/mail/mailer.js";
+import { premiumConfirmationEmail } from "../../../shared/mail/templates/premiumConfirmation.js";
 
 // Fixed business rule (BUSINESS_RULES §2): premium is a nominal 5 USD/month,
 // pinned to a fixed VND price since the wallet is VND-denominated. These are
@@ -85,6 +87,20 @@ export async function subscribePremium(userId) {
 
       dto = toProfileDTO(user, claimed);
     });
+    // Payment is committed. Notify the recipient (SRS 6.1.2) as a post-commit
+    // side effect: fire-and-forget so email latency never delays the response
+    // and a mail failure can never fail or roll back the charge. sendMail
+    // already swallows its own errors; the .catch is belt-and-suspenders.
+    sendMail({
+      to: user.email,
+      ...premiumConfirmationEmail({
+        premiumExpiryDate: newExpiry,
+        amountVnd: PREMIUM_PRICE_VND,
+      }),
+    }).catch((error) => {
+      console.error("[mail] premium confirmation failed", error);
+    });
+
     return dto;
   } finally {
     await session.endSession();
