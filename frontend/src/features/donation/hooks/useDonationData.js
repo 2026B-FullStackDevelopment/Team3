@@ -19,15 +19,6 @@ export function useDonationDetail(id) {
   });
 }
 
-/** Fetches and caches one page of donation activity for a listing. */
-export function useDonationHistory(id, page) {
-  return useQuery({
-    queryKey: donationKeys.history(id, page),
-    queryFn: ({ signal }) => donationService.history(id, page, signal),
-    enabled: Boolean(id),
-  });
-}
-
 /** Fetches and caches donation report data using optional React Query settings. */
 export function useDonationReport(filters = {}, options = {}) {
   return useQuery({

@@ -133,18 +133,6 @@ export const donationService = {
     };
   },
 
-  /** Fetches one page of donation activity for a listing. */
-  async history(id, page = 1, signal) {
-    const payload = await apiFetch(
-      `${donationRoutes.donations(id)}${queryString({ page, limit: 20 })}`,
-      { signal },
-    );
-    return {
-      entries: payload?.entries ?? [],
-      metadata: payload?.metadata ?? {},
-    };
-  },
-
   /** Fetches dashboard report totals and safely normalizes chart breakdowns. */
   async report(filters = {}, signal) {
     const payload = await apiFetch(

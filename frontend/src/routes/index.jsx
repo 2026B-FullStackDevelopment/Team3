@@ -15,7 +15,6 @@ import { Placeholder } from '@/routes/pages/Placeholder.jsx'
 import { DonationDashboardPage } from '@/features/donation/pages/DonationDashboardPage.jsx'
 import { ListingFormPage } from '@/features/donation/pages/ListingFormPage.jsx'
 import { ManualDonationPage } from '@/features/donation/pages/ManualDonationPage.jsx'
-import { ReservationHistoryPage, ReservationSelectorPage } from '@/features/donation/pages/ReservationPages.jsx'
 import { UserManagementPage } from '@/features/admin/pages/UserManagementPage.jsx'
 import { ListingModerationPage } from '@/features/admin/pages/ListingModerationPage.jsx'
 import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx'
@@ -51,7 +50,6 @@ export const router = createBrowserRouter([
             children: [
               { path: '/profile', element: <RecipientProfilePage /> },
               { path: '/browse', element: <Placeholder name="Browse" /> },
-              { path: '/reservations', element: <Placeholder name="My Reservations" /> },
               { path: '/history', element: <Placeholder name="History" /> },
               { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
               { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
@@ -72,8 +70,6 @@ export const router = createBrowserRouter([
               { path: '/donor/listings/new', element: <ListingFormPage /> },
               { path: '/donor/listings/:listingId/edit', element: <ListingFormPage mode="edit" /> },
               { path: '/donor/listings/:listingId/duplicate', element: <ListingFormPage mode="duplicate" /> },
-              { path: '/donor/listings/:listingId/reservations', element: <ReservationHistoryPage /> },
-              { path: '/donor/reservations', element: <ReservationSelectorPage /> },
               { path: '/donor/manual-donations', element: <ManualDonationPage /> },
               { path: '/donor/profile', element: <DonorProfilePage /> },
             ],

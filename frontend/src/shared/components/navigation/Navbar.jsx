@@ -24,12 +24,10 @@ const PUBLIC_LINKS = [
 const ROLE_LINKS = {
   recipient: [
     { label: 'Browse', to: '/browse' },
-    { label: 'My Reservation', to: '/reservations' },
     { label: 'History', to: '/history' },
   ],
   donor: [{ label: 'Dashboard', to: '/donor/dashboard' },
     { label: 'My Listings', to: '/donor/listings' },
-    { label: 'Reservations', to: '/donor/reservations' },
     { label: 'Manual Entries', to: '/donor/manual-donations' },
     { label: 'Profile', to: '/donor/profile' },],
   admin: [],
@@ -45,7 +43,6 @@ const MENU_ITEMS = {
   donor: [
     { label: 'Dashboard', to: '/donor/dashboard' },
     { label: 'My Listings', to: '/donor/listings' },
-    { label: 'Reservations', to: '/donor/reservations' },
     { label: 'Manual Entries', to: '/donor/manual-donations' },
     { label: 'Profile', to: '/donor/profile' },
   ],

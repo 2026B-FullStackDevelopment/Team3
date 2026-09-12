@@ -120,7 +120,7 @@ function ListingArtwork({ listing }) {
   );
 }
 
-export function ListingCard({ listing, compact = false }) {
+export function ListingCard({ listing }) {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(null);
   const statusMutation = useDonationMutation(({ id, status }) =>
@@ -144,9 +144,7 @@ export function ListingCard({ listing, compact = false }) {
   }
 
   return (
-    <article
-      className={`listing-card ${compact ? "listing-card-compact" : ""}`}
-    >
+    <article className="listing-card">
       <ListingArtwork listing={listing} />
       <div className="listing-body">
         <div className="listing-title-row">
@@ -172,32 +170,30 @@ export function ListingCard({ listing, compact = false }) {
           </div>
           <StatusBadge status={listing.status} />
         </div>
-        {!compact && (
-          <dl className="listing-metrics">
-            <div>
-              <dt>Price</dt>
-              <dd>{listing.price === 0 ? "Free" : formatVnd(listing.price)}</dd>
-            </div>
-            <div>
-              <dt>Donated</dt>
-              <dd>
-                {donated === null
-                  ? "Not tracked"
-                  : formatQuantityWithUnit(donated, listing.measurementUnit)}
-              </dd>
-            </div>
-            <div>
-              <dt>Revenue</dt>
-              <dd>{formatVnd(listing.revenue)}</dd>
-            </div>
-            <div>
-              <dt>{closed ? "Closed on" : "Created on"}</dt>
-              <dd>
-                {formatDate(closed ? listing.closedAt : listing.createdAt)}
-              </dd>
-            </div>
-          </dl>
-        )}
+        <dl className="listing-metrics">
+          <div>
+            <dt>Price</dt>
+            <dd>{listing.price === 0 ? "Free" : formatVnd(listing.price)}</dd>
+          </div>
+          <div>
+            <dt>Donated</dt>
+            <dd>
+              {donated === null
+                ? "Not tracked"
+                : formatQuantityWithUnit(donated, listing.measurementUnit)}
+            </dd>
+          </div>
+          <div>
+            <dt>Revenue</dt>
+            <dd>{formatVnd(listing.revenue)}</dd>
+          </div>
+          <div>
+            <dt>{closed ? "Closed on" : "Created on"}</dt>
+            <dd>
+              {formatDate(closed ? listing.closedAt : listing.createdAt)}
+            </dd>
+          </div>
+        </dl>
         {(statusMutation.error || deleteMutation.error) && (
           <StatusAlert variant="danger" title="Action failed">
             {(statusMutation.error ?? deleteMutation.error).message}
@@ -205,12 +201,6 @@ export function ListingCard({ listing, compact = false }) {
         )}
       </div>
       <div className="listing-actions">
-        <Link
-          className="button-secondary"
-          to={`/donor/listings/${listing.id}/reservations`}
-        >
-          History
-        </Link>
         {!closed && (
           <Link
             className="button-secondary"
