@@ -8,6 +8,7 @@ import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.rout
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { reservationRoutes } from "./modules/reservation/routes/reservationRoutes.js";
+import { recipientListingRoutes } from "./modules/donation/routes/recipientListing.routes.js";
 import { env } from "./config/env.js";
 
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/donations", recipientListingRoutes);
 
 // TODO: mount the remaining routers (donation, reservation, feedback,
 // notification, admin) as they are implemented.
