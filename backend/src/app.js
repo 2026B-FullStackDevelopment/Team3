@@ -8,6 +8,7 @@ import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.rout
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { reservationRoutes } from "./modules/reservation/routes/reservationRoutes.js";
+import { notificationPreferenceRoutes } from "./modules/notification/routes/notificationPreference.routes.js";
 import { env } from "./config/env.js";
 
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/notification-preferences", notificationPreferenceRoutes);
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
