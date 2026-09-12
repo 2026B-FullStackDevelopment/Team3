@@ -89,32 +89,61 @@ const defaults = {
   price: 0,
   image: null,
 };
+//Converts the form's object to send to the Donation BE API 
+function buildListingPayload(values) {
+  const perRequest = values.measurementUnit === MeasurementUnit.PER_REQUEST;
+
+  return {
+    name: values.name.trim(),
+    description: values.description.trim(),
+    foodCategory: values.foodCategory,
+    measurementUnit: values.measurementUnit,
+    isVegetarian:
+      values.isVegetarian === "unspecified"
+        ? null
+        : values.isVegetarian === "yes",
+    remainingQuantity: perRequest ? 1 : values.remainingQuantity,
+    donationLimit: perRequest ? 0 : values.donationLimit,
+    ration: perRequest ? 0 : values.ration,
+    price: values.price > 0 && values.price < 1000 ? 0 : values.price,
+  };
+}
+//Converts the form's edit object to send to the Donation BE API
+function buildEditListingPayload(values, dirtyFields) {
+  const fullPayload = buildListingPayload(values);
+  const payload = {};
+
+  for (const field of Object.keys(fullPayload)) {
+    if (dirtyFields[field]) payload[field] = fullPayload[field];
+  }
+
+  // Changing to Per Request also resets its non-editable inventory values.
+  if (
+    dirtyFields.measurementUnit &&
+    values.measurementUnit === MeasurementUnit.PER_REQUEST
+  ) {
+    payload.remainingQuantity = 1;
+    payload.donationLimit = 0;
+    payload.ration = 0;
+  }
+
+  return payload;
+}
 
 function FieldError({ error }) {
   return error ? <span className="field-error">{error.message}</span> : null;
 }
-
+//Provide one forms for three operations: Create, Update, Delete
 export function ListingFormPage({ mode = "create" }) {
   const { listingId } = useParams();
   const navigate = useNavigate();
   const validationSchema = useMemo(() => createSchema(mode), [mode]);
   const detail = useDonationDetail(mode === "create" ? null : listingId);
-  const mutation = useDonationMutation(async (values) => {
-    const perRequest = values.measurementUnit === MeasurementUnit.PER_REQUEST;
-    const payload = {
-      name: values.name.trim(),
-      description: values.description.trim(),
-      foodCategory: values.foodCategory,
-      measurementUnit: values.measurementUnit,
-      isVegetarian:
-        values.isVegetarian === "unspecified"
-          ? null
-          : values.isVegetarian === "yes",
-      remainingQuantity: perRequest ? 1 : values.remainingQuantity,
-      donationLimit: perRequest ? 0 : values.donationLimit,
-      ration: perRequest ? 0 : values.ration,
-      price: values.price > 0 && values.price < 1000 ? 0 : values.price,
-    };
+  const mutation = useDonationMutation(async ({ values, dirtyFields }) => {
+    const payload =
+      mode === "edit"
+        ? buildEditListingPayload(values, dirtyFields)
+        : buildListingPayload(values);
     if (mode === "edit") return donationService.update(listingId, payload);
     if (mode === "duplicate")
       return donationService.duplicate(listingId, payload);
@@ -127,7 +156,7 @@ export function ListingFormPage({ mode = "create" }) {
     reset,
     setError,
     setValue,
-    formState: { errors },
+    formState: { dirtyFields, errors, isDirty },
   } = useForm({
     resolver: zodResolver(validationSchema),
     defaultValues: defaults,
@@ -147,7 +176,10 @@ export function ListingFormPage({ mode = "create" }) {
   }, [detail.data, mode, reset]);
 
   async function submit(values) {
-    const listing = await mutation.mutateAsync(values);
+    const listing = await mutation.mutateAsync({
+      values,
+      dirtyFields: { ...dirtyFields },
+    });
     navigate(`/donor/listings/${listing.id}/reservations`, { replace: true });
   }
 
@@ -350,7 +382,7 @@ export function ListingFormPage({ mode = "create" }) {
           </Link>
           <button
             className="button-primary"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || (mode === "edit" && !isDirty)}
             type="submit"
           >
             {mutation.isPending
