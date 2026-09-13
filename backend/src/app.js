@@ -8,6 +8,7 @@ import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.rout
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { reservationRoutes } from "./modules/reservation/routes/reservationRoutes.js";
+import { notificationRoutes } from "./modules/notification/routes/notification.routes.js";
 import { env } from "./config/env.js";
 
 const app = express();
@@ -33,9 +34,9 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/notifications", notificationRoutes);
 
-// TODO: mount the remaining routers (donation, reservation, feedback,
-// notification, admin) as they are implemented.
+// TODO: mount remaining routers such as feedback as they are implemented.
 
 app.use((_req, res) => {
   res.status(404).json({ error: "NOT_FOUND", message: "Route not found" });

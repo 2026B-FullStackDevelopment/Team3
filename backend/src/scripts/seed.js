@@ -310,8 +310,6 @@ async function seedNotification(userId, donationId) {
     userId,
     type: NotificationType.ListingMatched,
     relatedDonationId: donationId,
-    isRead: false,
-    createdAt: new Date(),
   });
 }
 

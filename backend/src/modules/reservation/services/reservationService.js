@@ -2,7 +2,7 @@
 
 import * as ReservationRepository from '../repositories/ReservationRepository.js';
 import { Wallet } from '../../wallet/models/Wallet.js';  
-import { Notification } from '../../notification/models/Notification.js';
+import * as notification from '../../notification/interfaces/notification.interface.js';
 import { Donation } from '../../donation/models/donation.model.js';
 
 export async function processReservation(recipientProfileId, donationId, quantity, paymentMethod, manualRecipientName = null) {
@@ -62,13 +62,11 @@ export async function processReservation(recipientProfileId, donationId, quantit
       
       // Trigger Real-Time "Sold Out" Notification if stock is depleted
       if (updatedDonation.remainingQuantity < 1) {
-        await Notification.create({
-          userId: donation.donorProfileId,
-          type: "ListingSoldOut",
-          relatedDonationId: donationId,
-          isRead: false,
-          createdAt: new Date()
+        const createdNotification = await notification.notifyListingSoldOut({
+          donorProfileId: String(donation.donorProfileId),
+          donationId: String(donationId),
         });
+        notification.publishCreatedNotifications(createdNotification);
       }
 
       return newReservation;

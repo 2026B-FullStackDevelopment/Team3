@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import * as donationRepository from "../repositories/donorListing.repository.js";
 import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
 import {
@@ -320,6 +319,12 @@ export async function duplicateDonation(
   const sourceData =
     typeof source.toObject === "function" ? source.toObject() : source;
 
+  if (sourceData.status === DonationStatus.PendingCancellation) {
+    throw new ConflictError(
+      "A listing pending cancellation cannot be duplicated",
+    );
+  }
+
   // A new name is required because listing names are unique in the current model.
   const name = requireNonEmptyString(overrides.name, "name");
   const donationLimit = overrides.donationLimit ?? sourceData.donationLimit;
@@ -402,7 +407,10 @@ export async function listActiveListingsForAdmin(filters = {}) {
   if (isNonEmptyString(filters.donorProfileId)) {
     normalizedFilters.donorProfileId = filters.donorProfileId.trim();
   }
-  if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
+  if (
+    Array.isArray(filters.donorProfileIds) &&
+    filters.donorProfileIds.length > 0
+  ) {
     normalizedFilters.donorProfileIds = filters.donorProfileIds;
   }
   if (Array.isArray(filters.searchDonorProfileIds)) {
@@ -618,22 +626,26 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
  */
 export async function adminCancelDonation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-
-  const donation = await getDonationById(donationId, options);
-
-  if (donation.status !== DonationStatus.Active) {
-    throw new ConflictError(
-      `Donation is ${donation.status}, not Active -- it cannot be cancelled`,
-    );
+  const requestedAt = options.requestedAt ?? new Date();
+  const deadline = options.deadline;
+  if (!(deadline instanceof Date) || Number.isNaN(deadline.getTime())) {
+    throw new ValidationError("A valid cancellation deadline is required");
   }
 
-  const updated = await donationRepository.updateById(
+  const updated = await donationRepository.requestAdminCancellation(
     donationId,
-    { status: DonationStatus.PendingCancellation },
+    {
+      requestedAt,
+      deadline,
+      requestedBy: requireNonEmptyString(options.requestedBy, "requestedBy"),
+      auditLogId: requireNonEmptyString(options.auditLogId, "auditLogId"),
+    },
     options,
   );
   if (!updated) {
-    throw new NotFoundError("Donation not found");
+    throw new ConflictError(
+      "Only an active food listing can enter pending cancellation",
+    );
   }
 
   return toDonationSummaryDTO(updated);
@@ -648,77 +660,38 @@ export async function adminCancelDonation(id, options = {}) {
  */
 export async function reinstateDonation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-
-  const donation = await getDonationById(donationId, options);
-
-  if (donation.status !== DonationStatus.PendingCancellation) {
-    throw new ConflictError(
-      `Donation is ${donation.status}, not PendingCancellation -- it cannot be reinstated`,
-    );
-  }
-
-  const updated = await donationRepository.updateById(
+  const updated = await donationRepository.reinstateAdminCancellation(
     donationId,
-    { status: DonationStatus.Active, closedAt: null },
+    options.now ?? new Date(),
     options,
   );
   if (!updated) {
-    throw new NotFoundError("Donation not found");
+    throw new ConflictError("The cancellation can no longer be undone");
   }
 
   return toDonationSummaryDTO(updated);
 }
 
 /**
- * Makes an admin cancellation real once its undo window has expired
- * unactioned (called from AuditLog's finalizeExpiredEntries sweep). This is
- * where the reservation cascade that adminCancelDonation used to do
- * immediately now actually happens -- closing the listing and cancelling its
- * active reservations are two separate writes, so they're wrapped in one
- * Mongo transaction (same options.session-or-own-session shape as
- * manualDonation.service.js) -- otherwise a failure between the two steps
- * could leave a Cancelled listing with reservations still stuck as Reserved.
+ * Makes an admin cancellation real once its undo window has expired.
+ * The Admin workflow supplies the shared transaction and coordinates the
+ * reservation cascade, audit finalization, and recipient notifications around
+ * this Donation-owned state transition.
  */
 export async function finalizeCancellation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const session = options.session ?? (await mongoose.startSession());
-  const ownsSession = !options.session;
-
-  const execute = async () => {
-    const donation = await getDonationById(donationId, { session });
-
-    if (donation.status !== DonationStatus.PendingCancellation) {
-      throw new ConflictError(
-        `Donation is ${donation.status}, not PendingCancellation -- it cannot be finalized`,
-      );
-    }
-
-    const updated = await donationRepository.updateById(
-      donationId,
-      { status: DonationStatus.Cancelled, closedAt: new Date() },
-      { session },
+  const now = options.now ?? new Date();
+  const updated = await donationRepository.finalizeAdminCancellation(
+    donationId,
+    now,
+    options,
+  );
+  if (!updated) {
+    throw new ConflictError(
+      "The listing is not an expired pending cancellation",
     );
-    if (!updated) {
-      throw new NotFoundError("Donation not found");
-    }
-
-    await reservationRepository.cancelActiveReservationsForDonation(donationId, {
-      session,
-    });
-
-    return toDonationSummaryDTO(updated);
-  };
-
-  try {
-    if (!ownsSession) return await execute();
-    let result;
-    await session.withTransaction(async () => {
-      result = await execute();
-    });
-    return result;
-  } finally {
-    if (ownsSession) await session.endSession();
   }
+  return toDonationSummaryDTO(updated);
 }
 //ADD DELETION
 export async function deleteDonation(id, donorProfileId) {

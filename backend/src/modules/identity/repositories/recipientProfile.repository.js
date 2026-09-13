@@ -25,6 +25,13 @@ export async function findById(recipientProfileId, options = {}) {
   return query;
 }
 
+/** Batch-fetches RecipientProfiles so cross-module callers avoid N+1 reads. */
+export async function findByIds(recipientProfileIds, options = {}) {
+  const query = RecipientProfile.find({ _id: { $in: recipientProfileIds } });
+  if (options.session) query.session(options.session);
+  return query;
+}
+
 /**
  * Batch fetch of RecipientProfiles for a page of userIds (Admin account
  * listing) — one $in query instead of one findByUserId per row.
