@@ -331,37 +331,21 @@ export async function undoAction(auditLogId, actorId) {
   try {
     let reverted;
     await session.withTransaction(async () => {
-      const current = await auditLogRepository.findById(auditLogId, {
-        session,
-      });
-      const now = new Date();
-      if (
-        !current ||
-        current.status !== AuditLogStatus.Pending ||
-        !current.undoDeadline ||
-        current.undoDeadline.getTime() <= now.getTime()
-      ) {
-        throw new ConflictError(
-          `Audit log ${auditLogId} can no longer be undone`,
-        );
-      }
-
-      if (current.action === AdminActionType.DeactivateUser) {
-        reverted = await identity.reactivateAccount(current.targetId, {
+      if (entry.action === AdminActionType.DeactivateUser) {
+        reverted = await identity.reactivateAccount(entry.targetId, {
           session,
         });
-      } else if (current.action === AdminActionType.ReactivateUser) {
-        reverted = await identity.deactivateAccount(current.targetId, {
+      } else if (entry.action === AdminActionType.ReactivateUser) {
+        reverted = await identity.deactivateAccount(entry.targetId, {
           session,
         });
-      } else if (current.action === AdminActionType.CancelDonation) {
-        reverted = await donation.reinstateDonation(current.targetId, {
+      } else if (entry.action === AdminActionType.CancelDonation) {
+        reverted = await donation.reinstateDonation(entry.targetId, {
           session,
-          now,
         });
       } else {
         throw new NotImplementedError(
-          `Undo is not available for ${current.action}`,
+          `Undo is not available for ${entry.action}`,
         );
       }
 
@@ -469,11 +453,12 @@ export async function finalizeExpiredEntries() {
         await session.endSession();
       }
     } else {
-      const updated = await auditLogRepository.updatePendingStatus(
-        entry._id,
-        AuditLogStatus.Finalized,
+      finalized.push(
+        await auditLogRepository.updateStatus(
+          entry._id,
+          AuditLogStatus.Finalized,
+        ),
       );
-      if (updated) finalized.push(updated);
     }
   }
 
@@ -667,10 +652,6 @@ export async function cancelDonation(adminId, donationId) {
   try {
     let after;
     await session.withTransaction(async () => {
-      const requestedAt = new Date();
-      const undoDeadline = new Date(
-        requestedAt.getTime() + env.admin.undoWindowMs,
-      );
       const beforeDonation = await donation.readDonationById(donationId, {
         session,
       });

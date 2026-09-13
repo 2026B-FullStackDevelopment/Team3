@@ -1,4 +1,5 @@
-import * as donationRepository from "../repositories/donorListing.repository.js";
+import mongoose from "mongoose";
+import * as donationRepository from "../repositories/donation.repo.js";
 import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
@@ -12,7 +13,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/errors.js";
-import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
+import { toDonationSummaryDTO } from "../dtos/donation.dto.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
