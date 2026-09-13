@@ -382,13 +382,16 @@ export async function listActiveDonations(filters = {}) {
 /**
  * Admin-wide view of active food listings (SRS 7.3.1), reusing the same
  * query as listActiveDonations (the Recipient browse page) plus exact
- * donationId/donorProfileId(s) filters for the Admin search box (SRS
+ * donationId/donorProfileId filters and the combined search box (SRS
  * 7.3.2) -- filters a Recipient has no reason to use, so they're kept out
  * of normalizeListingQuery and added only here.
  *
  * donorProfileId and donorProfileIds are both passed through independently
  * (not one-or-the-other) -- buildDonationQuery is the one place that
  * decides how they combine (it ANDs them) if a caller supplies both.
+ * searchDonorProfileIds is a separate, distinctly-named field: it's ORed
+ * with the `search` text match (grocery name OR account/donor name), not
+ * ANDed like donorProfileIds above.
  */
 export async function listActiveListingsForAdmin(filters = {}) {
   const normalizedFilters = normalizeListingQuery(filters);
@@ -401,6 +404,9 @@ export async function listActiveListingsForAdmin(filters = {}) {
   }
   if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
     normalizedFilters.donorProfileIds = filters.donorProfileIds;
+  }
+  if (Array.isArray(filters.searchDonorProfileIds)) {
+    normalizedFilters.searchDonorProfileIds = filters.searchDonorProfileIds;
   }
 
   return donationRepository.findActiveDonations(normalizedFilters);
@@ -505,7 +511,8 @@ export async function updateDonation(id, donorProfileId, input = {}) {
 
   if (
     current.status === DonationStatus.Cancelled ||
-    current.status === DonationStatus.SoldOut
+    current.status === DonationStatus.SoldOut ||
+    current.status === DonationStatus.PendingCancellation
   ) {
     throw new ValidationError("A closed donation cannot be edited");
   }
@@ -531,6 +538,7 @@ export async function updateDonationRation(
   if (
     donation.status === DonationStatus.Cancelled ||
     donation.status === DonationStatus.SoldOut ||
+    donation.status === DonationStatus.PendingCancellation ||
     donation.closedAt
   ) {
     throw new ValidationError("A closed donation cannot be edited");
@@ -594,21 +602,84 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
 }
 
 /**
- * Cancels any Active food listing regardless of owner (SRS 7.2.2, Admin-only).
- * Unlike the donor's own changeDonationStatus, this has no ownership filter --
- * getDonationById, not getOwnedDonation. Only Active -> Cancelled is allowed
- * here: 7.2.2's wording is "cancel any active food listing," narrower than the
+ * Puts any Active food listing into cancellation limbo (SRS 7.2.2,
+ * Admin-only), rather than cancelling it outright. Unlike the donor's own
+ * changeDonationStatus, this has no ownership filter -- getDonationById, not
+ * getOwnedDonation. Only Active -> PendingCancellation is allowed here:
+ * 7.2.2's wording is "cancel any active food listing," narrower than the
  * donor-facing 4.2.3 (which also allows cancelling from Paused).
  *
- * Closing the listing and cancelling its active reservations are two separate
- * writes, so they're wrapped in one Mongo transaction (same
- * options.session-or-own-session shape as manualDonation.service.js) --
- * otherwise a failure between the two steps could leave a Cancelled listing
- * with reservations still stuck as Reserved. Accepting an externally-supplied
- * session also lets a caller (the Admin module) fold this into its own larger
- * transaction alongside the audit-log write.
+ * The listing's reservations are deliberately left untouched here -- the
+ * cascade only happens if/when finalizeCancellation runs (see below). This
+ * status flip is the only write, so it doesn't need the transaction the old
+ * cancel-and-cascade version did; options.session is still accepted so the
+ * caller (the Admin module) can fold it into its own transaction alongside
+ * the audit-log write.
  */
 export async function adminCancelDonation(id, options = {}) {
+  const donationId = requireNonEmptyString(id, "donationId");
+
+  const donation = await getDonationById(donationId, options);
+
+  if (donation.status !== DonationStatus.Active) {
+    throw new ConflictError(
+      `Donation is ${donation.status}, not Active -- it cannot be cancelled`,
+    );
+  }
+
+  const updated = await donationRepository.updateById(
+    donationId,
+    { status: DonationStatus.PendingCancellation },
+    options,
+  );
+  if (!updated) {
+    throw new NotFoundError("Donation not found");
+  }
+
+  return toDonationSummaryDTO(updated);
+}
+
+/**
+ * Reverses an admin cancellation that's still within its undo window
+ * (called from AuditLog's undoAction). Since adminCancelDonation never
+ * touched anything but the donation's own status, undo is symmetric: just
+ * flip PendingCancellation back to Active. No reservation restoration --
+ * nothing was ever cascaded.
+ */
+export async function reinstateDonation(id, options = {}) {
+  const donationId = requireNonEmptyString(id, "donationId");
+
+  const donation = await getDonationById(donationId, options);
+
+  if (donation.status !== DonationStatus.PendingCancellation) {
+    throw new ConflictError(
+      `Donation is ${donation.status}, not PendingCancellation -- it cannot be reinstated`,
+    );
+  }
+
+  const updated = await donationRepository.updateById(
+    donationId,
+    { status: DonationStatus.Active, closedAt: null },
+    options,
+  );
+  if (!updated) {
+    throw new NotFoundError("Donation not found");
+  }
+
+  return toDonationSummaryDTO(updated);
+}
+
+/**
+ * Makes an admin cancellation real once its undo window has expired
+ * unactioned (called from AuditLog's finalizeExpiredEntries sweep). This is
+ * where the reservation cascade that adminCancelDonation used to do
+ * immediately now actually happens -- closing the listing and cancelling its
+ * active reservations are two separate writes, so they're wrapped in one
+ * Mongo transaction (same options.session-or-own-session shape as
+ * manualDonation.service.js) -- otherwise a failure between the two steps
+ * could leave a Cancelled listing with reservations still stuck as Reserved.
+ */
+export async function finalizeCancellation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
   const session = options.session ?? (await mongoose.startSession());
   const ownsSession = !options.session;
@@ -616,9 +687,9 @@ export async function adminCancelDonation(id, options = {}) {
   const execute = async () => {
     const donation = await getDonationById(donationId, { session });
 
-    if (donation.status !== DonationStatus.Active) {
+    if (donation.status !== DonationStatus.PendingCancellation) {
       throw new ConflictError(
-        `Donation is ${donation.status}, not Active -- it cannot be cancelled`,
+        `Donation is ${donation.status}, not PendingCancellation -- it cannot be finalized`,
       );
     }
 
@@ -655,6 +726,11 @@ export async function deleteDonation(id, donorProfileId) {
   if (donation.revenue > 0) {
     throw new ValidationError(
       "A donation with recorded revenue cannot be deleted",
+    );
+  }
+  if (donation.status === DonationStatus.PendingCancellation) {
+    throw new ConflictError(
+      "A donation pending cancellation review cannot be deleted",
     );
   }
   const deleted = await donationRepository.deleteOwnedDonation(

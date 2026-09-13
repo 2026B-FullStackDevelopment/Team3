@@ -16,7 +16,7 @@ const TransactionSchema = new Schema(
       type: String,
       default: () => uuidv4(),
     },
-    recipientProfileId: {
+    userId: {
       type: String,
       required: true,
       index: true,

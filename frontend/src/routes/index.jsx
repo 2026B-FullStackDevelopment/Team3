@@ -1,33 +1,41 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { USER_ROLES } from '@/config/constants.js'
-import { ProtectedRoute } from '@/auth/ProtectedRoute.jsx'
-import { RequireRole } from '@/auth/RequireRole.jsx'
-import { PublicLayout } from '@/layouts/PublicLayout.jsx'
-import { RecipientShell } from '@/layouts/RecipientShell.jsx'
-import { DonorShell } from '@/layouts/DonorShell.jsx'
-import { AdminShell } from '@/layouts/AdminShell.jsx'
-import { LandingPage } from '@/routes/pages/LandingPage.jsx'
+import { ProtectedRoute } from '@/routes/guards/ProtectedRoute.jsx'
+import { GuestOnlyRoute } from '@/routes/guards/GuestOnlyRoute.jsx'
+import { RequireRole } from '@/routes/guards/RequireRole.jsx'
+import { RoleLayout } from '@/routes/layouts/RoleLayout.jsx'
+import { LandingPage } from '@/features/marketing/Page/LandingPage.jsx'
+import { LoginPage } from '@/features/identity/Page/auth/LoginPage.jsx'
+import { RegisterPage } from '@/features/identity/Page/auth/RegisterPage.jsx'
+import { RecipientProfilePage } from '@/features/identity/Page/profile/RecipientProfilePage.jsx'
+import { DonorProfilePage } from '@/features/identity/Page/profile/DonorProfilePage.jsx'
+import { WalletPage } from '@/features/wallet/Page/WalletPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
+import { UserManagementPage } from '@/features/admin/pages/UserManagementPage.jsx'
+import { ListingModerationPage } from '@/features/admin/pages/ListingModerationPage.jsx'
+import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx'
 import { ReservationPage } from '@/routes/pages/ReservationPage.jsx'
-import { HistoryPage } from './pages/HistoryPage'
+import { HistoryPage } from '@/routes/pages/HistoryPage.jsx'
+import { AdminShell } from '@/routes/layouts/AdminShell.jsx'
 
 /**
- * Application route tree, gated by role (SRS A.2.c).
- * Placeholder targets are replaced as each module plan runs. Insertion points
- * for the in-scope modules (Identity, Wallet) are marked below.
+ * Application route tree, gated by role (SRS A.2.c). Public pages render
+ * directly (Landing owns its navbar/footer; auth pages use AuthSplitLayout).
+ * Authed pages sit under a role-aware RoleLayout. Placeholder targets are
+ * replaced as each module plan runs.
  */
 export const router = createBrowserRouter([
   // ---- Public ----
+  { path: '/', element: <LandingPage /> },
+
+  // Auth pages — only for anonymous visitors; logged-in users go to their home.
   {
-    element: <PublicLayout />,
+    element: <GuestOnlyRoute />,
     children: [
-      { path: '/', element: <LandingPage /> },
-      // Identity module (public) — built in the Identity plan:
-      { path: '/login', element: <Placeholder name="Login" /> },
-      { path: '/register/donor', element: <Placeholder name="Register — Donor" /> },
-      { path: '/register/recipient', element: <Placeholder name="Register — Recipient" /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
     ],
   },
 
@@ -35,65 +43,47 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
-      // Recipient area
       {
         element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
         children: [
           {
-            element: <RecipientShell />,
+            element: <RoleLayout role="recipient" />,
             children: [
-              // Identity module: Profile — built in the Identity plan
-              { path: '/profile', element: <Placeholder name="Recipient Profile" /> },
-              // Wallet module — built in the Wallet plan
-              { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
+              { path: '/profile', element: <RecipientProfilePage /> },
+              { path: '/browse', element: <ReservationPage /> },
+              { path: '/reservations', element: <Placeholder name="My Reservations" /> },
+              { path: '/history', element: <HistoryPage /> },
+              { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
+              { path: '/wallet', element: <WalletPage /> },
               { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
             ],
           },
         ],
       },
-
-      // Donor area
       {
         element: <RequireRole roles={[USER_ROLES.DONOR]} />,
         children: [
           {
-            element: <DonorShell />,
-            children: [
-              { path: '/donor/profile', element: <Placeholder name="Donor Profile" /> },
-            ],
+            element: <RoleLayout role="donor" />,
+            children: [{ path: '/donor/profile', element: <DonorProfilePage /> }],
           },
         ],
       },
-
-      // Admin area
       {
         element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
             element: <AdminShell />,
             children: [
-              { path: '/admin', element: <Placeholder name="Admin" /> },
+              { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
+              { path: '/admin/listing-moderation', element: <ListingModerationPage /> },
+              { path: '/admin/user-management', element: <UserManagementPage /> },
+              { path: '/admin/audit-log', element: <AuditLogPage /> },
             ],
           },
         ],
       },
 
-      //Recipient
-      {
-        element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
-        children: [
-          {
-            element: <RecipientShell />,
-            children: [
-              { path: '/profile', element: <Placeholder name="Recipient Profile" /> },
-              { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
-              { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
-              { path: '/reservations', element: <ReservationPage /> },
-              { path: '/history', element: <HistoryPage /> },
-            ],
-          },
-        ],
-      },
     ],
   },
 

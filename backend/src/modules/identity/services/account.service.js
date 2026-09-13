@@ -155,3 +155,19 @@ export async function getDonorProfilesByIds(donorProfileIds, options = {}) {
 export async function findDonorProfileIdsByName(namePattern) {
   return donorProfileRepository.findIdsByCompanyNameLike(namePattern);
 }
+
+/**
+ * Batch-fetches Users by id, for the Admin module to join the acting
+ * admin's email onto Audit Log entries (SRS §8). Users have no username
+ * field (see the 2026-09-01 entry on why the Admin account listing's
+ * "Username" column already has to fall back per-role) -- email is the
+ * only real identifying field a User (Admin included) actually has.
+ */
+export async function getUsersByIds(userIds, options = {}) {
+  return userRepository.findByIds(userIds, options);
+}
+
+/** Finds Admin user ids whose email matches a search term (audit log search). */
+export async function findAdminIdsByEmailLike(emailPattern) {
+  return userRepository.findAdminIdsByEmailLike(emailPattern);
+}

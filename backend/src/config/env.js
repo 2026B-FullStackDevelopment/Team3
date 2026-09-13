@@ -30,7 +30,7 @@ function int(name, fallback) {
 }
 
 export const env = {
-  dbUri: required("MONGODB_URI_TEST"),
+  dbUri: required("MONGODB_URI"),
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction: process.env.NODE_ENV === "production",
 
@@ -53,7 +53,10 @@ export const env = {
   admin: {
     // Window an Admin has to undo a Deactivate/Reactivate/Cancel action
     // before the audit log entry finalizes (see AuditLog.undoDeadline).
-    undoWindowMs: int("ADMIN_UNDO_WINDOW_MS", 5 * 60_000),
+    undoWindowMs: int("ADMIN_UNDO_WINDOW_MS", 10 * 60_000),
+    // How often the sweep job checks for Pending entries past their
+    // undoDeadline (see jobs/auditLogSweep.job.js).
+    sweepIntervalMs: int("ADMIN_SWEEP_INTERVAL_MS", 60_000),
   },
 
   upload: {

@@ -1,5 +1,9 @@
-import { User } from "../models/User.js";
+import { User, userRole } from "../models/User.js";
 import { env } from "../../../config/env.js";
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 /**
  * True if a User already exists with this email. Email is uniquely indexed,
@@ -141,6 +145,31 @@ export async function findAll({ roles, page = 1, limit = 20 } = {}) {
   ]);
 
   return { entries, total };
+}
+
+/**
+ * Batch fetch of Users by _id -- used by the Admin module to join the
+ * acting admin's email onto Audit Log entries (SRS §8), which only have
+ * adminId to work with. Same shape as
+ * donorProfileRepository.findByIds (2026-09-07 session).
+ */
+export async function findByIds(ids, options = {}) {
+  const query = User.find({ _id: { $in: ids } });
+  if (options.session) query.session(options.session);
+  return query;
+}
+
+/**
+ * Finds Admin user ids whose email matches a case-insensitive substring
+ * search (Audit Log's "search by Admin" box). Scoped to role: Admin --
+ * AuditLog.adminId is always an Admin's id, so there's no reason to let a
+ * Donor/Recipient email match here.
+ */
+export async function findAdminIdsByEmailLike(emailPattern) {
+  const trimmedPattern = String(emailPattern).trim();
+  const regex = new RegExp(escapeRegExp(trimmedPattern), "i");
+  const users = await User.find({ role: userRole.Admin, email: regex }).select("_id");
+  return users.map((user) => user._id);
 }
 
 /**
