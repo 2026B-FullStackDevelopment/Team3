@@ -48,9 +48,24 @@ export function loadDonorProfile(userId) {
   return donorProfileRepository.findByUserId(userId);
 }
 
+/** Returns a DonorProfile by profile id for profile-to-User resolution. */
+export function loadDonorProfileById(donorProfileId, options) {
+  return donorProfileRepository.findById(donorProfileId, options);
+}
+
+/** Returns a RecipientProfile linked to an authenticated User, or null. */
+export function loadRecipientProfile(userId, options) {
+  return recipientProfileRepository.findByUserId(userId, options);
+}
+
 /** Returns a RecipientProfile by id so other modules can resolve its User. */
 export function loadRecipientProfileById(recipientProfileId, options) {
   return recipientProfileRepository.findById(recipientProfileId, options);
+}
+
+/** Batch-resolves RecipientProfile ids for cross-module notification fan-out. */
+export function loadRecipientProfilesByIds(recipientProfileIds, options) {
+  return recipientProfileRepository.findByIds(recipientProfileIds, options);
 }
 
 /**

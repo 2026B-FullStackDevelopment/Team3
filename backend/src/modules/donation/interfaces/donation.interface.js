@@ -1,11 +1,11 @@
-import * as donationRepository from "../repositories/donorListing.repository.js";
+import * as donationRepository from "../repositories/donation.repo.js";
 import {
   adminCancelDonation,
   finalizeCancellation,
   reinstateDonation,
   listActiveListingsForAdmin,
-} from "../services/donorListing.service.js";
-import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
+} from "../services/donation.service.js";
+import { toDonationSummaryDTO } from "../dtos/donation.dto.js";
 import { buildSoldOutAlert } from "../services/soldOutAlert.service.js";
 import {
   allowsOnlineReservationForMeasurementUnit,

@@ -22,6 +22,13 @@ export async function findByUserId(userId, options = {}) {
   return query;
 }
 
+/** Fetches a DonorProfile by its profile id. */
+export async function findById(donorProfileId, options = {}) {
+  const query = DonorProfile.findById(donorProfileId);
+  if (options.session) query.session(options.session);
+  return query;
+}
+
 /**
  * Batch fetch of DonorProfiles for a page of userIds (Admin account listing) —
  * one $in query instead of one findByUserId per row.

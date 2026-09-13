@@ -2,6 +2,7 @@ import { env } from "../config/env.js";
 import { finalizeExpiredEntries } from "../modules/admin/services/auditLog.service.js";
 
 let sweeping = false;
+let sweepTimer = null;
 
 async function runSweep() {
   // Skip this tick instead of overlapping if the previous sweep is still
@@ -12,7 +13,9 @@ async function runSweep() {
   try {
     const finalized = await finalizeExpiredEntries();
     if (finalized.length > 0) {
-      console.log(`Audit log sweep: finalized ${finalized.length} expired entr${finalized.length === 1 ? "y" : "ies"}`);
+      console.log(
+        `Audit log sweep: finalized ${finalized.length} expired entr${finalized.length === 1 ? "y" : "ies"}`,
+      );
     }
   } catch (error) {
     console.error("Audit log sweep failed:", error);
@@ -30,7 +33,17 @@ async function runSweep() {
  * timer from blocking process exit (e.g. in tests).
  */
 export function startAuditLogSweep() {
-  const timer = setInterval(runSweep, env.admin.sweepIntervalMs);
-  timer.unref();
-  return timer;
+  if (sweepTimer) return sweepTimer;
+
+  void runSweep();
+  sweepTimer = setInterval(runSweep, env.admin.sweepIntervalMs);
+  sweepTimer.unref();
+  return sweepTimer;
+}
+
+/** Stops future audit-log sweeps during graceful server shutdown. */
+export function stopAuditLogSweep() {
+  if (!sweepTimer) return;
+  clearInterval(sweepTimer);
+  sweepTimer = null;
 }

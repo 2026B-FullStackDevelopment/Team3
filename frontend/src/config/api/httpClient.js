@@ -1,4 +1,7 @@
 import { env } from '@/config/env.js'
+import { notifyUnauthorized } from '@/config/api/sessionEvents.js'
+
+export { onUnauthorized } from '@/config/api/sessionEvents.js'
 
 /**
  * REST HTTP Helper (SRS A.2.b).
@@ -12,14 +15,6 @@ import { env } from '@/config/env.js'
  * react. Auth rides an httpOnly cookie, so every request sends credentials and
  * carries no token in JS.
  */
-
-// Subscribers notified on a 401 (used by AuthContext to clear the session).
-const unauthorizedListeners = new Set()
-
-export function onUnauthorized(listener) {
-  unauthorizedListeners.add(listener)
-  return () => unauthorizedListeners.delete(listener)
-}
 
 function buildUrl(path, params) {
   const base = `${env.API_BASE_URL}${path}`
@@ -62,7 +57,7 @@ async function request(method, path, { body, headers, params, signal, suppressUn
   // "current password incorrect" on change-password) pass `suppressUnauthorized`
   // to opt out of that global logout.
   if (response.status === 401 && !suppressUnauthorized) {
-    unauthorizedListeners.forEach((listener) => listener())
+    notifyUnauthorized()
   }
 
   return {

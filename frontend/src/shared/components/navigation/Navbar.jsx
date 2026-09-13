@@ -24,10 +24,12 @@ const PUBLIC_LINKS = [
 const ROLE_LINKS = {
   recipient: [
     { label: 'Browse', to: '/browse' },
-    { label: 'My Reservation', to: '/reservations' },
     { label: 'History', to: '/history' },
   ],
-  donor: [],
+  donor: [{ label: 'Dashboard', to: '/donor/dashboard' },
+    { label: 'My Listings', to: '/donor/listings' },
+    { label: 'Manual Entries', to: '/donor/manual-donations' },
+    { label: 'Profile', to: '/donor/profile' },],
   admin: [],
 }
 
@@ -38,11 +40,19 @@ const MENU_ITEMS = {
     { label: 'Wallet', to: '/wallet', icon: 'wallet' },
     { label: 'Notification Preferences', to: '/notifications', icon: 'bell' },
   ],
-  donor: [{ label: 'Profile', to: '/donor/profile', icon: 'user' }],
-  admin: [],
+  donor: [
+    { label: 'Dashboard', to: '/donor/dashboard' },
+    { label: 'My Listings', to: '/donor/listings' },
+    { label: 'Manual Entries', to: '/donor/manual-donations' },
+    { label: 'Profile', to: '/donor/profile' },
+  ],
+  admin: [{ label: 'Admin', to: '/admin' }],
 }
 
-const itemsForUser = (user) => MENU_ITEMS[user?.role?.toLowerCase()] ?? []
+function itemsForUser(user) {
+  const role = String(user?.role ?? '').toLowerCase()
+  return MENU_ITEMS[role] ?? []
+}
 
 function PublicBar({ user, onLogout }) {
   const link =
