@@ -2,7 +2,7 @@ import { Notification } from "../models/Notification.js";
 
 export async function createNotification(data, options = {}) {
   if (data.dedupeKey) {
-    return Notification.findOneAndUpdate(
+    const result = await Notification.findOneAndUpdate(
       { dedupeKey: data.dedupeKey },
       { $setOnInsert: data },
       {
@@ -10,15 +10,21 @@ export async function createNotification(data, options = {}) {
         upsert: true,
         runValidators: true,
         setDefaultsOnInsert: true,
+        includeResultMetadata: true,
         session: options.session,
       },
     );
+
+    return {
+      notification: result.value,
+      created: Boolean(result.lastErrorObject?.upserted),
+    };
   }
 
   const [notification] = await Notification.create([data], {
     session: options.session,
   });
-  return notification;
+  return { notification, created: true };
 }
 
 export async function findByUserId(userId, filters = {}) {
