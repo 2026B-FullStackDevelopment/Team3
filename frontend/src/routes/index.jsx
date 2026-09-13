@@ -13,6 +13,9 @@ import { WalletPage } from '@/features/wallet/Page/WalletPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
+import { DonationDashboardPage } from '@/features/donation/pages/DonationDashboardPage.jsx'
+import { ListingFormPage } from '@/features/donation/pages/ListingFormPage.jsx'
+import { ManualDonationPage } from '@/features/donation/pages/ManualDonationPage.jsx'
 import { UserManagementPage } from '@/features/admin/pages/UserManagementPage.jsx'
 import { ListingModerationPage } from '@/features/admin/pages/ListingModerationPage.jsx'
 import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx'
@@ -48,7 +51,6 @@ export const router = createBrowserRouter([
             children: [
               { path: '/profile', element: <RecipientProfilePage /> },
               { path: '/browse', element: <Placeholder name="Browse" /> },
-              { path: '/reservations', element: <Placeholder name="My Reservations" /> },
               { path: '/history', element: <Placeholder name="History" /> },
               { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
               { path: '/wallet', element: <WalletPage /> },
@@ -62,7 +64,16 @@ export const router = createBrowserRouter([
         children: [
           {
             element: <RoleLayout role="donor" />,
-            children: [{ path: '/donor/profile', element: <DonorProfilePage /> }],
+            children: [
+              { path: '/donor', element: <Navigate to="/donor/dashboard" replace /> },
+              { path: '/donor/dashboard', element: <DonationDashboardPage /> },
+              { path: '/donor/listings', element: <DonationDashboardPage listingsOnly /> },
+              { path: '/donor/listings/new', element: <ListingFormPage /> },
+              { path: '/donor/listings/:listingId/edit', element: <ListingFormPage mode="edit" /> },
+              { path: '/donor/listings/:listingId/duplicate', element: <ListingFormPage mode="duplicate" /> },
+              { path: '/donor/manual-donations', element: <ManualDonationPage /> },
+              { path: '/donor/profile', element: <DonorProfilePage /> },
+            ],
           },
         ],
       },
@@ -70,7 +81,7 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={[USER_ROLES.ADMIN]} />,
         children: [
           {
-            element: <AdminShell />,
+            element: <RoleLayout role="admin" />,
             children: [
               { path: '/admin', element: <Navigate to="/admin/listing-moderation" replace /> },
               { path: '/admin/listing-moderation', element: <ListingModerationPage /> },
