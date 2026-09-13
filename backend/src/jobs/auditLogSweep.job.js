@@ -32,3 +32,18 @@ async function runSweep() {
  * there's no cron syntax to justify a dependency for. unref() keeps the
  * timer from blocking process exit (e.g. in tests).
  */
+export function startAuditLogSweep() {
+  if (sweepTimer) return sweepTimer;
+
+  void runSweep();
+  sweepTimer = setInterval(runSweep, env.admin.sweepIntervalMs);
+  sweepTimer.unref();
+  return sweepTimer;
+}
+
+/** Stops future audit-log sweeps during graceful server shutdown. */
+export function stopAuditLogSweep() {
+  if (!sweepTimer) return;
+  clearInterval(sweepTimer);
+  sweepTimer = null;
+}
