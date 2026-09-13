@@ -29,8 +29,6 @@ export async function sendMail({ to, subject, html, text }) {
     await resend.emails.send({ from: env.mail.from, to, subject, html, text });
     console.log(`[mail] sent: ${subject} → ${to}`);
   } catch (error) {
-    // Log the failure but never rethrow — the triggering action already
-    // succeeded. Do not log tokens or the API key (CLAUDE.md).
     console.error(`[mail] send failed: ${subject} → ${to}`, error);
   }
 }

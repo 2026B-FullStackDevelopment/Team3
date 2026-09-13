@@ -15,5 +15,6 @@ router.post("/avatar", requireAuth, requireRole(userRole.Recipient, userRole.Don
 router.delete("/avatar", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.removeAvatar);
 
 router.post("/subscribe", requireAuth, requireRole(userRole.Recipient), subscriptionController.subscribe);
+router.post("/subscribe/checkout", requireAuth, requireRole(userRole.Recipient), subscriptionController.subscribeCheckout);
 
 export const profileRoutes = router;

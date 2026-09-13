@@ -12,6 +12,8 @@ import * as recipientProfileRepository from "./repositories/recipientProfile.rep
 import * as accountService from "./services/account.service.js";
 import * as authService from "./services/auth.service.js";
 import * as premiumHelper from "./helpers/premium.helper.js";
+import * as subscriptionService from "./services/subscription.service.js";
+import * as paymentsFacade from "../payments/index.js";
 
 // Role + account-status vocabulary is part of Identity's public surface — other
 // modules and the auth middleware read it from here (the facade), never from the
@@ -109,4 +111,12 @@ export function getUsersByIds(userIds, options) {
 /** Finds Admin user ids whose email matches a search term (Audit Log search). */
 export function findAdminIdsByEmailLike(emailPattern) {
   return accountService.findAdminIdsByEmailLike(emailPattern);
+}
+
+/**
+ * Wires Identity's fulfilment handlers into the payments module. Called once at
+ * app startup so a completed "premium" Checkout Session activates premium.
+ */
+export function registerPaymentHandlers() {
+  paymentsFacade.registerHandler("premium", subscriptionService.activatePremiumFromPayment);
 }

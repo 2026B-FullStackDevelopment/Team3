@@ -9,10 +9,16 @@ import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { reservationRoutes } from "./modules/reservation/routes/reservationRoutes.js";
 import { notificationPreferenceRoutes } from "./modules/notification/routes/notificationPreference.routes.js";
+import { paymentsWebhookRoutes } from "./modules/payments/routes/paymentsWebhook.routes.js";
+import { registerPaymentHandlers } from "./modules/identity/index.js";
 import { env } from "./config/env.js";
 
 const app = express();
 
+registerPaymentHandlers();
+
+// Stripe webhook needs the raw body — mount before the JSON parser.
+app.use("/api/payments/stripe", paymentsWebhookRoutes);
 
 app.use(express.json());
 app.use(cookieParser());
