@@ -1,35 +1,42 @@
-// frontend/src/features/reservation/components/DonationDetail.jsx
 import React, { useState } from 'react';
 
 export default function DonationDetail({ item, onClose, onProceed }) {
-  // Determine maximum allowable quantity
   const limit = item.ration > 0 
     ? Math.min(item.ration, item.remainingQuantity) 
     : item.remainingQuantity;
 
-  const [quantity, setQuantity] = useState(limit > 0 ? 1 : 0);
+  const isIncremental = item.measurementUnit?.toLowerCase() === 'unit';
+
+  const [quantity, setQuantity] = useState(limit > 0 ? (isIncremental ? 1 : '') : 0);
   const [error, setError] = useState('');
 
-  const handleQuantityChange = (newQuantity) => {
-    if (newQuantity === '' || isNaN(newQuantity)) {
+  const handleQuantityChange = (val) => {
+    // 1. Allow clearing the input
+    if (val === '') {
       setQuantity('');
+      setError('');
       return;
     }
 
-    const parsed = Number(newQuantity);
+    // 2. Prevent negative signs globally
+    if (val.includes('-')) return;
+
+    // 3. Prevent decimal points for incremental "Unit" items
+    if (isIncremental && val.includes('.')) return;
+
+    const parsed = Number(val);
+    if (isNaN(parsed) || parsed < 0) return;
+
     setQuantity(parsed);
 
-    // Validate against limits
+    // 4. Validate limit
     if (parsed > limit) {
-      setError(`Error: Quantity exceeds the limit. Please reduce your quantity.`);
-    } else if (parsed <= 0) {
-      setError('Error: Please enter a valid quantity.');
+      setError('Error: Quantity exceeds the limit. Please reduce your quantity.');
     } else {
       setError('');
     }
   };
 
-  // Calculate dynamic total price
   const currentQuantity = Number(quantity) || 0;
   const totalPrice = currentQuantity * item.price;
 
@@ -38,26 +45,20 @@ export default function DonationDetail({ item, onClose, onProceed }) {
     onProceed(currentQuantity, totalPrice);
   };
 
-  // Determine step size for the input based on measurement unit
-  const stepSize = (item.measurementUnit === 'KG' || item.measurementUnit === 'L') ? "0.1" : "1";
-
   return (
     <div className="modal-overlay">
       <div className="modal-content donation-detail">
         <div className="modal-image-container">
           <img src={item.imageUrl} alt={item.name} className="modal-image" />
         </div>
-
         <div className="modal-body">
           <h2>{item.name}</h2>
           <p className="donor-name">{item.donorName || 'Local Farm'}</p>
-
+          
           <div className="stock-warning">
             <span className="units-left">{item.remainingQuantity} {item.measurementUnit} left</span>
-            
-            {/* Added: Unit Price Display */}
             <span className="unit-price">
-              {item.price === 0 ? 'FREE' : `${item.price.toLocaleString()} VND / ${item.measurementUnit}`}
+              {item.price === 0 ? 'FREE' : `${item.price.toLocaleString()} VND`}
             </span>
           </div>
 
@@ -71,27 +72,38 @@ export default function DonationDetail({ item, onClose, onProceed }) {
           </div>
 
           <div className="quantity-selector">
-            <button onClick={() => handleQuantityChange(currentQuantity - Number(stepSize))}>-</button>
-            <input 
-              type="number" 
-              value={quantity} 
-              onChange={(e) => handleQuantityChange(e.target.value)} 
-              step={stepSize}
-              min="0"
-            />
+            {isIncremental ? (
+              <>
+                <button 
+                  onClick={() => handleQuantityChange(String(currentQuantity - 1))}
+                  disabled={currentQuantity <= 0}
+                >-</button>
+                <input 
+                  type="number" 
+                  value={quantity} 
+                  onChange={(e) => handleQuantityChange(e.target.value)}
+                  min="0"
+                  step="1"
+                  className="incremental-input"
+                />
+                <button 
+                  onClick={() => handleQuantityChange(String(currentQuantity + 1))}
+                  disabled={currentQuantity >= limit}
+                >+</button>
+              </>
+            ) : (
+              <input 
+                type="number" 
+                value={quantity} 
+                onChange={(e) => handleQuantityChange(e.target.value)} 
+                min="0"
+                step="0.1"
+                placeholder="0.0"
+                className="custom-input"
+              />
+            )}
             <span className="unit-label">{item.measurementUnit}</span>
-            <button onClick={() => handleQuantityChange(currentQuantity + Number(stepSize))}>+</button>
           </div>
-
-          {/* Added: Dynamic Total Price */}
-          <div className="total-price-display">
-            <strong>Total: </strong>
-            <span className={error ? 'error-text' : ''}>
-              {totalPrice === 0 ? '0 VND' : `${totalPrice.toLocaleString()} VND`}
-            </span>
-          </div>
-
-          {error && <div className="error-banner">{error}</div>}
 
           <div className="modal-actions">
             <button 
@@ -107,6 +119,9 @@ export default function DonationDetail({ item, onClose, onProceed }) {
           </div>
         </div>
       </div>
+      
+      {/* Moved outside modal-content to float below it */}
+      {error && <div className="error-banner">{error}</div>}
     </div>
   );
 }

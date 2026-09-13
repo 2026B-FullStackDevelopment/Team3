@@ -4,7 +4,7 @@ import { useReservation } from './ReservationHook.js';
 import FoodBrowsing from './components/FoodBrowsing.jsx';
 import DonationDetail from './components/DonationDetail.jsx';
 import Payment from './components/Payment.jsx';
-// import './Reservation.css';
+import './Reservation.css';
 
 export default function ReservationView() {
   const {

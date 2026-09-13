@@ -41,3 +41,18 @@ export async function createReservation(reservationData) {
 
     return response.json();
 }
+
+export async function fetchReservationHistory() {
+    // Calls the existing backend route: GET /api/reservations/history
+    const response = await fetch('/api/reservations/history', {
+        method: 'GET',
+        headers: { 'Content-type': 'application/json' }
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch reservation history');
+    }
+    
+    return response.json();
+}

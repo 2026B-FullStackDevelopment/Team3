@@ -10,7 +10,8 @@ import { LandingPage } from '@/routes/pages/LandingPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
-import { RecipientPage } from '@/routes/pages/RecipientPage.jsx'
+import { ReservationPage } from '@/routes/pages/ReservationPage.jsx'
+import { HistoryPage } from './pages/HistoryPage'
 
 /**
  * Application route tree, gated by role (SRS A.2.c).
@@ -87,7 +88,8 @@ export const router = createBrowserRouter([
               { path: '/profile', element: <Placeholder name="Recipient Profile" /> },
               { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
               { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
-              { path: '/reservations', element: <RecipientPage /> },
+              { path: '/reservations', element: <ReservationPage /> },
+              { path: '/history', element: <HistoryPage /> },
             ],
           },
         ],

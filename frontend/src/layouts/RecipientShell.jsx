@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { RecipientNavbar } from './RecipientNavbar'
 
 /**
  * Authenticated shell for Recipient pages.
@@ -8,7 +9,7 @@ import { Outlet } from 'react-router-dom'
 export function RecipientShell() {
   return (
     <div className="min-h-screen bg-cream text-ink">
-      {/* <RecipientNavbar /> */}
+      <RecipientNavbar />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>
