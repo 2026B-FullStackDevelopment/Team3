@@ -29,6 +29,10 @@ const NotificationSchema = new Schema({
     required: true,
     index: true,
   },
+  dedupeKey: {
+    type: String,
+    trim: true,
+  },
   isRead: {
     type: Boolean,
     default: false,
@@ -42,5 +46,6 @@ const NotificationSchema = new Schema({
 
 NotificationSchema.index({ userId: 1, createdAt: -1 });
 NotificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+NotificationSchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
 
 export const Notification = mongoose.model("Notification", NotificationSchema);

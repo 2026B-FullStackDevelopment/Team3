@@ -4,6 +4,10 @@ import mongoose from "mongoose";
 import app from "./app.js";
 import { connectDatabase } from "./config/database.js";
 import { ensureUploadDirs } from "./shared/upload/services/storage.js";
+import {
+  startAuditLogSweep,
+  stopAuditLogSweep,
+} from "./jobs/auditLogSweep.job.js";
 
 import {
   closeNotificationGateway,
@@ -18,6 +22,7 @@ async function startServer() {
     await ensureUploadDirs();
     const httpServer = createServer(app);
     initializeNotificationGateway(httpServer);
+    startAuditLogSweep();
 
     httpServer.listen(PORT, () => {
       console.log(`Backend running at http://localhost:${PORT}`);
@@ -28,11 +33,28 @@ async function startServer() {
       if (shuttingDown) return;
       shuttingDown = true;
       stopAuditLogSweep();
-      await closeNotificationGateway();
-      if (httpServer.listening) {
-        await new Promise((resolve) => httpServer.close(resolve));
+
+      try {
+        await closeNotificationGateway();
+      } catch (error) {
+        console.error("Failed to close notification gateway", error);
       }
-      await mongoose.disconnect();
+
+      try {
+        if (httpServer.listening) {
+          await new Promise((resolve, reject) =>
+            httpServer.close((error) => (error ? reject(error) : resolve())),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to close HTTP server", error);
+      }
+
+      try {
+        await mongoose.disconnect();
+      } catch (error) {
+        console.error("Failed to disconnect MongoDB", error);
+      }
     };
 
     process.once("SIGINT", () => void shutdown());

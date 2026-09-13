@@ -1,6 +1,20 @@
 import { Notification } from "../models/Notification.js";
 
 export async function createNotification(data, options = {}) {
+  if (data.dedupeKey) {
+    return Notification.findOneAndUpdate(
+      { dedupeKey: data.dedupeKey },
+      { $setOnInsert: data },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+        session: options.session,
+      },
+    );
+  }
+
   const [notification] = await Notification.create([data], {
     session: options.session,
   });

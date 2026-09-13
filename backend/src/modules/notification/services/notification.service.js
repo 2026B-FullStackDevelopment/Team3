@@ -33,6 +33,9 @@ async function persistNotification(input, options = {}) {
         input.relatedDonationId,
         "relatedDonationId",
       ),
+      ...(input.dedupeKey && {
+        dedupeKey: requireText(input.dedupeKey, "dedupeKey"),
+      }),
     },
     options,
   );
@@ -117,6 +120,7 @@ export async function notifyListingCancelledByAdmin(event, options = {}) {
           userId,
           type: NotificationType.ListingCancelledByAdmin,
           relatedDonationId: donationId,
+          dedupeKey: `${NotificationType.ListingCancelledByAdmin}:${donationId}:${userId}`,
         },
         options,
       ),

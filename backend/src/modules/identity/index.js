@@ -61,6 +61,11 @@ export function loadRecipientProfileById(recipientProfileId, options) {
   return recipientProfileRepository.findById(recipientProfileId, options);
 }
 
+/** Batch-resolves RecipientProfile ids for cross-module notification fan-out. */
+export function loadRecipientProfilesByIds(recipientProfileIds, options) {
+  return recipientProfileRepository.findByIds(recipientProfileIds, options);
+}
+
 /**
  * Resolves an authenticated recipient's context for other modules: their
  * RecipientProfile id and current (lazily-computed) premium status. Returns
