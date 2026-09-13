@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '@/context/auth/context.js'
-import { identityService } from '@/features/identity/Service/identityService.js'
-import { onUnauthorized } from '@/config/api/sessionEvents.js'
+import { authService } from '@/features/identity/Service/authService.js'
+import { formatAuthUser } from '@/features/identity/Model/authModel.js'
+import { onUnauthorized } from '@/config/api/httpClient.js'
 
 /**
  * Holds the authenticated session. Hydrates from GET /api/auth/me on mount
@@ -12,9 +13,9 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading') // 'loading' | 'authenticated' | 'anonymous'
 
   const loadSession = useCallback(async () => {
-    const { data, ok } = await identityService.me()
+    const { data, ok } = await authService.me()
     if (ok && data) {
-      setUser(data.user ?? data)
+      setUser(formatAuthUser(data))
       setStatus('authenticated')
     } else {
       setUser(null)
@@ -36,13 +37,13 @@ export function AuthProvider({ children }) {
   }), [])
 
   const login = useCallback(async (credentials) => {
-    const result = await identityService.login(credentials)
+    const result = await authService.login(credentials)
     if (result.ok) await loadSession()
     return result
   }, [loadSession])
 
   const logout = useCallback(async () => {
-    await identityService.logout()
+    await authService.logout()
     setUser(null)
     setStatus('anonymous')
   }, [])

@@ -6,37 +6,28 @@ import { PasswordInput } from '@/shared/components/PasswordInput/PasswordInput.j
 import { Select } from '@/shared/components/Select.jsx'
 import { FormField } from '@/shared/components/FormField.jsx'
 import { Alert } from '@/shared/components/Alert.jsx'
-import { useRegisterRecipientForm } from '@/features/identity/Hook/identityHook.js'
-import { PasswordRulesChecklist } from '@/features/identity/Component/PasswordRulesChecklist.jsx'
+import { useRegisterDonorForm } from '@/features/identity/Hook/authHook.js'
+import { PasswordRulesChecklist } from '@/features/identity/Component/common/PasswordRulesChecklist.jsx'
 
 /**
- * Recipient sign-up form. Behavior lives in useRegisterRecipientForm; this is
- * presentation only. `onSwitchToDonor` flips the RegisterPage role. Tailwind inlined.
+ * Donor sign-up form. Behavior lives in useRegisterDonorForm (incl. geolocation).
+ * Presentation only. `onSwitchToRecipient` flips the RegisterPage role. Tailwind inlined.
  */
-export function RegisterRecipientForm({ onSwitchToDonor }) {
-  const f = useRegisterRecipientForm()
+export function RegisterDonorForm({ onSwitchToRecipient }) {
+  const f = useRegisterDonorForm()
 
   return (
     <div className="w-full max-w-md">
       <form onSubmit={f.onSubmit} className="space-y-4" noValidate>
         {f.banner && <Alert variant="error">{f.banner}</Alert>}
+        {f.locationError && <Alert variant="warning">{f.locationError}</Alert>}
 
         <FormField
-          label="Username"
-          htmlFor="userName"
-          error={f.errors.userName?.message}
-          hint="English letters, numbers, underscore (_) or hyphen (-) only — e.g. jane_doe-01."
+          label="Email"
+          htmlFor="email"
+          required
+          error={f.errors.email?.message || f.emailError}
         >
-          <Input
-            id="userName"
-            placeholder="Enter your username"
-            autoComplete="username"
-            error={!!f.errors.userName}
-            {...f.register('userName', f.userNameRules)}
-          />
-        </FormField>
-
-        <FormField label="Email" htmlFor="email" error={f.errors.email?.message || f.emailError}>
           <Input
             id="email"
             type="email"
@@ -47,7 +38,39 @@ export function RegisterRecipientForm({ onSwitchToDonor }) {
           />
         </FormField>
 
-        <FormField label="City" htmlFor="city" error={f.errors.city?.message}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            label="Company Name"
+            htmlFor="companyName"
+            required
+            error={f.errors.companyName?.message}
+          >
+            <Input
+              id="companyName"
+              placeholder="Enter company name"
+              error={!!f.errors.companyName}
+              {...f.register('companyName', f.companyNameRules)}
+            />
+          </FormField>
+
+          <FormField
+            label="Tax Code"
+            htmlFor="taxCode"
+            required
+            error={f.errors.taxCode?.message}
+            hint="Tax Code must be 10–13 digits — e.g. 0312345678."
+          >
+            <Input
+              id="taxCode"
+              inputMode="numeric"
+              placeholder="Enter tax code"
+              error={!!f.errors.taxCode}
+              {...f.register('taxCode', f.taxCodeRules)}
+            />
+          </FormField>
+        </div>
+
+        <FormField label="City" htmlFor="city" required error={f.errors.city?.message}>
           <Select
             id="city"
             placeholder="Select your location"
@@ -58,7 +81,7 @@ export function RegisterRecipientForm({ onSwitchToDonor }) {
           />
         </FormField>
 
-        <FormField label="Password" htmlFor="password" error={f.errors.password?.message}>
+        <FormField label="Password" htmlFor="password" required error={f.errors.password?.message}>
           <PasswordInput
             id="password"
             placeholder="Enter your password"
@@ -73,6 +96,7 @@ export function RegisterRecipientForm({ onSwitchToDonor }) {
         <FormField
           label="Confirm Password"
           htmlFor="confirmPassword"
+          required
           error={f.errors.confirmPassword?.message}
         >
           <PasswordInput
@@ -89,8 +113,8 @@ export function RegisterRecipientForm({ onSwitchToDonor }) {
         </Button>
       </form>
 
-      <Button variant="secondary" fullWidth size="lg" className="mt-3" onClick={onSwitchToDonor}>
-        Sign up as a Donor
+      <Button variant="secondary" fullWidth size="lg" className="mt-3" onClick={onSwitchToRecipient}>
+        Sign up as a Recipient
       </Button>
 
       <p className="mt-6 text-center text-sm text-muted">

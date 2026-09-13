@@ -15,7 +15,6 @@ export const RecipientProfileSchema = new Schema({
   },
   userName: {
     type: String,
-    unique: true,
     index: true,
   },
   city: {

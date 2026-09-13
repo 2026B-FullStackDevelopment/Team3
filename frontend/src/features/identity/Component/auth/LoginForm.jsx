@@ -6,7 +6,7 @@ import { PasswordInput } from '@/shared/components/PasswordInput/PasswordInput.j
 import { FormField } from '@/shared/components/FormField.jsx'
 import { Alert } from '@/shared/components/Alert.jsx'
 import { Modal } from '@/shared/components/Modal/Modal.jsx'
-import { useLoginForm } from '@/features/identity/Hook/identityHook.js'
+import { useLoginForm } from '@/features/identity/Hook/authHook.js'
 
 /**
  * Login card: brand + headings, the email/password form, and the sign-up link,

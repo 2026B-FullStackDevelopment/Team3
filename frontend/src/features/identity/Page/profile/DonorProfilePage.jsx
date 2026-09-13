@@ -1,36 +1,38 @@
 import { useState } from 'react'
 import { PageHeader } from '@/shared/components/PageHeader.jsx'
-import { useProfile } from '@/features/identity/Hook/identityHook.js'
-import { ProfileView } from '@/features/identity/Component/ProfileView.jsx'
-import { EditProfileForm } from '@/features/identity/Component/EditProfileForm.jsx'
-import { ProfileSuccessBanner } from '@/features/identity/Component/ProfileSuccessBanner.jsx'
+import { useProfile } from '@/features/identity/Hook/profileHook.js'
+import { ProfileView } from '@/features/identity/Component/profile/ProfileView.jsx'
+import { EditProfileForm } from '@/features/identity/Component/profile/EditProfileForm.jsx'
+import { ProfileSuccessBanner } from '@/features/identity/Component/profile/ProfileSuccessBanner.jsx'
 
 /**
- * Recipient profile (route: /profile). Toggles inline between view and edit on
- * the same route; saving returns to view with a success banner.
+ * Donor profile (route: /donor/profile). Same inline view↔edit pattern as the
+ * recipient page, with the donor's extra fields and no subscription section.
  */
-export function RecipientProfilePage() {
+export function DonorProfilePage() {
   const { profile, status, setProfile } = useProfile()
   const [editing, setEditing] = useState(false)
   const [justSaved, setJustSaved] = useState(false)
   if (status !== 'ready' || !profile) return null
 
   const contactItems = [
-    { label: 'Username', value: profile.userName },
+    { label: 'Company Name', value: profile.companyName },
+    { label: 'Tax Code', value: profile.taxCode },
     { label: 'Email', value: profile.email },
-    { label: 'Country', value: 'Vietnam' },
+    { label: 'Country', value: profile.country },
     { label: 'City', value: profile.city },
+    { label: 'Address', value: profile.address ?? '—' },
     { label: 'Password', value: '••••••••' },
   ]
 
   return (
     <>
       <PageHeader
-        title={editing ? 'Edit Profile' : 'Recipient Profile'}
+        title={editing ? 'Edit Profile' : 'Donor Profile'}
         subtitle={
           editing
-            ? 'Update your contact details and profile photo.'
-            : 'Edit contact details, upload an avatar, and manage Premium subscription status.'
+            ? 'Update your company details and profile photo.'
+            : 'Edit your company details, address, and profile photo.'
         }
       />
       {justSaved && !editing && <ProfileSuccessBanner onDismiss={() => setJustSaved(false)} />}
@@ -48,7 +50,7 @@ export function RecipientProfilePage() {
         <ProfileView
           profile={profile}
           contactItems={contactItems}
-          showSubscription
+          showSubscription={false}
           onEdit={() => {
             setJustSaved(false)
             setEditing(true)

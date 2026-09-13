@@ -1,6 +1,8 @@
 import * as donationRepository from "../repositories/donorListing.repository.js";
 import {
   adminCancelDonation,
+  finalizeCancellation,
+  reinstateDonation,
   listActiveListingsForAdmin,
 } from "../services/donorListing.service.js";
 import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
@@ -273,6 +275,8 @@ export {
   MeasurementUnit,
   RESERVATION_BLOCK_REASONS as ReservationBlockReasons,
   adminCancelDonation,
+  finalizeCancellation,
+  reinstateDonation,
   listActiveListingsForAdmin,
   toDonationSummaryDTO,
 };
