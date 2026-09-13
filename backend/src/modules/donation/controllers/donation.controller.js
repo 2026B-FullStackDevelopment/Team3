@@ -1,5 +1,5 @@
-import * as donorListingService from "../services/donorListing.service.js";
-import { toDonationListingResponse } from "../services/donorListing.service.js";
+import * as donorListingService from "../services/donation.service.js";
+import { toDonationListingResponse } from "../services/donation.service.js";
 import { removeUploadedImage } from "../../../middleware/imageUpload.js";
 
 function getDonorProfileId(req) {

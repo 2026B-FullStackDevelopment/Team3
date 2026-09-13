@@ -1,12 +1,21 @@
 import mongoose from "mongoose";
 import * as auditLogRepository from "../repositories/auditLog.repository.js";
-import { AdminActionType, AuditTargetType, AuditLogStatus } from "../models/AuditLog.js";
-import { NotFoundError, ValidationError, ConflictError, NotImplementedError } from "../../../shared/errors/errors.js";
+import {
+  AdminActionType,
+  AuditTargetType,
+  AuditLogStatus,
+} from "../models/AuditLog.js";
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+  NotImplementedError,
+} from "../../../shared/errors/errors.js";
 import { env } from "../../../config/env.js";
 // Cross-module calls go through each module's public facade/interface only
 // (SRS A.3.1) -- never that module's Service layer directly.
 import * as identity from "../../identity/index.js";
-import * as donation from "../../donation/interfaces/donorListing.interface.js";
+import * as donation from "../../donation/interfaces/donation.interface.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -45,8 +54,13 @@ function toAuditLogDTO(doc) {
 async function withAdminEmails(entries) {
   const uniqueAdminIds = [...new Set(entries.map((entry) => entry.adminId))];
   const admins = await identity.getUsersByIds(uniqueAdminIds);
-  const emailByAdminId = new Map(admins.map((admin) => [admin._id, admin.email]));
-  return entries.map((entry) => ({ ...entry, adminEmail: emailByAdminId.get(entry.adminId) ?? null }));
+  const emailByAdminId = new Map(
+    admins.map((admin) => [admin._id, admin.email]),
+  );
+  return entries.map((entry) => ({
+    ...entry,
+    adminEmail: emailByAdminId.get(entry.adminId) ?? null,
+  }));
 }
 
 function isNonEmptyString(value) {
@@ -76,16 +90,28 @@ function isNonEmptyString(value) {
  * unlogged change.
  */
 export async function createAuditLog(input, options = {}) {
-  const { adminId, action, targetType, targetId, previousState, undoDeadline, status } = input;
+  const {
+    adminId,
+    action,
+    targetType,
+    targetId,
+    previousState,
+    undoDeadline,
+    status,
+  } = input;
 
   if (!isNonEmptyString(adminId)) {
     throw new ValidationError("adminId is required");
   }
   if (!Object.values(AdminActionType).includes(action)) {
-    throw new ValidationError(`action must be one of: ${Object.values(AdminActionType).join(", ")}`);
+    throw new ValidationError(
+      `action must be one of: ${Object.values(AdminActionType).join(", ")}`,
+    );
   }
   if (!Object.values(AuditTargetType).includes(targetType)) {
-    throw new ValidationError(`targetType must be one of: ${Object.values(AuditTargetType).join(", ")}`);
+    throw new ValidationError(
+      `targetType must be one of: ${Object.values(AuditTargetType).join(", ")}`,
+    );
   }
   if (!isNonEmptyString(targetId)) {
     throw new ValidationError("targetId is required");
@@ -97,7 +123,9 @@ export async function createAuditLog(input, options = {}) {
   let normalizedStatus = AuditLogStatus.Pending;
   if (status !== undefined) {
     if (!Object.values(AuditLogStatus).includes(status)) {
-      throw new ValidationError(`status must be one of: ${Object.values(AuditLogStatus).join(", ")}`);
+      throw new ValidationError(
+        `status must be one of: ${Object.values(AuditLogStatus).join(", ")}`,
+      );
     }
     normalizedStatus = status;
   }
@@ -122,7 +150,9 @@ export async function createAuditLog(input, options = {}) {
       targetId,
       previousState,
       status: normalizedStatus,
-      ...(normalizedUndoDeadline !== undefined && { undoDeadline: normalizedUndoDeadline }),
+      ...(normalizedUndoDeadline !== undefined && {
+        undoDeadline: normalizedUndoDeadline,
+      }),
     },
     options,
   );
@@ -175,13 +205,29 @@ function normalizeLimit(value) {
  * got built) behave like no filter at all and wrongly return every entry.
  */
 export async function listAuditLogs(filters = {}) {
-  const { targetType, status, adminId, search, startDate, endDate, page, limit } = filters;
+  const {
+    targetType,
+    status,
+    adminId,
+    search,
+    startDate,
+    endDate,
+    page,
+    limit,
+  } = filters;
 
-  if (targetType !== undefined && !Object.values(AuditTargetType).includes(targetType)) {
-    throw new ValidationError(`targetType must be one of: ${Object.values(AuditTargetType).join(", ")}`);
+  if (
+    targetType !== undefined &&
+    !Object.values(AuditTargetType).includes(targetType)
+  ) {
+    throw new ValidationError(
+      `targetType must be one of: ${Object.values(AuditTargetType).join(", ")}`,
+    );
   }
   if (status !== undefined && !Object.values(AuditLogStatus).includes(status)) {
-    throw new ValidationError(`status must be one of: ${Object.values(AuditLogStatus).join(", ")}`);
+    throw new ValidationError(
+      `status must be one of: ${Object.values(AuditLogStatus).join(", ")}`,
+    );
   }
 
   let normalizedStart;
@@ -209,7 +255,12 @@ export async function listAuditLogs(filters = {}) {
   if (isNonEmptyString(search)) {
     adminIds = await identity.findAdminIdsByEmailLike(search);
     if (adminIds.length === 0) {
-      return { entries: [], total: 0, page: normalizedPage, limit: normalizedLimit };
+      return {
+        entries: [],
+        total: 0,
+        page: normalizedPage,
+        limit: normalizedLimit,
+      };
     }
   }
 
@@ -261,10 +312,17 @@ export async function undoAction(auditLogId, actorId) {
   const entry = await getAuditLogById(auditLogId);
 
   if (entry.status !== AuditLogStatus.Pending) {
-    throw new ConflictError(`Audit log ${auditLogId} is ${entry.status}, not Pending -- it can no longer be undone`);
+    throw new ConflictError(
+      `Audit log ${auditLogId} is ${entry.status}, not Pending -- it can no longer be undone`,
+    );
   }
-  if (!entry.undoDeadline || new Date(entry.undoDeadline).getTime() <= Date.now()) {
-    throw new ConflictError(`Audit log ${auditLogId}'s undo window has expired`);
+  if (
+    !entry.undoDeadline ||
+    new Date(entry.undoDeadline).getTime() <= Date.now()
+  ) {
+    throw new ConflictError(
+      `Audit log ${auditLogId}'s undo window has expired`,
+    );
   }
 
   const session = await mongoose.startSession();
@@ -272,13 +330,21 @@ export async function undoAction(auditLogId, actorId) {
     let reverted;
     await session.withTransaction(async () => {
       if (entry.action === AdminActionType.DeactivateUser) {
-        reverted = await identity.reactivateAccount(entry.targetId, { session });
+        reverted = await identity.reactivateAccount(entry.targetId, {
+          session,
+        });
       } else if (entry.action === AdminActionType.ReactivateUser) {
-        reverted = await identity.deactivateAccount(entry.targetId, { session });
+        reverted = await identity.deactivateAccount(entry.targetId, {
+          session,
+        });
       } else if (entry.action === AdminActionType.CancelDonation) {
-        reverted = await donation.reinstateDonation(entry.targetId, { session });
+        reverted = await donation.reinstateDonation(entry.targetId, {
+          session,
+        });
       } else {
-        throw new NotImplementedError(`Undo is not available for ${entry.action}`);
+        throw new NotImplementedError(
+          `Undo is not available for ${entry.action}`,
+        );
       }
 
       await auditLogRepository.updateStatus(
@@ -338,7 +404,12 @@ export async function finalizeExpiredEntries() {
         await session.endSession();
       }
     } else {
-      finalized.push(await auditLogRepository.updateStatus(entry._id, AuditLogStatus.Finalized));
+      finalized.push(
+        await auditLogRepository.updateStatus(
+          entry._id,
+          AuditLogStatus.Finalized,
+        ),
+      );
     }
   }
 
@@ -468,24 +539,37 @@ export async function listAllFoodListings(filters = {}) {
     searchDonorProfileIds = await identity.findDonorProfileIdsByName(search);
   }
 
-  const { entries, total, page: resolvedPage, limit: resolvedLimit } =
-    await donation.listActiveListingsForAdmin({
-      page,
-      limit,
-      donationId,
-      donorProfileId,
-      search,
-      searchDonorProfileIds,
-    });
+  const {
+    entries,
+    total,
+    page: resolvedPage,
+    limit: resolvedLimit,
+  } = await donation.listActiveListingsForAdmin({
+    page,
+    limit,
+    donationId,
+    donorProfileId,
+    search,
+    searchDonorProfileIds,
+  });
 
-  const uniqueDonorProfileIds = [...new Set(entries.map((entry) => entry.donorProfileId))];
-  const donorProfiles = await identity.getDonorProfilesByIds(uniqueDonorProfileIds);
-  const donorNameById = new Map(donorProfiles.map((profile) => [profile._id, profile.companyName]));
+  const uniqueDonorProfileIds = [
+    ...new Set(entries.map((entry) => entry.donorProfileId)),
+  ];
+  const donorProfiles = await identity.getDonorProfilesByIds(
+    uniqueDonorProfileIds,
+  );
+  const donorNameById = new Map(
+    donorProfiles.map((profile) => [profile._id, profile.companyName]),
+  );
 
   return {
     listings: entries.map((entry) => {
       const summary = donation.toDonationSummaryDTO(entry);
-      return { ...summary, donorName: donorNameById.get(summary.donorProfileId) ?? null };
+      return {
+        ...summary,
+        donorName: donorNameById.get(summary.donorProfileId) ?? null,
+      };
     }),
     total,
     page: resolvedPage,
@@ -519,7 +603,9 @@ export async function cancelDonation(adminId, donationId) {
   try {
     let after;
     await session.withTransaction(async () => {
-      const beforeDonation = await donation.readDonationById(donationId, { session });
+      const beforeDonation = await donation.readDonationById(donationId, {
+        session,
+      });
       const before = donation.toDonationSummaryDTO(beforeDonation);
       after = await donation.adminCancelDonation(donationId, { session });
 
