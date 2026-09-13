@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/auth/useAuth.js'
+import { AppLoadingState } from '@/app/AppLoadingState.jsx'
 
 /**
  * Gate for authenticated-only routes. While the session is resolving we render
@@ -9,7 +10,7 @@ export function ProtectedRoute() {
   const { status } = useAuth()
   const location = useLocation()
 
-  if (status === 'loading') return null
+  if (status === 'loading') return <AppLoadingState />
   if (status === 'anonymous') {
     return <Navigate to="/login" replace state={{ from: location }} />
   }
