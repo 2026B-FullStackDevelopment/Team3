@@ -15,7 +15,7 @@ import { env } from "../../../config/env.js";
 // Cross-module calls go through each module's public facade/interface only
 // (SRS A.3.1) -- never that module's Service layer directly.
 import * as identity from "../../identity/index.js";
-import * as donation from "../../donation/interfaces/donorListing.interface.js";
+import * as donation from "../../donation/interfaces/donation.interface.js";
 
 import * as notification from "../../notification/interfaces/notification.interface.js";
 
