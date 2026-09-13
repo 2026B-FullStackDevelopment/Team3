@@ -16,6 +16,7 @@ export default defineConfig({
       // Backend Express app. Keeps the httpOnly auth cookie same-origin in dev.
       '/api': { target: 'http://localhost:5000', changeOrigin: true },
       '/upload': { target: 'http://localhost:5000', changeOrigin: true },
+      '/socket.io': { target: 'http://localhost:5000', changeOrigin: true, ws: true },
     },
   },
 })

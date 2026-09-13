@@ -18,6 +18,7 @@ import { Placeholder } from '@/routes/pages/Placeholder.jsx'
 import { UserManagementPage } from '@/features/admin/pages/UserManagementPage.jsx'
 import { ListingModerationPage } from '@/features/admin/pages/ListingModerationPage.jsx'
 import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx'
+import { NotificationPage } from '@/features/notification/Page/NotificationPage.jsx'
 
 /**
  * Application route tree, gated by role (SRS A.2.c). Public pages render
@@ -52,7 +53,7 @@ export const router = createBrowserRouter([
               { path: '/browse', element: <Placeholder name="Browse" /> },
               { path: '/reservations', element: <Placeholder name="My Reservations" /> },
               { path: '/history', element: <Placeholder name="History" /> },
-              { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
+              { path: '/notifications', element: <NotificationPage /> },
               { path: '/wallet', element: <WalletPage /> },
               { path: '/premium', element: <PremiumPage /> },
             ],
@@ -64,7 +65,10 @@ export const router = createBrowserRouter([
         children: [
           {
             element: <RoleLayout role="donor" />,
-            children: [{ path: '/donor/profile', element: <DonorProfilePage /> }],
+            children: [
+              { path: '/donor/profile', element: <DonorProfilePage /> },
+              { path: '/notifications', element: <NotificationPage /> },
+            ],
           },
         ],
       },

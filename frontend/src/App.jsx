@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from '@/context/auth/AuthProvider.jsx'
+import { NotificationProvider } from '@/features/notification/Context/NotificationProvider.jsx'
 import { router } from '@/routes/index.jsx'
 
 /**
@@ -9,7 +10,9 @@ import { router } from '@/routes/index.jsx'
 export default function App() {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <NotificationProvider>
+        <RouterProvider router={router} />
+      </NotificationProvider>
     </AuthProvider>
   )
 }
