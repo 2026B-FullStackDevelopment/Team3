@@ -1,4 +1,3 @@
-
 import { AuditLog, AuditLogStatus } from "../models/AuditLog.js";
 
 /**
@@ -9,7 +8,9 @@ import { AuditLog, AuditLogStatus } from "../models/AuditLog.js";
  * doesn't pass.
  */
 export async function create(entryData, options = {}) {
-  const [created] = await AuditLog.create([entryData], { session: options.session });
+  const [created] = await AuditLog.create([entryData], {
+    session: options.session,
+  });
   return created;
 }
 
@@ -18,8 +19,10 @@ export async function create(entryData, options = {}) {
  * Just findById — no populate/projection, since the AdminService decides
  * what shape it needs, not this layer.
  */
-export async function findById(id) {
-  return AuditLog.findById(id);
+export async function findById(id, options = {}) {
+  const query = AuditLog.findById(id);
+  if (options.session) query.session(options.session);
+  return query;
 }
 
 /**
@@ -29,18 +32,46 @@ export async function findById(id) {
  * (e.g. actions that never allowed undo) can never match — Mongo would
  * otherwise treat a missing/null date as satisfying `$lte`.
  */
-export async function findExpiredPending() {
-  return AuditLog.find({
+export async function findExpiredPending(options = {}) {
+  const query = AuditLog.find({
     status: AuditLogStatus.Pending,
     undoDeadline: { $ne: null, $lte: new Date() },
   });
+  if (options.limit !== undefined) query.limit(options.limit);
+  if (options.session) query.session(options.session);
+  return query;
+}
+
+/**
+ * Atomically transitions an entry only while it is still Pending. The status
+ * predicate is the concurrency guard shared by manual undo and the expiry
+ * sweep: once either path wins, the other receives null and must not apply a
+ * second transition.
+ */
+export async function updatePendingStatus(
+  id,
+  newStatus,
+  fields = {},
+  options = {},
+) {
+  return AuditLog.findOneAndUpdate(
+    { _id: id, status: AuditLogStatus.Pending },
+    { $set: { ...fields, status: newStatus } },
+    { new: true, session: options.session },
+  );
 }
 
 /**
  * Transitions an entry's status (e.g. Pending -> Finalized on sweep,
  * Pending -> Undone on manual undo), stamping undoneAt/undoneBy when given.
  */
-export async function updateStatus(id, newStatus, undoneAt, undoneBy, options = {}) {
+export async function updateStatus(
+  id,
+  newStatus,
+  undoneAt,
+  undoneBy,
+  options = {},
+) {
   const update = { status: newStatus };
   if (undoneAt !== undefined) update.undoneAt = undoneAt;
   if (undoneBy !== undefined) update.undoneBy = undoneBy;
@@ -59,7 +90,16 @@ export async function updateStatus(id, newStatus, undoneAt, undoneBy, options = 
  * can't avoid the second query, only avoid running it sequentially.
  */
 export async function findAll(filters = {}) {
-  const { targetType, status, adminId, adminIds, startDate, endDate, page = 1, limit = 20 } = filters;
+  const {
+    targetType,
+    status,
+    adminId,
+    adminIds,
+    startDate,
+    endDate,
+    page = 1,
+    limit = 20,
+  } = filters;
 
   const query = {};
   if (targetType !== undefined) query.targetType = targetType;
@@ -70,7 +110,10 @@ export async function findAll(filters = {}) {
     // ALSO given, intersect them instead of letting either one silently
     // override the other -- same fix as the donorProfileId/donorProfileIds
     // bug in donorListing.repository.js's buildDonationQuery (2026-09-07).
-    const resolvedIds = adminId !== undefined ? adminIds.filter((id) => id === adminId) : adminIds;
+    const resolvedIds =
+      adminId !== undefined
+        ? adminIds.filter((id) => id === adminId)
+        : adminIds;
     query.adminId = { $in: resolvedIds };
   } else if (adminId !== undefined) {
     query.adminId = adminId;
