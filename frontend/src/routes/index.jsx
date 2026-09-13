@@ -10,6 +10,7 @@ import { LandingPage } from '@/routes/pages/LandingPage.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
 import { Placeholder } from '@/routes/pages/Placeholder.jsx'
+import { RecipientPage } from '@/routes/pages/RecipientPage.jsx'
 
 /**
  * Application route tree, gated by role (SRS A.2.c).
@@ -71,6 +72,22 @@ export const router = createBrowserRouter([
             element: <AdminShell />,
             children: [
               { path: '/admin', element: <Placeholder name="Admin" /> },
+            ],
+          },
+        ],
+      },
+
+      //Recipient
+      {
+        element: <RequireRole roles={[USER_ROLES.RECIPIENT]} />,
+        children: [
+          {
+            element: <RecipientShell />,
+            children: [
+              { path: '/profile', element: <Placeholder name="Recipient Profile" /> },
+              { path: '/wallet', element: <Placeholder name="Wallet & Deposit" /> },
+              { path: '/premium', element: <Placeholder name="Upgrade to Premium" /> },
+              { path: '/reservations', element: <RecipientPage /> },
             ],
           },
         ],
