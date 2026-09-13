@@ -77,4 +77,14 @@ export const env = {
     // verified-domain sender via MAIL_FROM once DNS is set up.
     from: process.env.MAIL_FROM ?? "AFF <onboarding@resend.dev>",
   },
+
+  stripe: {
+    // Test-mode secret key. When unset, Stripe is disabled: the simulated
+    // /deposit stays active and /topup/session returns 409.
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    // Webhook signing secret (whsec_...), required to verify webhook signatures.
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    // Base URL Stripe redirects back to after checkout. Vite dev default.
+    frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:5173",
+  },
 };

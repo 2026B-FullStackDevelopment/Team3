@@ -41,6 +41,15 @@ const TransactionSchema = new Schema(
       ref: "Reservation",
       default: null,
     },
+    // Stripe Checkout Session id for card top-ups. Sparse-unique so a
+    // re-delivered webhook can't double-credit (duplicate insert aborts the
+    // crediting transaction). Absent on simulated deposits and all other rows.
+    stripeSessionId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: undefined,
+    },
   },
   { timestamps: true },
 );
