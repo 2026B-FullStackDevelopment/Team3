@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import { authRoutes } from "./modules/identity/routes/auth.routes.js";
 import { profileRoutes } from "./modules/identity/routes/profile.routes.js";
 import { walletRoutes } from "./modules/wallet/routes/wallet.routes.js";
-import { stripeWebhookRoutes } from "./modules/wallet/routes/stripeWebhook.routes.js";
 import { donorListingRoutes } from "./modules/donation/routes/donorListing.routes.js";
 import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.routes.js";
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
@@ -14,8 +13,6 @@ import { env } from "./config/env.js";
 
 const app = express();
 
-// Stripe webhook needs the raw body — mount before the JSON parser.
-app.use("/api/wallet/stripe", stripeWebhookRoutes);
 
 app.use(express.json());
 app.use(cookieParser());

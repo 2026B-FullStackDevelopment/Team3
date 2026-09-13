@@ -79,8 +79,9 @@ export const env = {
   },
 
   stripe: {
-    // Test-mode secret key. When unset, Stripe is disabled: the simulated
-    // /deposit stays active and /topup/session returns 409.
+    // Test-mode secret key. Together with webhookSecret it enables card
+    // payments (e.g. premium via Stripe); when either is unset, card payment
+    // endpoints return 409.
     secretKey: process.env.STRIPE_SECRET_KEY,
     // Webhook signing secret (whsec_...), required to verify webhook signatures.
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
