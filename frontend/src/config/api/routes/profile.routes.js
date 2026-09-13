@@ -5,4 +5,5 @@ export const profileRoutes = {
   changePassword: '/api/profile/change-password',
   avatar: '/api/profile/avatar',
   subscribe: '/api/profile/subscribe',
+  subscribeCheckout: '/api/profile/subscribe/checkout',
 }
