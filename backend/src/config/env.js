@@ -57,6 +57,12 @@ export const env = {
     // How often the sweep job checks for Pending entries past their
     // undoDeadline (see jobs/auditLogSweep.job.js).
     sweepIntervalMs: int("ADMIN_SWEEP_INTERVAL_MS", 60_000),
+    sweepBatchSize: int("ADMIN_SWEEP_BATCH_SIZE", 50),
+  },
+
+  realtime: {
+    corsOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:5173",
+    recoveryWindowMs: int("SOCKET_RECOVERY_WINDOW_MS", 2 * 60_000),
   },
 
   upload: {

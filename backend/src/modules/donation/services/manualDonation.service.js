@@ -16,6 +16,7 @@ import {
 import { buildSoldOutAlert } from "./soldOutAlert.service.js";
 import { Donation, DonationStatus } from "../models/donation.model.js";
 import { validateManualDonationInput } from "../validators/manualDonation.js";
+import * as notification from "../../notification/interfaces/notification.interface.js";
 
 export async function createManualDonation(
   donorProfileId,
@@ -29,6 +30,7 @@ export async function createManualDonation(
   const data = validateManualDonationInput(input);
   const session = options.session ?? (await mongoose.startSession());
   const ownsSession = !options.session;
+  let createdNotifications = [];
 
   const execute = async () => {
     const listing = await Donation.findById(donationId).session(session);
@@ -139,6 +141,12 @@ export async function createManualDonation(
 
     const soldOutAlert = soldOut ? buildSoldOutAlert(updatedListing) : null;
 
+    if (soldOutAlert) {
+      createdNotifications = [
+        await notification.notifyListingSoldOut(soldOutAlert, { session }),
+      ];
+    }
+
     return {
       donation: reservation,
       payment: {
@@ -158,6 +166,7 @@ export async function createManualDonation(
     await session.withTransaction(async () => {
       result = await execute();
     });
+    notification.publishCreatedNotifications(createdNotifications);
     return result;
   } finally {
     if (ownsSession) await session.endSession();

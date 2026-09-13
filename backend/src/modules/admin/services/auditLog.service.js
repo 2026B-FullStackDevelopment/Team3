@@ -17,6 +17,8 @@ import { env } from "../../../config/env.js";
 import * as identity from "../../identity/index.js";
 import * as donation from "../../donation/interfaces/donation.interface.js";
 
+import * as notification from "../../notification/interfaces/notification.interface.js";
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -165,12 +167,12 @@ export async function createAuditLog(input, options = {}) {
  * returning null so callers get an explicit, typed signal rather than each
  * having to re-check for a missing entry themselves.
  */
-export async function getAuditLogById(id) {
+export async function getAuditLogById(id, options = {}) {
   if (!isNonEmptyString(id)) {
     throw new ValidationError("id is required");
   }
 
-  const entry = await auditLogRepository.findById(id);
+  const entry = await auditLogRepository.findById(id, options);
   if (!entry) {
     throw new NotFoundError(`Audit log ${id} not found`);
   }
@@ -347,13 +349,17 @@ export async function undoAction(auditLogId, actorId) {
         );
       }
 
-      await auditLogRepository.updateStatus(
-        entry.id,
+      const updatedAudit = await auditLogRepository.updatePendingStatus(
+        current._id,
         AuditLogStatus.Undone,
-        new Date(),
-        actorId,
+        { undoneAt: now, undoneBy: actorId },
         { session },
       );
+      if (!updatedAudit) {
+        throw new ConflictError(
+          `Audit log ${auditLogId} can no longer be undone`,
+        );
+      }
     });
     return reverted;
   } finally {
@@ -363,9 +369,8 @@ export async function undoAction(auditLogId, actorId) {
 
 /**
  * Sweeps Pending entries whose undo window has passed and finalizes them.
- * Meant to be called by a scheduled job (see the Scheduled Job Worker in
- * the architecture diagram), not a user-facing route -- wiring an actual
- * cron trigger for it is a separate task.
+ * Called by jobs/auditLogSweep.job.js on startup and once per configured
+ * interval; this is an internal worker, not a user-facing route.
  *
  * Most actions (DeactivateUser, ReactivateUser) already took full effect at
  * action time, so finalizing one is just closing the audit record -- a
@@ -381,25 +386,69 @@ export async function undoAction(auditLogId, actorId) {
  * a latency-sensitive path, so sequential is fine.
  */
 export async function finalizeExpiredEntries() {
-  const expired = await auditLogRepository.findExpiredPending();
+  const expired = await auditLogRepository.findExpiredPending({
+    limit: env.admin.sweepBatchSize,
+  });
 
   const finalized = [];
   for (const entry of expired) {
     if (entry.action === AdminActionType.CancelDonation) {
       const session = await mongoose.startSession();
+      let createdNotifications = [];
       try {
         let updated;
         await session.withTransaction(async () => {
-          await donation.finalizeCancellation(entry.targetId, { session });
-          updated = await auditLogRepository.updateStatus(
+          const now = new Date();
+          const current = await auditLogRepository.findById(entry._id, {
+            session,
+          });
+          if (
+            !current ||
+            current.status !== AuditLogStatus.Pending ||
+            !current.undoDeadline ||
+            current.undoDeadline.getTime() > now.getTime()
+          ) {
+            return;
+          }
+
+          const recipientProfileIds =
+            await reservation.listAffectedRecipientProfileIds(
+              current.targetId,
+              { session },
+            );
+          const cancelledListing = await donation.finalizeCancellation(
+            current.targetId,
+            { session, now },
+          );
+          await reservation.cancelActiveReservationsByAdmin(current.targetId, {
+            session,
+          });
+          createdNotifications =
+            await notification.notifyListingCancelledByAdmin(
+              {
+                donationId: String(cancelledListing.id),
+                recipientProfileIds,
+              },
+              { session },
+            );
+          updated = await auditLogRepository.updatePendingStatus(
             entry._id,
             AuditLogStatus.Finalized,
-            undefined,
-            undefined,
+            {},
             { session },
           );
+          if (!updated) {
+            throw new ConflictError(
+              `Audit log ${entry._id} was already finalized or undone`,
+            );
+          }
         });
-        finalized.push(updated);
+        if (updated) {
+          finalized.push(updated);
+          notification.publishCreatedNotifications(createdNotifications);
+        }
+      } catch (error) {
+        if (!(error instanceof ConflictError)) throw error;
       } finally {
         await session.endSession();
       }
@@ -607,19 +656,24 @@ export async function cancelDonation(adminId, donationId) {
         session,
       });
       const before = donation.toDonationSummaryDTO(beforeDonation);
-      after = await donation.adminCancelDonation(donationId, { session });
-
-      await createAuditLog(
+      const auditLog = await createAuditLog(
         {
           adminId,
           action: AdminActionType.CancelDonation,
           targetType: AuditTargetType.Donation,
           targetId: donationId,
           previousState: before,
-          undoDeadline: computeUndoDeadline(),
+          undoDeadline,
         },
         { session },
       );
+      after = await donation.adminCancelDonation(donationId, {
+        session,
+        requestedAt,
+        deadline: undoDeadline,
+        requestedBy: adminId,
+        auditLogId: String(auditLog.id),
+      });
     });
     return after;
   } finally {

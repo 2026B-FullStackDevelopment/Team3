@@ -1,8 +1,8 @@
 // backend/src/modules/reservation/services/reservationService.js
 
-import * as ReservationRepository from "../repositories/reservationRepository.js";
+import * as ReservationRepository from "../repositories/ReservationRepository.js";
 import { Wallet } from "../../wallet/models/Wallet.js";
-import { Notification } from "../../notification/models/Notification.js";
+import * as notification from "../../notification/interfaces/notification.interface.js";
 import { Donation } from "../../donation/models/donation.model.js";
 
 export async function processReservation(
@@ -85,6 +85,11 @@ export async function processReservation(
           isRead: false,
           createdAt: new Date(),
         });
+        const createdNotification = await notification.notifyListingSoldOut({
+          donorProfileId: String(donation.donorProfileId),
+          donationId: String(donationId),
+        });
+        notification.publishCreatedNotifications(createdNotification);
       }
 
       return newReservation;

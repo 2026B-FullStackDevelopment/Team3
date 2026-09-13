@@ -102,7 +102,10 @@ function buildDonationQuery(filters = {}) {
     // name-only matching, unlike donorProfileIds above, which is only set
     // when there ARE ids to filter by.
     if (Array.isArray(searchDonorProfileIds)) {
-      query.$or = [{ name: searchRegex }, { donorProfileId: { $in: searchDonorProfileIds } }];
+      query.$or = [
+        { name: searchRegex },
+        { donorProfileId: { $in: searchDonorProfileIds } },
+      ];
     } else {
       query.name = searchRegex;
     }
@@ -194,7 +197,11 @@ export async function updateById(id, data, options = {}) {
 
 export async function updateOwnedDonation(id, donorProfileId, data) {
   return Donation.findOneAndUpdate(
-    { _id: id, donorProfileId },
+    {
+      _id: id,
+      donorProfileId,
+      status: { $ne: DonationStatus.PendingCancellation },
+    },
     { $set: data },
     { new: true, runValidators: true },
   );
@@ -219,7 +226,11 @@ export async function updateDonationStatus(id, donorProfileId, status) {
 
 export async function updateDonationRation(id, donorProfileId, ration) {
   return Donation.findOneAndUpdate(
-    { _id: id, donorProfileId },
+    {
+      _id: id,
+      donorProfileId,
+      status: { $ne: DonationStatus.PendingCancellation },
+    },
     { $set: { ration } },
     { new: true, runValidators: true },
   );
@@ -256,16 +267,16 @@ export async function decrementRemainingQuantity(id, quantity, options = {}) {
 }
 
 export async function incrementRemainingQuantity(id, quantity, options = {}) {
-  return Donation.findByIdAndUpdate(
-    id,
+  return Donation.findOneAndUpdate(
+    { _id: id, status: { $ne: DonationStatus.PendingCancellation } },
     { $inc: { remainingQuantity: quantity } },
     { new: true, runValidators: true, session: options.session },
   );
 }
 
 export async function addRevenue(id, amount, options = {}) {
-  return Donation.findByIdAndUpdate(
-    id,
+  return Donation.findOneAndUpdate(
+    { _id: id, status: { $ne: DonationStatus.PendingCancellation } },
     { $inc: { revenue: amount } },
     { new: true, runValidators: true, session: options.session },
   );
@@ -317,7 +328,7 @@ export async function closeIfSoldOut(id, options = {}) {
     {
       _id: id,
       remainingQuantity: { $lte: 0 },
-      status: { $ne: DonationStatus.SoldOut },
+      status: DonationStatus.Active,
     },
     {
       $set: {
@@ -334,5 +345,57 @@ export async function deleteById(id) {
 }
 
 export async function deleteOwnedDonation(id, donorProfileId) {
-  return Donation.findOneAndDelete({ _id: id, donorProfileId });
+  return Donation.findOneAndDelete({
+    _id: id,
+    donorProfileId,
+    status: { $ne: DonationStatus.PendingCancellation },
+  });
+}
+
+export function requestAdminCancellation(id, cancellation, options = {}) {
+  return Donation.findOneAndUpdate(
+    { _id: id, status: DonationStatus.Active, closedAt: null },
+    {
+      $set: {
+        status: DonationStatus.PendingCancellation,
+        cancellationRequestedAt: cancellation.requestedAt,
+        cancellationDeadline: cancellation.deadline,
+        cancellationRequestedBy: cancellation.requestedBy,
+        cancellationAuditLogId: cancellation.auditLogId,
+      },
+    },
+    { new: true, runValidators: true, session: options.session },
+  );
+}
+
+export function reinstateAdminCancellation(id, now, options = {}) {
+  return Donation.findOneAndUpdate(
+    {
+      _id: id,
+      status: DonationStatus.PendingCancellation,
+      cancellationDeadline: { $gt: now },
+    },
+    {
+      $set: { status: DonationStatus.Active, closedAt: null },
+      $unset: {
+        cancellationRequestedAt: "",
+        cancellationDeadline: "",
+        cancellationRequestedBy: "",
+        cancellationAuditLogId: "",
+      },
+    },
+    { new: true, runValidators: true, session: options.session },
+  );
+}
+
+export function finalizeAdminCancellation(id, now, options = {}) {
+  return Donation.findOneAndUpdate(
+    {
+      _id: id,
+      status: DonationStatus.PendingCancellation,
+      cancellationDeadline: { $lte: now },
+    },
+    { $set: { status: DonationStatus.Cancelled, closedAt: now } },
+    { new: true, runValidators: true, session: options.session },
+  );
 }

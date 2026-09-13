@@ -32,6 +32,8 @@ export const MIN_PAID_PRICE_VND = 1000
 
 // Premium subscription price.
 export const PREMIUM_PRICE_USD = 5
+// Premium subscription price in VND (mirrors the backend's fixed 125,000 VND = 5 USD).
+export const PREMIUM_PRICE_VND = 125000
 
 // Vietnam's 63 provinces/municipalities — MUST match the backend's canonical
 // list (backend/src/shared/constants/vietnamCities.js), which register validates

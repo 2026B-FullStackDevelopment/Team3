@@ -11,6 +11,7 @@ import * as donorProfileRepository from "./repositories/donorProfile.repository.
 import * as recipientProfileRepository from "./repositories/recipientProfile.repository.js";
 import * as accountService from "./services/account.service.js";
 import * as authService from "./services/auth.service.js";
+import * as premiumHelper from "./helpers/premium.helper.js";
 
 // Role + account-status vocabulary is part of Identity's public surface — other
 // modules and the auth middleware read it from here (the facade), never from the
@@ -45,9 +46,39 @@ export function loadDonorProfile(userId) {
   return donorProfileRepository.findByUserId(userId);
 }
 
+/** Returns a DonorProfile by profile id for profile-to-User resolution. */
+export function loadDonorProfileById(donorProfileId, options) {
+  return donorProfileRepository.findById(donorProfileId, options);
+}
+
+/** Returns a RecipientProfile linked to an authenticated User, or null. */
+export function loadRecipientProfile(userId, options) {
+  return recipientProfileRepository.findByUserId(userId, options);
+}
+
 /** Returns a RecipientProfile by id so other modules can resolve its User. */
 export function loadRecipientProfileById(recipientProfileId, options) {
   return recipientProfileRepository.findById(recipientProfileId, options);
+}
+
+/** Batch-resolves RecipientProfile ids for cross-module notification fan-out. */
+export function loadRecipientProfilesByIds(recipientProfileIds, options) {
+  return recipientProfileRepository.findByIds(recipientProfileIds, options);
+}
+
+/**
+ * Resolves an authenticated recipient's context for other modules: their
+ * RecipientProfile id and current (lazily-computed) premium status. Returns
+ * null when the user has no recipient profile. Keeps recipient-id resolution
+ * and premium logic inside Identity (facade — ARCHITECTURE §4).
+ */
+export async function getRecipientContext(userId) {
+  const profile = await recipientProfileRepository.findByUserId(userId);
+  if (!profile) return null;
+  return {
+    recipientProfileId: profile._id,
+    isPremium: premiumHelper.isPremiumActive(profile),
+  };
 }
 
 // --- Admin account management (SRS 7.1.1, 7.2.1) ---------------------------

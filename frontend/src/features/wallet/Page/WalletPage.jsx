@@ -4,7 +4,8 @@ import { useWallet, useDepositForm } from '@/features/wallet/Hook/walletHook.js'
 import { BalanceCard } from '@/features/wallet/Component/BalanceCard.jsx'
 import { DepositForm } from '@/features/wallet/Component/DepositForm.jsx'
 import { TransactionList } from '@/features/wallet/Component/TransactionList.jsx'
-import { DepositResultBanner } from '@/features/wallet/Component/DepositResultBanner.jsx'
+import { ResultBanner } from '@/features/wallet/Component/ResultBanner.jsx'
+import { formatVND } from '@/shared/utils/format.js'
 
 /**
  * Recipient Wallet page (route: /wallet). Balance + deposit + transaction
@@ -28,7 +29,18 @@ export function WalletPage() {
         <Alert variant="error">Couldn&apos;t load your wallet. Please refresh the page.</Alert>
       ) : (
         <>
-          <DepositResultBanner result={deposit.result} onDismiss={deposit.dismissResult} />
+          {deposit.result && (
+            <ResultBanner
+              variant={deposit.result.kind === 'success' ? 'success' : 'error'}
+              title={deposit.result.kind === 'success' ? 'Deposit successful' : "Deposit couldn't be processed"}
+              message={
+                deposit.result.kind === 'success'
+                  ? `${formatVND(deposit.result.amount)} added to your wallet.`
+                  : deposit.result.message
+              }
+              onDismiss={deposit.dismissResult}
+            />
+          )}
           <BalanceCard balance={balance} />
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <DepositForm
