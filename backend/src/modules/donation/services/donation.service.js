@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import * as donationRepository from "../repositories/donorListing.repository.js";
+import * as donationRepository from "../repositories/donation.repo.js";
 import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
@@ -13,7 +13,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/errors.js";
-import { toDonationSummaryDTO } from "../dtos/donationSummary.dto.js";
+import { toDonationSummaryDTO } from "../dtos/donation.dto.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -402,7 +402,10 @@ export async function listActiveListingsForAdmin(filters = {}) {
   if (isNonEmptyString(filters.donorProfileId)) {
     normalizedFilters.donorProfileId = filters.donorProfileId.trim();
   }
-  if (Array.isArray(filters.donorProfileIds) && filters.donorProfileIds.length > 0) {
+  if (
+    Array.isArray(filters.donorProfileIds) &&
+    filters.donorProfileIds.length > 0
+  ) {
     normalizedFilters.donorProfileIds = filters.donorProfileIds;
   }
   if (Array.isArray(filters.searchDonorProfileIds)) {
@@ -702,9 +705,12 @@ export async function finalizeCancellation(id, options = {}) {
       throw new NotFoundError("Donation not found");
     }
 
-    await reservationRepository.cancelActiveReservationsForDonation(donationId, {
-      session,
-    });
+    await reservationRepository.cancelActiveReservationsForDonation(
+      donationId,
+      {
+        session,
+      },
+    );
 
     return toDonationSummaryDTO(updated);
   };

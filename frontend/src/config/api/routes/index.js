@@ -7,6 +7,5 @@ export { profileRoutes } from './profile.routes.js'
 export { walletRoutes } from './wallet.routes.js'
 // Skeletons for later modules (not yet built out):
 export { donationRoutes } from './donation.routes.js'
-export { reservationRoutes } from './reservation.routes.js'
 export { adminRoutes } from './admin.routes.js'
 export { notificationRoutes } from './notification.routes.js'

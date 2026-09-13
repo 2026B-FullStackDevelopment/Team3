@@ -3,7 +3,6 @@ export const donationRoutes = {
   listings: '/api/donor/food-listings',
   listing: (id) => `/api/donor/food-listings/${id}`,
   duplicate: (id) => `/api/donor/food-listings/${id}/duplicate`,
-  donations: (id) => `/api/donor/food-listings/${id}/donations`,
   status: (id) => `/api/donor/food-listings/${id}/status`,
   ration: (id) => `/api/donor/food-listings/${id}/ration`,
   reports: '/api/donor/reports/dashboard',

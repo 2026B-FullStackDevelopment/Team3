@@ -5,3 +5,4 @@ packages:
 allowBuilds:
   bcrypt: false
   esbuild: true
+  msw: false
