@@ -8,6 +8,7 @@ export const ReservationStatus = {
   CollectedByRecipient: "CollectedByRecipient",
   Collected: "Collected",
   CancelledByDonor: "CancelledByDonor",
+  CancelledByAdmin: "CancelledByAdmin",
 };
 
 export const ReservationSchema = {

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { foodCategory } from "../../notification/models/NotificationPreference.js";
+import { FoodCategory } from "../../../shared/constants/foodCategory.js";
 export const MeasurementUnit = {
   KG: "KG",
   G: "G",
@@ -64,7 +64,7 @@ export const DonationSchema = {
   },
   foodCategory: {
     type: String,
-    enum: Object.values(foodCategory),
+    enum: Object.values(FoodCategory),
   },
   isVegetarian: {
     type: Boolean,

@@ -1,8 +1,8 @@
 import { ValidationError } from "../../../shared/errors/errors.js";
 import { isVietnamCity } from "../../../shared/constants/vietnamCities.js";
-import { foodCategory } from "../models/NotificationPreference.js";
+import { FoodCategory } from "../../../shared/constants/foodCategory.js";
 
-const CATEGORIES = Object.values(foodCategory);
+const CATEGORIES = Object.values(FoodCategory);
 
 /** True if `body` has its own `key` (present in the request, even if falsy). */
 export function has(body, key) {
