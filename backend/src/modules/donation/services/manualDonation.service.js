@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 
 import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
-import { ReservationStatus } from "../../reservation/models/Reservation.js";
-import * as reservationRepository from "../../reservation/repositories/ReservationRepository.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import * as identity from "../../identity/index.js";
 import * as wallet from "../../wallet/index.js";
 import {
@@ -100,16 +99,14 @@ export async function createManualDonation(
     }
     const soldOut = updatedListing.status === DonationStatus.SoldOut;
 
-    const reservation = await reservationRepository.createReservation(
+    const reservationResult = await reservation.recordManualCollection(
       {
         donationId,
         recipientProfileId: data.recipientProfileId,
         manualRecipientName: data.recipientName,
         quantity: data.quantity,
-        status: ReservationStatus.Collected,
         totalPaid: totalPrice,
         paymentMethod,
-        collectedAt: new Date(),
       },
       { session },
     );
@@ -121,7 +118,7 @@ export async function createManualDonation(
         {
           type: wallet.TransactionType.FoodPurchase,
           method: PaymentMethod.Wallet,
-          relatedReservationId: reservation._id,
+          relatedReservationId: reservationResult._id,
         },
         { session },
       );
@@ -136,7 +133,7 @@ export async function createManualDonation(
     }
 
     return {
-      donation: reservation,
+      donation: reservationResult,
       payment: {
         method: paymentMethod ?? null,
         totalPrice,

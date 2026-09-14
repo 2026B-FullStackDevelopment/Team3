@@ -1,5 +1,6 @@
 import { ValidationError } from "../../../shared/errors/errors.js";
 import * as reservationRepository from "../repositories/ReservationRepository.js";
+import * as donationSupportService from "../services/donationSupport.service.js";
 
 function requireDonationId(value) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -30,6 +31,33 @@ export async function listAffectedRecipientProfileIds(
 export function cancelActiveReservationsByAdmin(donationId, options = {}) {
   return reservationRepository.cancelActiveReservationsByAdmin(
     requireDonationId(donationId),
+    options,
+  );
+}
+
+export function listReservationsByDonation(donationId, options = {}) {
+  return donationSupportService.listReservationsByDonation(
+    requireDonationId(donationId),
+    options,
+  );
+}
+
+export function cancelActiveReservationsByDonation(
+  donationId,
+  options = {},
+) {
+  return donationSupportService.cancelActiveReservationsByDonation(
+    requireDonationId(donationId),
+    options,
+  );
+}
+
+export function recordManualCollection(data, options = {}) {
+  return donationSupportService.recordManualCollection(
+    {
+      ...data,
+      donationId: requireDonationId(data?.donationId),
+    },
     options,
   );
 }

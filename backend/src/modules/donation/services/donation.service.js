@@ -1,5 +1,5 @@
 import * as donationRepository from "../repositories/donation.repo.js";
-import * as reservationRepository from "../../reservation/repositories/ReservationRepository.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
   MeasurementUnit,
@@ -458,7 +458,7 @@ export async function listFoodListingDonations(
   const listing = await getOwnedDonation(donationId, donorProfileId);
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
-  const result = await reservationRepository.findByDonationId(listing.id, {
+  const result = await reservation.listReservationsByDonation(listing.id, {
     page,
     limit,
   });
@@ -603,7 +603,7 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
   }
 
   if (status === DonationStatus.Cancelled) {
-    await reservationRepository.cancelActiveReservationsForDonation(id);
+    await reservation.cancelActiveReservationsByDonation(id);
   }
 
   return updated;
