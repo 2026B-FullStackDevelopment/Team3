@@ -4,4 +4,6 @@ export const notificationRoutes = {
   unreadCount: "/api/notifications/unread-count",
   markRead: (id) => `/api/notifications/${id}/read`,
   markAllRead: "/api/notifications/read-all",
+  preferences: "/api/notification-preferences",
+  preference: (id) => `/api/notification-preferences/${id}`,
 };

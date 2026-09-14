@@ -29,10 +29,4 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.js"],
     css: true,
   },
-  test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: ["./src/test/setup.js"],
-    css: true,
-  },
 });

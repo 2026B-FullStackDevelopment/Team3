@@ -39,7 +39,11 @@ const MENU_ITEMS = {
   recipient: [
     { label: "Profile", to: "/profile", icon: "user" },
     { label: "Wallet", to: "/wallet", icon: "wallet" },
-    { label: "Notification Preferences", to: "/notifications", icon: "bell" },
+    {
+      label: "Notification Preferences",
+      to: "/notification-preferences",
+      icon: "bell",
+    },
   ],
   donor: [
     { label: "Dashboard", to: "/donor/dashboard" },
@@ -132,5 +136,7 @@ function AuthedBar({ role, user, onLogout, actions }) {
 
 export function Navbar({ role = "public", user, onLogout, actions }) {
   if (role === "public") return <PublicBar user={user} onLogout={onLogout} />;
-  return <AuthedBar role={role} user={user} onLogout={onLogout} actions={actions} />;
+  return (
+    <AuthedBar role={role} user={user} onLogout={onLogout} actions={actions} />
+  );
 }

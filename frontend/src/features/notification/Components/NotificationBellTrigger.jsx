@@ -1,34 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import { NotificationBell } from '@/shared/components/ui/notification-bell.jsx'
-import { NotificationPanel } from '@/features/notification/Component/NotificationPanel.jsx'
-import { useNotifications } from '@/features/notification/Hook/useNotifications.js'
+import { NotificationBell } from "@/features/notification/Components/NotificationBell.jsx";
+import { NotificationPanel } from "@/features/notification/Components/NotificationPanel.jsx";
+import { useNotificationPanel } from "@/features/notification/Hook/useNotificationPanel.js";
+import { useNotifications } from "@/features/notification/Hook/useNotifications.js";
 
 export function NotificationBellTrigger() {
-  const [open, setOpen] = useState(false)
-  const wrapperRef = useRef(null)
-  const triggerRef = useRef(null)
-  const panelRef = useRef(null)
-  const { unreadCount } = useNotifications()
-
-  useEffect(() => {
-    if (!open) return undefined
-    panelRef.current?.focus()
-
-    const handlePointerDown = (event) => {
-      if (!wrapperRef.current?.contains(event.target)) setOpen(false)
-    }
-    const handleKeyDown = (event) => {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      triggerRef.current?.focus()
-    }
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
+  const { open, close, toggle, wrapperRef, triggerRef, panelRef } =
+    useNotificationPanel();
+  const { unreadCount } = useNotifications();
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -38,9 +16,9 @@ export function NotificationBellTrigger() {
         max={99}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
+        onClick={toggle}
       />
-      {open && <NotificationPanel panelRef={panelRef} onClose={() => setOpen(false)} />}
+      {open && <NotificationPanel panelRef={panelRef} onClose={close} />}
     </div>
-  )
+  );
 }

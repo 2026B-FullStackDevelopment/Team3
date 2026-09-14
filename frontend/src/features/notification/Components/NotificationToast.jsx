@@ -1,17 +1,17 @@
-import { useEffect } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { notificationContent } from '@/features/notification/Model/notificationModel.js'
+import { useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { notificationContent } from "@/features/notification/Model/notificationModel.js";
 
 export function NotificationToast({ notification, onDismiss }) {
-  const reducedMotion = useReducedMotion()
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!notification) return undefined
-    const timer = window.setTimeout(onDismiss, 5000)
-    return () => window.clearTimeout(timer)
-  }, [notification, onDismiss])
+    if (!notification) return undefined;
+    const timer = window.setTimeout(onDismiss, 5000);
+    return () => window.clearTimeout(timer);
+  }, [notification, onDismiss]);
 
-  const content = notification ? notificationContent(notification.type) : null
+  const content = notification ? notificationContent(notification.type) : null;
 
   return (
     <AnimatePresence>
@@ -26,15 +26,29 @@ export function NotificationToast({ notification, onDismiss }) {
           className="fixed right-4 top-20 z-50 w-[calc(100%-2rem)] max-w-sm rounded-card border border-khaki-strong bg-surface p-4 text-ink shadow-xl"
         >
           <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-white" aria-hidden="true">✓</span>
+            <span
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-white"
+              aria-hidden="true"
+            >
+              ✓
+            </span>
             <div className="min-w-0 flex-1">
-              <p className="font-heading text-sm font-semibold">{content.title}</p>
+              <p className="font-heading text-sm font-semibold">
+                {content.title}
+              </p>
               <p className="mt-1 text-sm text-muted">{content.message}</p>
             </div>
-            <button type="button" onClick={onDismiss} className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-cream" aria-label="Dismiss notification">×</button>
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-cream"
+              aria-label="Dismiss notification"
+            >
+              ×
+            </button>
           </div>
         </motion.aside>
       )}
     </AnimatePresence>
-  )
+  );
 }

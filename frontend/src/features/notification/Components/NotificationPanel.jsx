@@ -1,29 +1,31 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { cn } from '@/shared/utils/cn.js'
-import { NotificationItem } from '@/features/notification/Component/NotificationItem.jsx'
-import { useNotifications } from '@/features/notification/Hook/useNotifications.js'
+import { Link } from "react-router-dom";
+import { useAuth } from "@/context/auth/useAuth.js";
+import { cn } from "@/shared/utils/cn.js";
+import { NotificationItem } from "@/features/notification/Components/NotificationItem.jsx";
+import { useNotificationFilter } from "@/features/notification/Hook/useNotificationFilter.js";
+import { useNotifications } from "@/features/notification/Hook/useNotifications.js";
 
 export function NotificationPanel({ panelRef, onClose }) {
-  const [filter, setFilter] = useState('all')
+  const { role } = useAuth();
   const {
     entries,
     unreadCount,
     status,
     socketStatus,
     error,
-    markRead,
+    selectNotification,
     markAllRead,
     soundEnabled,
     soundBlocked,
     enableSound,
     toggleSound,
-  } = useNotifications()
+  } = useNotifications();
 
-  const visibleEntries = useMemo(
-    () => entries.filter((entry) => filter === 'all' || !entry.isRead).slice(0, 5),
-    [entries, filter],
-  )
+  const { filter, setFilter, visibleEntries } = useNotificationFilter(
+    entries,
+    5,
+  );
+  const feedPath = role === "Donor" ? "/donor/notifications" : "/notifications";
 
   return (
     <section
@@ -35,7 +37,9 @@ export function NotificationPanel({ panelRef, onClose }) {
     >
       <div className="flex items-center justify-between gap-3 border-b border-khaki px-4 py-3">
         <div>
-          <h2 className="font-heading text-base font-semibold">Notifications</h2>
+          <h2 className="font-heading text-base font-semibold">
+            Notifications
+          </h2>
           <p className="text-xs text-muted">{unreadCount} unread</p>
         </div>
         <button
@@ -50,15 +54,17 @@ export function NotificationPanel({ panelRef, onClose }) {
 
       <div className="flex items-center justify-between gap-3 border-b border-khaki px-4 py-2">
         <div className="flex gap-1" aria-label="Notification filters">
-          {['all', 'unread'].map((value) => (
+          {["all", "unread"].map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setFilter(value)}
               aria-pressed={filter === value}
               className={cn(
-                'min-h-11 rounded-full px-3 text-sm font-medium capitalize',
-                filter === value ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-cream',
+                "min-h-11 rounded-full px-3 text-sm font-medium capitalize",
+                filter === value
+                  ? "bg-primary-soft text-primary"
+                  : "text-muted hover:bg-cream",
               )}
             >
               {value}
@@ -71,50 +77,72 @@ export function NotificationPanel({ panelRef, onClose }) {
           className="min-h-11 rounded-full px-2 text-xs font-semibold text-muted hover:bg-cream hover:text-ink"
           aria-pressed={soundEnabled}
         >
-          {soundBlocked ? 'Enable sound' : `Sound ${soundEnabled ? 'on' : 'off'}`}
+          {soundBlocked
+            ? "Enable sound"
+            : `Sound ${soundEnabled ? "on" : "off"}`}
         </button>
       </div>
 
-      {socketStatus !== 'connected' && (
-        <p className="border-b border-khaki bg-cream px-4 py-2 text-xs text-muted" role="status">
-          {socketStatus === 'connecting'
-            ? 'Connecting to live updates…'
-            : 'Live updates are disconnected. Saved notifications still work.'}
+      {socketStatus !== "connected" && (
+        <p
+          className="border-b border-khaki bg-cream px-4 py-2 text-xs text-muted"
+          role="status"
+        >
+          {socketStatus === "connecting"
+            ? "Connecting to live updates…"
+            : "Live updates are disconnected. Saved notifications still work."}
         </p>
       )}
       {soundBlocked && soundEnabled && (
         <p className="border-b border-khaki bg-danger-soft px-4 py-2 text-xs text-danger">
-          Your browser blocked sound. Use Enable sound after interacting with the page.
+          Your browser blocked sound. Use Enable sound after interacting with
+          the page.
         </p>
       )}
-      {error && <p className="border-b border-khaki bg-danger-soft px-4 py-2 text-sm text-danger">{error}</p>}
+      {error && (
+        <p className="border-b border-khaki bg-danger-soft px-4 py-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
 
       <div className="max-h-[min(60vh,30rem)] overflow-y-auto">
-        {status === 'loading' && entries.length === 0 && (
+        {status === "loading" && entries.length === 0 && (
           <div className="space-y-3 p-4" aria-label="Loading notifications">
-            {[1, 2, 3].map((item) => <div key={item} className="h-16 animate-pulse rounded-xl bg-khaki/70 motion-reduce:animate-none" />)}
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="h-16 animate-pulse rounded-xl bg-khaki/70 motion-reduce:animate-none"
+              />
+            ))}
           </div>
         )}
-        {status !== 'loading' && visibleEntries.length === 0 && (
+        {status !== "loading" && visibleEntries.length === 0 && (
           <div className="px-6 py-10 text-center">
             <p className="font-heading font-semibold">You're all caught up</p>
             <p className="mt-1 text-sm text-muted">
-              {filter === 'unread' ? 'There are no unread notifications.' : 'New updates will appear here.'}
+              {filter === "unread"
+                ? "There are no unread notifications."
+                : "New updates will appear here."}
             </p>
           </div>
         )}
         {visibleEntries.map((notification) => (
-          <NotificationItem key={notification.id} notification={notification} onSelect={markRead} compact />
+          <NotificationItem
+            key={notification.id}
+            notification={notification}
+            onSelect={selectNotification}
+            compact
+          />
         ))}
       </div>
 
       <Link
-        to="/notifications"
+        to={feedPath}
         onClick={onClose}
         className="flex min-h-11 items-center justify-center border-t border-khaki px-4 text-sm font-semibold text-primary hover:bg-cream"
       >
         View all notifications
       </Link>
     </section>
-  )
+  );
 }
