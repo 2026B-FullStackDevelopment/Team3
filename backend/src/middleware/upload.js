@@ -1,7 +1,7 @@
-import { open, unlink } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import multer from "multer";
 import { ValidationError } from "../shared/errors/errors.js";
-import { AVATAR_DIR, processAvatar } from "../shared/upload/services/storage.js";
+import { processAvatar } from "../shared/upload/services/storage.js";
 import {
   ALLOWED_IMAGE_MIMES,
   MIME_EXTENSION,
@@ -11,18 +11,12 @@ import {
 } from "../shared/upload/validators/upload.js";
 
 /**
- * Avatar upload middleware. multer streams the file straight to disk
- * (diskStorage) under AVATAR_DIR with a server-generated, userId-namespaced
- * name; the extension comes from the (trusted) mimetype, never the client
- * filename. Mounted AFTER requireAuth so req.user.userId is available.
+ * Avatar upload middleware. multer keeps the bounded upload in memory so Sharp
+ * never has to read and immediately overwrite the same file on Windows. The
+ * processed image is written to disk once with a server-generated,
+ * userId-namespaced name. Mounted AFTER requireAuth so req.user.userId exists.
  */
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, AVATAR_DIR),
-  filename: (req, file, cb) => {
-    const ext = MIME_EXTENSION[file.mimetype] ?? "bin";
-    cb(null, `${req.user.userId}-${Date.now()}.${ext}`);
-  },
-});
+const storage = multer.memoryStorage();
 
 // Cheap first gate on the client-supplied mimetype. Rejecting with a
 // ValidationError (a DomainError) means a bad type surfaces as a clean 400.
@@ -40,23 +34,12 @@ const runMulter = multer({
 }).single("avatar");
 
 /**
- * Reads the stored file's leading bytes and rejects it (deleting the file) if
- * its actual content isn't a supported image — catching a non-image with a
- * spoofed image mimetype that slipped past the declared-mimetype filter.
+ * Reads the in-memory upload's leading bytes and rejects it if its actual
+ * content isn't a supported image, catching a spoofed declared mimetype.
  */
 async function assertImageContent(file) {
-  const header = Buffer.alloc(IMAGE_HEADER_BYTES);
-  const fd = await open(file.path, "r");
-  let bytesRead;
-  try {
-    ({ bytesRead } = await fd.read(header, 0, IMAGE_HEADER_BYTES, 0));
-  } finally {
-    await fd.close();
-  }
-
-  const detected = sniffImageMime(header.subarray(0, bytesRead));
+  const detected = sniffImageMime(file.buffer.subarray(0, IMAGE_HEADER_BYTES));
   if (!detected || !ALLOWED_IMAGE_MIMES.has(detected)) {
-    await unlink(file.path).catch(() => {});
     throw new ValidationError(
       "Avatar file is not a valid JPEG, PNG or WebP image",
     );
@@ -88,12 +71,17 @@ export function avatarUpload(req, res, next) {
       return next(); // controller handles the no-file case
     }
 
+    const ext = MIME_EXTENSION[req.file.mimetype] ?? "bin";
+    const filename = `${req.user.userId}-${randomUUID()}.${ext}`;
+
     assertImageContent(req.file)
-      .then(() => processAvatar(req.file.path, req.file.mimetype))
-      .then(() => next())
-      .catch(async (err) => {
-        await unlink(req.file.path).catch(() => {});
-        next(err);
-      });
+      .then(() => processAvatar(req.file.buffer, filename, req.file.mimetype))
+      .then(({ path }) => {
+        req.file.filename = filename;
+        req.file.path = path;
+        delete req.file.buffer;
+        next();
+      })
+      .catch(next);
   });
 }

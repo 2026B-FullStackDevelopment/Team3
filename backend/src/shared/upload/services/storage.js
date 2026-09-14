@@ -34,24 +34,34 @@ export function avatarUrlFor(filename) {
 const AVATAR_SIZE = 256;
 
 /**
- * Resizes the avatar at `filePath` to a fixed AVATAR_SIZE square (cover/crop),
- * re-encoded to its own format, overwriting the file in place (SRS 3.2.1). sharp
- * fully reads + processes the input into a buffer before we overwrite, so writing
- * back to the same path is safe. A processing failure becomes a 400 (the caller
- * deletes the file).
+ * Resizes an in-memory avatar to a fixed AVATAR_SIZE square (cover/crop),
+ * re-encodes it, then writes the final file once (SRS 3.2.1). Avoiding an
+ * immediate read/overwrite of the same file prevents Windows file-lock races.
+ * Invalid image processing becomes a 400; storage failures remain server errors.
  */
-export async function processAvatar(filePath, mime) {
-  const format = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpeg";
+export async function processAvatar(inputBuffer, filename, mime) {
+  const format =
+    mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpeg";
   let buffer;
   try {
-    buffer = await sharp(filePath)
+    buffer = await sharp(inputBuffer)
       .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: "cover" })
       .toFormat(format)
       .toBuffer();
   } catch {
     throw new ValidationError("Avatar image could not be processed");
   }
-  await fs.writeFile(filePath, buffer);
+
+  const filePath = path.join(AVATAR_DIR, filename);
+  try {
+    await fs.writeFile(filePath, buffer, { flag: "wx" });
+  } catch (error) {
+    if (error?.code !== "EEXIST") {
+      await fs.unlink(filePath).catch(() => {});
+    }
+    throw error;
+  }
+  return { path: filePath };
 }
 
 /**
@@ -62,7 +72,10 @@ export async function processAvatar(filePath, mime) {
  * AVATAR_DIR.
  */
 export async function deleteAvatar(avatarUrl) {
-  if (typeof avatarUrl !== "string" || !avatarUrl.startsWith(`${AVATAR_URL_PREFIX}/`)) {
+  if (
+    typeof avatarUrl !== "string" ||
+    !avatarUrl.startsWith(`${AVATAR_URL_PREFIX}/`)
+  ) {
     return;
   }
   const filename = path.basename(avatarUrl);
