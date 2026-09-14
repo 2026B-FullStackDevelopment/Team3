@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useDonationReport } from "@/features/donation/hooks/useDonationData.js";
+import { useDonationReport } from "@/features/donation/hooks/donation.hooks.js";
 import { ReportBarChart } from "@/features/donation/components/report/ReportBarChart.jsx";
 import { ReportMetrics } from "@/features/donation/components/report/ReportMetrics.jsx";
 import { ReportPeriodControls } from "@/features/donation/components/report/ReportPeriodControls.jsx";

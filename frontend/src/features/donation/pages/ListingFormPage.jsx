@@ -1,9 +1,9 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { donationService } from "@/features/donation/service/donationService.js";
+import { donationService } from "@/features/donation/service/donation.service.js";
 import {
   useDonationDetail,
   useDonationMutation,
-} from "@/features/donation/hooks/useDonationData.js";
+} from "@/features/donation/hooks/donation.hooks.js";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
 import { ListingForm } from "@/features/donation/components/report/ListingForm.jsx";
 import {

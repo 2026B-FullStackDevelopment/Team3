@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { donationService } from "@/features/donation/service/donationService.js";
+import { donationService } from "@/features/donation/service/donation.service.js";
 import { donationKeys } from "@/features/donation/service/donationKeys.js";
 
 /** Fetches and caches the donation listings that match the supplied filters. */
