@@ -20,7 +20,7 @@ const LISTINGS = [
     distance: '1.2 km',
     price: '15,000₫',
     category: 'Vegetable',
-    tone: 'bg-primary/15 text-primary',
+    tone: 'bg-emerald-100 text-emerald-700',
     swatch: 'from-[#8fae5a] to-[#5f7d1f]',
     image:
       'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=640&q=60&auto=format&fit=crop',
