@@ -4,10 +4,10 @@ Full-stack application developed by Team 3 for the Full-Stack Development course
 
 ## Team Member
 
-- Huynh Tan Phuc - s4103131 - Donor Dashboard
-- Dao Tien Dung - s4088577 - Authentication & Profile
+- Huynh Tan Phuc - s4103131 - Donor Dashboard & Notification
+- Dao Tien Dung - s4088577 - Authentication & Profile & Notification Preference & Wallet
 - Lam Vi Tin - s4116601 - Recipient & Reservation History
-- Nguyen Nhat Minh - s4112692 - Admin & Notification
+- Nguyen Nhat Minh - s4112692 - Admin & Feedback
 
 ## Tech Stack
 

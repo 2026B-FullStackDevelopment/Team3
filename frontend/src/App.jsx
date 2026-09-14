@@ -1,7 +1,7 @@
-import { RouterProvider } from 'react-router-dom'
-import { AuthProvider } from '@/context/auth/AuthProvider.jsx'
-import { NotificationProvider } from '@/features/notification/Context/NotificationProvider.jsx'
-import { router } from '@/routes/index.jsx'
+import { RouterProvider } from "react-router-dom";
+import { AuthProvider } from "@/context/auth/AuthProvider.jsx";
+import { NotificationProvider } from "@/features/notification/Context/NotificationProvider.jsx";
+import { router } from "@/routes/index.jsx";
 
 /**
  * App root. Global providers wrap the router so every route has access to the
@@ -14,5 +14,5 @@ export default function App() {
         <RouterProvider router={router} />
       </NotificationProvider>
     </AuthProvider>
-  )
+  );
 }

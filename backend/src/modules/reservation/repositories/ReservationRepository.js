@@ -1,25 +1,25 @@
-import { Reservation } from '../models/Reservation.js';
-import { Donation } from '../../donation/models/donation.model.js';
+import { Donation } from "../../donation/models/donation.model.js";
+import { Reservation, ReservationStatus } from "../models/Reservation.js";
 
 /** Create new reservation */
-export async function createReservation(reservationData) {
+export async function createReservation(reservationData, options = {}) {
   const newReservation = new Reservation(reservationData);
-  return await newReservation.save();
+  return await newReservation.save({ session: options.session });
 }
 
 /** Fetch recipient by id */
 export async function getReservationsByRecipient(recipientProfileId) {
   return await Reservation.find({ recipientProfileId })
     .sort({ reservedAt: -1 })
-    .populate('donationId', 'name foodCategory');
+    .populate("donationId", "name foodCategory");
 }
 
 /** Deduct the remaining stock */
 export async function deductDonationStock(donationId, quantityToDeduct) {
   const updatedDonation = await Donation.findOneAndUpdate(
-    { _id: donationId, remainingQuantity: { $gte: quantityToDeduct } }, 
+    { _id: donationId, remainingQuantity: { $gte: quantityToDeduct } },
     { $inc: { remainingQuantity: -quantityToDeduct } },
-    { new: true } 
+    { new: true },
   );
 
   if (!updatedDonation) {
@@ -33,7 +33,7 @@ export async function restoreDonationStock(donationId, quantityToRestore) {
   return await Donation.findByIdAndUpdate(
     donationId,
     { $inc: { remainingQuantity: quantityToRestore } },
-    { new: true }
+    { new: true },
   );
 }
 
@@ -47,15 +47,99 @@ export async function findByDonationId(donationId, options = {}) {
   const limit = options.limit || 20;
   const skip = (page - 1) * limit;
   const [entries, total] = await Promise.all([
-    Reservation.find({ donationId }).skip(skip).limit(limit).populate('recipientProfileId'),
+    Reservation.find({ donationId })
+      .skip(skip)
+      .limit(limit)
+      .populate("recipientProfileId"),
     Reservation.countDocuments({ donationId }),
   ]);
   return { entries, total, page, limit };
 }
 
-export async function cancelActiveReservationsForDonation(donationId) {
+export function aggregateCollectedByDonationIds(donationIds, options = {}) {
+  if (donationIds.length === 0) return Promise.resolve([]);
+
+  const match = {
+    donationId: { $in: donationIds },
+    status: ReservationStatus.Collected,
+  };
+  if (options.periodStart !== undefined || options.periodEnd !== undefined) {
+    match.collectedAt = {};
+    if (options.periodStart !== undefined) {
+      match.collectedAt.$gte = options.periodStart;
+    }
+    if (options.periodEnd !== undefined) {
+      match.collectedAt.$lte = options.periodEnd;
+    }
+  }
+
+  const aggregate = Reservation.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: "$donationId",
+        donatedQuantity: { $sum: "$quantity" },
+        donationCount: { $sum: 1 },
+        revenue: { $sum: { $ifNull: ["$totalPaid", 0] } },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        donationId: "$_id",
+        donatedQuantity: 1,
+        donationCount: 1,
+        revenue: 1,
+      },
+    },
+  ]);
+  if (options.session) aggregate.session(options.session);
+  return aggregate;
+}
+
+/**
+ * Returns the recipient profiles that currently hold active reservations for
+ * a listing. Manual/walk-in reservations have no recipientProfileId and are
+ * deliberately excluded from the notification audience.
+ */
+export async function listAffectedRecipientProfileIds(
+  donationId,
+  options = {},
+) {
+  const query = Reservation.distinct("recipientProfileId", {
+    donationId,
+    status: ReservationStatus.Reserved,
+    recipientProfileId: { $ne: null },
+  });
+  if (options.session) query.session(options.session);
+  return query;
+}
+
+/**
+ * Attach recipient feedback (SRS 5.2.4). Ownership and "already collected"
+ * are enforced by the query filter itself so a single findOneAndUpdate
+ * covers both checks — a null result just means "not eligible", which the
+ * caller reports as one generic error.
+ */
+export async function submitFeedback(reservationId, recipientProfileId, feedback) {
+  return await Reservation.findOneAndUpdate(
+    {
+      _id: reservationId,
+      recipientProfileId,
+      status: { $in: [ReservationStatus.Collected, ReservationStatus.CollectedByRecipient] },
+    },
+    { feedback },
+    { new: true },
+  );
+}
+
+export async function cancelActiveReservationsForDonation(
+  donationId,
+  options = {},
+) {
   return await Reservation.updateMany(
-    { donationId, status: "Reserved" },
-    { $set: { status: "CancelledByDonor" } }
+    { donationId, status: ReservationStatus.Reserved },
+    { $set: { status: ReservationStatus.CancelledByDonor } },
+    { session: options.session },
   );
 }

@@ -5,9 +5,9 @@ export async function create(data) {
   return NotificationPreference.create(data);
 }
 
-/** All preferences owned by a recipient. */
+/** All preferences owned by a recipient, newest-first. */
 export async function findByRecipientProfileId(recipientProfileId) {
-  return NotificationPreference.find({ recipientProfileId });
+  return NotificationPreference.find({ recipientProfileId }).sort({ createdAt: -1 });
 }
 
 /**

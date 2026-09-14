@@ -66,11 +66,20 @@ export function initializeNotificationGateway(httpServer) {
 
 export function publishNotifications(notifications) {
   if (!socketServer) return;
-  const entries = Array.isArray(notifications)
+  const results = Array.isArray(notifications)
     ? notifications
     : [notifications];
 
-  for (const notification of entries.filter(Boolean)) {
+  for (const result of results.filter(Boolean)) {
+    const isCreationResult =
+      typeof result === "object" &&
+      Object.prototype.hasOwnProperty.call(result, "created") &&
+      Object.prototype.hasOwnProperty.call(result, "notification");
+    if (isCreationResult && !result.created) continue;
+
+    const notification = isCreationResult ? result.notification : result;
+    if (!notification) continue;
+
     socketServer
       .to(`user:${notification.userId}`)
       .emit("notification:created", notification);

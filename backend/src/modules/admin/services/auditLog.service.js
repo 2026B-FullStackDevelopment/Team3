@@ -15,8 +15,8 @@ import { env } from "../../../config/env.js";
 // Cross-module calls go through each module's public facade/interface only
 // (SRS A.3.1) -- never that module's Service layer directly.
 import * as identity from "../../identity/index.js";
-import * as donation from "../../donation/interfaces/donorListing.interface.js";
-
+import * as donation from "../../donation/interfaces/donation.interface.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
 
 const DEFAULT_PAGE = 1;
@@ -357,7 +357,6 @@ export async function undoAction(auditLogId, actorId) {
       } else if (current.action === AdminActionType.CancelDonation) {
         reverted = await donation.reinstateDonation(current.targetId, {
           session,
-          now,
         });
       } else {
         throw new NotImplementedError(
@@ -414,6 +413,10 @@ export async function finalizeExpiredEntries() {
       try {
         let updated;
         await session.withTransaction(async () => {
+          // withTransaction may retry this callback after a transient error.
+          // Never publish values captured by an aborted attempt.
+          updated = undefined;
+          createdNotifications = [];
           const now = new Date();
           const current = await auditLogRepository.findById(entry._id, {
             session,
@@ -434,7 +437,7 @@ export async function finalizeExpiredEntries() {
             );
           const cancelledListing = await donation.finalizeCancellation(
             current.targetId,
-            { session, now },
+            { session },
           );
           await reservation.cancelActiveReservationsByAdmin(current.targetId, {
             session,
@@ -628,13 +631,10 @@ export async function listAllFoodListings(filters = {}) {
   );
 
   return {
-    listings: entries.map((entry) => {
-      const summary = donation.toDonationSummaryDTO(entry);
-      return {
-        ...summary,
-        donorName: donorNameById.get(summary.donorProfileId) ?? null,
-      };
-    }),
+    listings: entries.map((entry) => ({
+      ...entry,
+      donorName: donorNameById.get(entry.donorProfileId) ?? null,
+    })),
     total,
     page: resolvedPage,
     limit: resolvedLimit,
@@ -667,32 +667,22 @@ export async function cancelDonation(adminId, donationId) {
   try {
     let after;
     await session.withTransaction(async () => {
-      const requestedAt = new Date();
-      const undoDeadline = new Date(
-        requestedAt.getTime() + env.admin.undoWindowMs,
-      );
-      const beforeDonation = await donation.readDonationById(donationId, {
+      const before = await donation.readDonationById(donationId, {
         session,
       });
-      const before = donation.toDonationSummaryDTO(beforeDonation);
-      const auditLog = await createAuditLog(
+      after = await donation.adminCancelDonation(donationId, { session });
+
+      await createAuditLog(
         {
           adminId,
           action: AdminActionType.CancelDonation,
           targetType: AuditTargetType.Donation,
           targetId: donationId,
           previousState: before,
-          undoDeadline,
+          undoDeadline: computeUndoDeadline(),
         },
         { session },
       );
-      after = await donation.adminCancelDonation(donationId, {
-        session,
-        requestedAt,
-        deadline: undoDeadline,
-        requestedBy: adminId,
-        auditLogId: String(auditLog.id),
-      });
     });
     return after;
   } finally {

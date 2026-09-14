@@ -25,7 +25,7 @@ export function toNotificationDTO(notification) {
 }
 
 async function persistNotification(input, options = {}) {
-  const notification = await notificationRepository.createNotification(
+  const result = await notificationRepository.createNotification(
     {
       userId: requireText(input.userId, "userId"),
       type: input.type,
@@ -39,7 +39,10 @@ async function persistNotification(input, options = {}) {
     },
     options,
   );
-  return toNotificationDTO(notification);
+  return {
+    notification: toNotificationDTO(result.notification),
+    created: result.created,
+  };
 }
 
 export async function notifyListingSoldOut(event, options = {}) {
@@ -57,6 +60,7 @@ export async function notifyListingSoldOut(event, options = {}) {
       userId,
       type: NotificationType.ListingSoldOut,
       relatedDonationId: donationId,
+      dedupeKey: `${NotificationType.ListingSoldOut}:${donationId}:${userId}`,
     },
     options,
   );
@@ -83,18 +87,21 @@ export async function notifyListingMatched(event, options = {}) {
     ),
   ];
 
-  return Promise.all(
-    recipientUserIds.map((userId) =>
-      persistNotification(
+  const results = [];
+  for (const userId of recipientUserIds) {
+    results.push(
+      await persistNotification(
         {
           userId,
           type: NotificationType.ListingMatched,
           relatedDonationId: donationId,
+          dedupeKey: `${NotificationType.ListingMatched}:${donationId}:${userId}`,
         },
         options,
       ),
-    ),
-  );
+    );
+  }
+  return results;
 }
 
 export async function notifyListingCancelledByAdmin(event, options = {}) {
@@ -109,13 +116,15 @@ export async function notifyListingCancelledByAdmin(event, options = {}) {
   );
   const donationId = requireText(event.donationId, "donationId");
 
-  return Promise.all(
-    [
-      ...new Map(
-        profiles.map((profile) => [String(profile.userId), profile]),
-      ).keys(),
-    ].map((userId) =>
-      persistNotification(
+  const userIds = [
+    ...new Map(
+      profiles.map((profile) => [String(profile.userId), profile]),
+    ).keys(),
+  ];
+  const results = [];
+  for (const userId of userIds) {
+    results.push(
+      await persistNotification(
         {
           userId,
           type: NotificationType.ListingCancelledByAdmin,
@@ -124,8 +133,9 @@ export async function notifyListingCancelledByAdmin(event, options = {}) {
         },
         options,
       ),
-    ),
-  );
+    );
+  }
+  return results;
 }
 
 export async function listNotifications(userId, filters = {}) {
