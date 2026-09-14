@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/shared/utils/cn.js'
 import { Button } from '@/shared/components/Button.jsx'
@@ -9,8 +10,9 @@ import { Button } from '@/shared/components/Button.jsx'
  * Tailwind classes inlined (single-file rule).
  */
 
-// Placeholder listings — replaced by real Donation data in a future pass.
-const PLACEHOLDER_LISTINGS = [
+// Placeholder listings — replaced by real Donation data in a future pass. The
+// gradient `swatch` stays as a fallback behind the image if it fails to load.
+const LISTINGS = [
   {
     id: 'p1',
     title: 'Mixed Garden Greens',
@@ -20,6 +22,8 @@ const PLACEHOLDER_LISTINGS = [
     category: 'Vegetable',
     tone: 'bg-primary/15 text-primary',
     swatch: 'from-[#8fae5a] to-[#5f7d1f]',
+    image:
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=640&q=60&auto=format&fit=crop',
   },
   {
     id: 'p2',
@@ -30,6 +34,8 @@ const PLACEHOLDER_LISTINGS = [
     category: 'Baked Goods',
     tone: 'bg-khaki-strong text-ink',
     swatch: 'from-[#d8b483] to-[#a9793f]',
+    image:
+      'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=640&q=60&auto=format&fit=crop',
   },
   {
     id: 'p3',
@@ -40,6 +46,8 @@ const PLACEHOLDER_LISTINGS = [
     category: 'Cooked Dish',
     tone: 'bg-danger-soft text-danger',
     swatch: 'from-[#d98a5a] to-[#b3402f]',
+    image:
+      'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=640&q=60&auto=format&fit=crop',
   },
   {
     id: 'p4',
@@ -50,14 +58,27 @@ const PLACEHOLDER_LISTINGS = [
     category: 'Fruit',
     tone: 'bg-[#f6e6c9] text-[#a9793f]',
     swatch: 'from-[#e0b352] to-[#c88a2e]',
+    image:
+      'https://images.unsplash.com/photo-1553279768-865429fa0078?w=640&q=60&auto=format&fit=crop',
   },
 ]
 
 function ListingCard({ listing }) {
+  const [imageFailed, setImageFailed] = useState(false)
+
   return (
     <article className="overflow-hidden rounded-card border border-khaki-strong/50 bg-surface">
-      {/* Image placeholder — real photos come from the listing record later. */}
+      {/* Gradient swatch is the fallback; the photo covers it when it loads. */}
       <div className={cn('relative h-32 bg-linear-to-br', listing.swatch)}>
+        {listing.image && !imageFailed && (
+          <img
+            src={listing.image}
+            alt={listing.title}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
         <span
           className={cn(
             'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold',
@@ -83,7 +104,7 @@ function ListingCard({ listing }) {
           >
             {listing.price}
           </span>
-          <Button size="sm" variant="danger" disabled>
+          <Button size="sm" variant="danger" to="/browse">
             Reserve
           </Button>
         </div>
@@ -105,7 +126,7 @@ export function AvailableNow() {
             Fresh listings near Ho Chi Minh City
           </h2>
           <Link
-            to="/register"
+            to="/browse"
             className="shrink-0 text-sm font-semibold text-primary underline-offset-4 hover:underline"
           >
             View all listings &rarr;
@@ -113,7 +134,7 @@ export function AvailableNow() {
         </div>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {PLACEHOLDER_LISTINGS.map((listing) => (
+          {LISTINGS.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
