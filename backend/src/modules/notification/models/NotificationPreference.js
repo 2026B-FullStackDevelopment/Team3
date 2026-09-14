@@ -42,7 +42,7 @@ const NotificationPreferenceSchema = new Schema({
   city: {
     type: String,
   },
-});
+}, { timestamps: true });
 export const NotificationPreference = mongoose.model(
   "NotificationPreference",
   NotificationPreferenceSchema,
