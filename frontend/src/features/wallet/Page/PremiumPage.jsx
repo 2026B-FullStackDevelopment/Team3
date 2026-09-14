@@ -19,7 +19,9 @@ export function PremiumPage() {
     priceVnd,
     result,
     isSubmitting,
+    isCardSubmitting,
     subscribe,
+    subscribeWithCard,
     dismissResult,
   } = usePremium()
 
@@ -60,6 +62,8 @@ export function PremiumPage() {
               canAfford={canAfford}
               isSubmitting={isSubmitting}
               onSubscribe={subscribe}
+              onSubscribeCard={subscribeWithCard}
+              isCardSubmitting={isCardSubmitting}
             />
           )}
         </>

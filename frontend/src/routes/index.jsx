@@ -11,6 +11,7 @@ import { RecipientProfilePage } from '@/features/identity/Page/profile/Recipient
 import { DonorProfilePage } from '@/features/identity/Page/profile/DonorProfilePage.jsx'
 import { WalletPage } from '@/features/wallet/Page/WalletPage.jsx'
 import { PremiumPage } from '@/features/wallet/Page/PremiumPage.jsx'
+import { NotificationPreferencesPage } from '@/features/notification/Page/NotificationPreferencesPage.jsx'
 import { AdminShell } from '@/routes/layouts/AdminShell.jsx'
 import { ForbiddenPage } from '@/routes/pages/ForbiddenPage.jsx'
 import { NotFoundPage } from '@/routes/pages/NotFoundPage.jsx'
@@ -54,7 +55,7 @@ export const router = createBrowserRouter([
               { path: '/profile', element: <RecipientProfilePage /> },
               { path: '/browse', element: <Placeholder name="Browse" /> },
               { path: '/history', element: <Placeholder name="History" /> },
-              { path: '/notifications', element: <Placeholder name="Notification Preferences" /> },
+              { path: '/notifications', element: <NotificationPreferencesPage /> },
               { path: '/wallet', element: <WalletPage /> },
               { path: '/premium', element: <PremiumPage /> },
             ],

@@ -9,4 +9,5 @@ import { profileRoutes } from '@/config/api/routes/index.js'
 export const premiumService = {
   getStatus: () => httpClient.get(profileRoutes.get),
   subscribe: () => httpClient.post(profileRoutes.subscribe),
+  subscribeWithCard: () => httpClient.post(profileRoutes.subscribeCheckout),
 }

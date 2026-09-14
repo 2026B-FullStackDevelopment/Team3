@@ -1,6 +1,5 @@
-/** Notification API routes (SRS A.2.a). Skeleton — backend module not built yet. */
+/** Notification API routes (SRS A.2.a). */
 export const notificationRoutes = {
-  preferences: '/api/notifications/preferences',
-  preference: (id) => `/api/notifications/preferences/${id}`,
-  feed: '/api/notifications',
+  preferences: '/api/notification-preferences',
+  preference: (id) => `/api/notification-preferences/${id}`,
 }
