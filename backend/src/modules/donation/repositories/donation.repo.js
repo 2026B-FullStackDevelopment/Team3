@@ -149,6 +149,17 @@ export async function findDonationsByDonor(donorProfileId, options = {}) {
   });
 }
 
+export function listReportingDimensionsByDonor(
+  donorProfileId,
+  options = {},
+) {
+  const query = Donation.find({ donorProfileId })
+    .select("_id foodCategory measurementUnit")
+    .lean();
+  if (options.session) query.session(options.session);
+  return query;
+}
+
 export async function findActiveDonations(filters = {}) {
   return findAll({
     ...filters,

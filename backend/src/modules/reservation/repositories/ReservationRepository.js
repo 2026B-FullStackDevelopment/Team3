@@ -56,6 +56,47 @@ export async function findByDonationId(donationId, options = {}) {
   return { entries, total, page, limit };
 }
 
+export function aggregateCollectedByDonationIds(donationIds, options = {}) {
+  if (donationIds.length === 0) return Promise.resolve([]);
+
+  const match = {
+    donationId: { $in: donationIds },
+    status: ReservationStatus.Collected,
+  };
+  if (options.periodStart !== undefined || options.periodEnd !== undefined) {
+    match.collectedAt = {};
+    if (options.periodStart !== undefined) {
+      match.collectedAt.$gte = options.periodStart;
+    }
+    if (options.periodEnd !== undefined) {
+      match.collectedAt.$lte = options.periodEnd;
+    }
+  }
+
+  const aggregate = Reservation.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: "$donationId",
+        donatedQuantity: { $sum: "$quantity" },
+        donationCount: { $sum: 1 },
+        revenue: { $sum: { $ifNull: ["$totalPaid", 0] } },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        donationId: "$_id",
+        donatedQuantity: 1,
+        donationCount: 1,
+        revenue: 1,
+      },
+    },
+  ]);
+  if (options.session) aggregate.session(options.session);
+  return aggregate;
+}
+
 /**
  * Returns the recipient profiles that currently hold active reservations for
  * a listing. Manual/walk-in reservations have no recipientProfileId and are
