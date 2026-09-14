@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { requireAuth } from "../../../middleware/auth.js";
-import { requireRole } from "../../../middleware/role.js";
 import * as reservationController from "../controllers/reservationControllers.js";
 
 export const reservationRoutes = Router();
@@ -9,13 +8,7 @@ export const reservationRoutes = Router();
 reservationRoutes.use(requireAuth);
 
 // POST /api/reservations
-reservationRoutes.post(
-  "/", 
-  reservationController.createReservation
-);
+reservationRoutes.post("/", reservationController.createReservation);
 
 // 3. GET /api/reservations/history
-reservationRoutes.get(
-  "/history", 
-  reservationController.getHistory
-);
+reservationRoutes.get("/history", reservationController.getHistory);

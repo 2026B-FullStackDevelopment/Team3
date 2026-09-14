@@ -1,5 +1,5 @@
-import { Reservation } from '../models/Reservation.js';
-import { Donation } from '../../donation/models/donation.model.js';
+import { Donation } from "../../donation/models/donation.model.js";
+import { Reservation, ReservationStatus } from "../models/Reservation.js";
 
 /** Create new reservation */
 export async function createReservation(reservationData, options = {}) {
@@ -11,15 +11,15 @@ export async function createReservation(reservationData, options = {}) {
 export async function getReservationsByRecipient(recipientProfileId) {
   return await Reservation.find({ recipientProfileId })
     .sort({ reservedAt: -1 })
-    .populate('donationId', 'name foodCategory');
+    .populate("donationId", "name foodCategory");
 }
 
 /** Deduct the remaining stock */
 export async function deductDonationStock(donationId, quantityToDeduct) {
   const updatedDonation = await Donation.findOneAndUpdate(
-    { _id: donationId, remainingQuantity: { $gte: quantityToDeduct } }, 
+    { _id: donationId, remainingQuantity: { $gte: quantityToDeduct } },
     { $inc: { remainingQuantity: -quantityToDeduct } },
-    { new: true } 
+    { new: true },
   );
 
   if (!updatedDonation) {
@@ -33,7 +33,7 @@ export async function restoreDonationStock(donationId, quantityToRestore) {
   return await Donation.findByIdAndUpdate(
     donationId,
     { $inc: { remainingQuantity: quantityToRestore } },
-    { new: true }
+    { new: true },
   );
 }
 
@@ -47,15 +47,40 @@ export async function findByDonationId(donationId, options = {}) {
   const limit = options.limit || 20;
   const skip = (page - 1) * limit;
   const [entries, total] = await Promise.all([
-    Reservation.find({ donationId }).skip(skip).limit(limit).populate('recipientProfileId'),
+    Reservation.find({ donationId })
+      .skip(skip)
+      .limit(limit)
+      .populate("recipientProfileId"),
     Reservation.countDocuments({ donationId }),
   ]);
   return { entries, total, page, limit };
 }
 
-export async function cancelActiveReservationsForDonation(donationId) {
+/**
+ * Returns the recipient profiles that currently hold active reservations for
+ * a listing. Manual/walk-in reservations have no recipientProfileId and are
+ * deliberately excluded from the notification audience.
+ */
+export async function listAffectedRecipientProfileIds(
+  donationId,
+  options = {},
+) {
+  const query = Reservation.distinct("recipientProfileId", {
+    donationId,
+    status: ReservationStatus.Reserved,
+    recipientProfileId: { $ne: null },
+  });
+  if (options.session) query.session(options.session);
+  return query;
+}
+
+export async function cancelActiveReservationsForDonation(
+  donationId,
+  options = {},
+) {
   return await Reservation.updateMany(
-    { donationId, status: "Reserved" },
-    { $set: { status: "CancelledByDonor" } }
+    { donationId, status: ReservationStatus.Reserved },
+    { $set: { status: ReservationStatus.CancelledByDonor } },
+    { session: options.session },
   );
 }
