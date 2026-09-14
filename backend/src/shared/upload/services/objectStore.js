@@ -21,12 +21,15 @@ export function putObject({ key, buffer, transform }) {
   return new Promise((resolve, reject) => {
     const options = { public_id: key, resource_type: "image", overwrite: true };
     if (transform) options.transformation = transform;
-    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error || !result) {
-        return reject(error ?? new Error("Cloudinary upload failed"));
-      }
-      resolve({ url: result.secure_url });
-    });
+    const stream = cloudinary.uploader.upload_stream(
+      options,
+      (error, result) => {
+        if (error || !result) {
+          return reject(error ?? new Error("Cloudinary upload failed"));
+        }
+        resolve({ url: result.secure_url });
+      },
+    );
     stream.end(buffer);
   });
 }
@@ -51,5 +54,7 @@ export async function deleteObject(url) {
   if (!publicId) return;
   await cloudinary.uploader
     .destroy(publicId, { resource_type: "image" })
-    .catch((error) => console.warn("cloudinary cleanup failed:", error?.message));
+    .catch((error) =>
+      console.warn("cloudinary cleanup failed:", error?.message),
+    );
 }

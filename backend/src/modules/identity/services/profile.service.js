@@ -13,8 +13,6 @@ import {
 
 const DUPLICATE_KEY = 11000;
 
-
-
 /**
  * Loads the current user's full profile: the shared User fields plus the
  * role-specific profile row, composed into one DTO. A valid token whose user no
@@ -68,7 +66,10 @@ export async function updateProfile(userId, patch) {
   let profile;
   if (Object.keys(profilePatch).length > 0) {
     try {
-      profile = await profileRepositoryFor(user.role).updateByUserId(userId, profilePatch);
+      profile = await profileRepositoryFor(user.role).updateByUserId(
+        userId,
+        profilePatch,
+      );
     } catch (error) {
       if (error?.code === DUPLICATE_KEY) {
         throw new ConflictError("userName is already in use");
@@ -127,7 +128,11 @@ export async function changePassword(
   // Revoke the current token so the cleared cookie can't be replayed. Idempotent:
   // an already-revoked jti (duplicate key) is treated as success.
   try {
-    await revokedTokenRepository.add({ jti, userId, expiresAt: tokenExpiresAt });
+    await revokedTokenRepository.add({
+      jti,
+      userId,
+      expiresAt: tokenExpiresAt,
+    });
   } catch (error) {
     if (error?.code !== DUPLICATE_KEY) {
       throw error;

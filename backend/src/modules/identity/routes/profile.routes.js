@@ -19,13 +19,49 @@ const avatarUpload = uploadImage({
   keyFor: (req) => `avatars/${req.user.userId}-${randomUUID()}`,
 });
 
-router.get("/", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.getProfile);
-router.patch("/", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.updateProfile);
-router.patch("/change-password", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.changePassword);
-router.post("/avatar", requireAuth, requireRole(userRole.Recipient, userRole.Donor), avatarUpload, profileController.uploadAvatar);
-router.delete("/avatar", requireAuth, requireRole(userRole.Recipient, userRole.Donor), profileController.removeAvatar);
+router.get(
+  "/",
+  requireAuth,
+  requireRole(userRole.Recipient, userRole.Donor),
+  profileController.getProfile,
+);
+router.patch(
+  "/",
+  requireAuth,
+  requireRole(userRole.Recipient, userRole.Donor),
+  profileController.updateProfile,
+);
+router.patch(
+  "/change-password",
+  requireAuth,
+  requireRole(userRole.Recipient, userRole.Donor),
+  profileController.changePassword,
+);
+router.post(
+  "/avatar",
+  requireAuth,
+  requireRole(userRole.Recipient, userRole.Donor),
+  avatarUpload,
+  profileController.uploadAvatar,
+);
+router.delete(
+  "/avatar",
+  requireAuth,
+  requireRole(userRole.Recipient, userRole.Donor),
+  profileController.removeAvatar,
+);
 
-router.post("/subscribe", requireAuth, requireRole(userRole.Recipient), subscriptionController.subscribe);
-router.post("/subscribe/checkout", requireAuth, requireRole(userRole.Recipient), subscriptionController.subscribeCheckout);
+router.post(
+  "/subscribe",
+  requireAuth,
+  requireRole(userRole.Recipient),
+  subscriptionController.subscribe,
+);
+router.post(
+  "/subscribe/checkout",
+  requireAuth,
+  requireRole(userRole.Recipient),
+  subscriptionController.subscribeCheckout,
+);
 
 export const profileRoutes = router;

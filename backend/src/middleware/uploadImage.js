@@ -63,7 +63,9 @@ export function uploadImage({
 
       if (!req.file) {
         return required
-          ? next(new ValidationError(`An '${fieldName}' image file is required`))
+          ? next(
+              new ValidationError(`An '${fieldName}' image file is required`),
+            )
           : next();
       }
 
