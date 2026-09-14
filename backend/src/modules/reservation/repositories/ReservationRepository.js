@@ -7,11 +7,21 @@ export async function createReservation(reservationData, options = {}) {
   return await newReservation.save({ session: options.session });
 }
 
-/** Fetch recipient by id */
+/**
+ * SRS 5.1.4 collection history — only reservations actually collected, each
+ * with the donor's name so the frontend never needs a reservedAt fallback.
+ */
 export async function getReservationsByRecipient(recipientProfileId) {
-  return await Reservation.find({ recipientProfileId })
-    .sort({ reservedAt: -1 })
-    .populate("donationId", "name foodCategory");
+  return await Reservation.find({
+    recipientProfileId,
+    status: { $in: [ReservationStatus.Collected, ReservationStatus.CollectedByRecipient] },
+  })
+    .sort({ collectedAt: -1 })
+    .populate({
+      path: "donationId",
+      select: "name foodCategory donorProfileId",
+      populate: { path: "donorProfileId", select: "companyName" },
+    });
 }
 
 /** Deduct the remaining stock */

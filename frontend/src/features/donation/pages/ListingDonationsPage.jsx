@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   useDonationDetail,
@@ -5,16 +6,19 @@ import {
 } from "@/features/donation/hooks/donation.hooks.js";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
+import { Pagination } from "@/shared/components/Pagination.jsx";
 import { formatDateTime, formatVnd } from "@/lib/formatters.js";
+
+const PAGE_SIZE = 20;
 
 /** Donor's per-listing reservations, including any feedback left by recipients (SRS 4.2.5). */
 export function ListingDonationsPage() {
   const { listingId } = useParams();
+  const [page, setPage] = useState(1);
   const listing = useDonationDetail(listingId);
-  // A listing rarely has enough reservations to need real pagination here —
-  // one large page keeps this view simple without a Pagination control.
-  const donations = useListingDonations(listingId, { limit: 100 });
+  const donations = useListingDonations(listingId, { page, limit: PAGE_SIZE });
   const entries = donations.data?.entries ?? [];
+  const totalPages = donations.data?.metadata?.totalPages ?? 1;
 
   return (
     <div className="donation-page">
@@ -76,6 +80,7 @@ export function ListingDonationsPage() {
               ))}
             </tbody>
           </table>
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
     </div>

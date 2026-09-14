@@ -1,42 +1,29 @@
 import { PageHeader } from '@/shared/components/PageHeader.jsx'
 import { Card } from '@/shared/components/Card.jsx'
-import { Badge } from '@/shared/components/Badge.jsx'
 import { Alert } from '@/shared/components/Alert.jsx'
 import { useCollectionHistory } from '@/features/reservation/hooks/reservationHooks.js'
-import {
-  ReservationStatus,
-  isFeedbackEligible,
-} from '@/features/reservation/models/reservationModel.js'
-import { useSubmitFeedback } from '@/features/feedback/hooks/feedbackHooks.js'
+import { useFeedbackRow } from '@/features/feedback/hooks/feedbackHooks.js'
 import { FeedbackForm } from '@/features/feedback/Component/FeedbackForm.jsx'
 import { FeedbackDisplay } from '@/features/feedback/Component/FeedbackDisplay.jsx'
 import { CATEGORY_LABELS } from '@/lib/donation.js'
 import { formatVND, formatShortDate } from '@/shared/utils/format.js'
 
-function statusVariant(status) {
-  if (status === ReservationStatus.Reserved) return 'khaki'
-  if (status === ReservationStatus.CancelledByDonor) return 'danger'
-  return 'success'
-}
-
+/** One collected reservation (SRS 5.1.4) with its feedback form/display (5.2.4). */
 function HistoryRow({ entry }) {
-  const submitFeedback = useSubmitFeedback()
-  const canLeaveFeedback = isFeedbackEligible(entry.status) && !entry.feedback
+  const { canLeaveFeedback, submit, isSubmitting, error } = useFeedbackRow(entry)
 
   return (
     <Card className="mb-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="font-semibold text-ink">{entry.donationName}</p>
-          <p className="text-sm text-muted">
-            {CATEGORY_LABELS[entry.foodCategory] ?? entry.foodCategory ?? 'Uncategorized'}
-            {' · '}
-            {entry.quantity} {'· '}
-            {formatShortDate(entry.collectedAt ?? entry.reservedAt)}
-          </p>
-        </div>
-        <Badge variant={statusVariant(entry.status)}>{entry.status}</Badge>
-      </div>
+      <p className="font-semibold text-ink">{entry.donationName}</p>
+      <p className="text-sm text-muted">
+        {entry.donorName}
+        {' · '}
+        {CATEGORY_LABELS[entry.foodCategory] ?? entry.foodCategory ?? 'Uncategorized'}
+        {' · '}
+        {entry.quantity}
+        {' · '}
+        {formatShortDate(entry.collectedAt)}
+      </p>
 
       <p className="mt-2 text-sm text-muted">
         {entry.totalPaid > 0
@@ -47,13 +34,7 @@ function HistoryRow({ entry }) {
       {entry.feedback ? (
         <FeedbackDisplay feedback={entry.feedback} />
       ) : canLeaveFeedback ? (
-        <FeedbackForm
-          onSubmit={(text) =>
-            submitFeedback.mutate({ reservationId: entry.id, feedback: text })
-          }
-          isSubmitting={submitFeedback.isPending}
-          error={submitFeedback.error?.message}
-        />
+        <FeedbackForm onSubmit={submit} isSubmitting={isSubmitting} error={error} />
       ) : null}
     </Card>
   )
@@ -67,7 +48,7 @@ export function CollectionHistoryPage() {
     <>
       <PageHeader
         title="Collection History"
-        subtitle="Food you've reserved and collected, plus feedback you've left for donors."
+        subtitle="Food you've collected, plus feedback you've left for donors."
       />
 
       {isLoading && <p className="text-muted">Loading your history…</p>}
@@ -75,7 +56,7 @@ export function CollectionHistoryPage() {
 
       {entries && entries.length === 0 && (
         <Card>
-          <p className="text-muted">You haven&apos;t reserved anything yet.</p>
+          <p className="text-muted">You haven&apos;t collected anything yet.</p>
         </Card>
       )}
 

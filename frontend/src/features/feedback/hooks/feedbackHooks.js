@@ -13,3 +13,23 @@ export function useSubmitFeedback() {
     },
   })
 }
+
+/**
+ * Behavior for one collection-history row (SRS A.3.b: keep the row's
+ * behavior out of its presentation, so the row component can stay a plain
+ * presentational component and this hook can be swapped/tested on its own).
+ */
+export function useFeedbackRow(entry) {
+  const submitFeedback = useSubmitFeedback()
+
+  function submit(text) {
+    submitFeedback.mutate({ reservationId: entry.id, feedback: text })
+  }
+
+  return {
+    canLeaveFeedback: !entry.feedback,
+    submit,
+    isSubmitting: submitFeedback.isPending,
+    error: submitFeedback.error?.message,
+  }
+}
