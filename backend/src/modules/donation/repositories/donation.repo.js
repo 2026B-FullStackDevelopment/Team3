@@ -369,7 +369,7 @@ export async function applyManualDonation(
         },
       },
     ],
-    { new: true, session: options.session },
+    { new: true, session: options.session, updatePipeline: true },
   );
 }
 
