@@ -64,6 +64,30 @@ export async function updateByUserId(userId, patch) {
  * counts as inactive and is allowed to re-subscribe). Returns the updated
  * document, or `null` when already active (or no such profile).
  */
+/**
+ * Activates/extends premium for a card payment, exactly once per Stripe session.
+ * The `lastPremiumSessionId !== stripeSessionId` guard lives in the filter, so a
+ * re-delivered webhook for the same session matches nothing and returns null —
+ * no double extension, even under concurrent redelivery. Returns the updated
+ * document, or null if this session was already applied (or no such profile).
+ */
+export async function activatePremiumForPayment(
+  userId,
+  newExpiryDate,
+  stripeSessionId,
+  options = {},
+) {
+  return RecipientProfile.findOneAndUpdate(
+    { userId, lastPremiumSessionId: { $ne: stripeSessionId } },
+    {
+      isPremium: true,
+      premiumExpiryDate: newExpiryDate,
+      lastPremiumSessionId: stripeSessionId,
+    },
+    { returnDocument: "after", runValidators: true, session: options.session },
+  );
+}
+
 export async function activatePremiumIfInactive(
   userId,
   newExpiryDate,

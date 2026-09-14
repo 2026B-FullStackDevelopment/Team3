@@ -12,7 +12,7 @@ import { DonationImageUpload } from "@/features/donation/components/DonationImag
 import {
   createListingFormSchema,
   listingFormDefaults,
-} from "@/features/donation/components/listing-form/listingFormSchema.js";
+} from "@/features/donation/models/listingFormSchema.js";
 
 /** Displays a validation message for one form field. */
 function FieldError({ error }) {

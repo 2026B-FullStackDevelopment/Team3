@@ -6,7 +6,15 @@ import { formatVND } from '@/shared/utils/format.js'
 import { PerkList } from '@/features/wallet/Component/premium/PerkList.jsx'
 
 /** The Premium offer for a non-premium recipient. */
-export function PremiumPlanCard({ balance, priceVnd, canAfford, isSubmitting, onSubscribe }) {
+export function PremiumPlanCard({
+  balance,
+  priceVnd,
+  canAfford,
+  isSubmitting,
+  onSubscribe,
+  onSubscribeCard,
+  isCardSubmitting,
+}) {
   return (
     <Card className="border border-primary/40">
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
@@ -41,6 +49,15 @@ export function PremiumPlanCard({ balance, priceVnd, canAfford, isSubmitting, on
               </p>
             </div>
           )}
+          <Button
+            size="lg"
+            variant="secondary"
+            className="mt-3 w-full"
+            loading={isCardSubmitting}
+            onClick={onSubscribeCard}
+          >
+            Pay with card
+          </Button>
         </div>
       </div>
     </Card>

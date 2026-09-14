@@ -10,7 +10,7 @@ const PERKS = [
 /** Non-premium recipient upsell. The upgrade action lives in Wallet (F8). */
 export function PremiumUpsellCard() {
   return (
-    <div className="rounded-card border border-primary/40 bg-surface p-6 md:p-8">
+    <div className="rounded-card border border-green-500/40 bg-white/95 p-6 md:p-8">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
           <Badge variant="khaki">★ Recommended for you</Badge>

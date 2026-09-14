@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import * as userRepository from "../repositories/user.repository.js";
 import * as recipientProfileRepository from "../repositories/recipientProfile.repository.js";
 import * as walletFacade from "../../wallet/index.js";
+import * as paymentsFacade from "../../payments/index.js";
 import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 import { toProfileDTO } from "../dtos/profile.dto.js";
 import { isPremiumActive, nextExpiry } from "../helpers/premium.helper.js";
@@ -10,6 +11,8 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../../../shared/errors/errors.js";
+import { sendMail } from "../../../shared/mail/mailer.js";
+import { premiumConfirmationEmail } from "../../../shared/mail/templates/premiumConfirmation.js";
 
 // Fixed business rule (BUSINESS_RULES §2): premium is a nominal 5 USD/month,
 // pinned to a fixed VND price since the wallet is VND-denominated. These are
@@ -85,8 +88,95 @@ export async function subscribePremium(userId) {
 
       dto = toProfileDTO(user, claimed);
     });
+    // Payment is committed. Notify the recipient (SRS 6.1.2) as a post-commit
+    // side effect: fire-and-forget so email latency never delays the response
+    // and a mail failure can never fail or roll back the charge. sendMail
+    // already swallows its own errors; the .catch is belt-and-suspenders.
+    sendMail({
+      to: user.email,
+      ...premiumConfirmationEmail({
+        premiumExpiryDate: newExpiry,
+        amountVnd: PREMIUM_PRICE_VND,
+      }),
+    }).catch((error) => {
+      console.error("[mail] premium confirmation failed", error);
+    });
+
     return dto;
   } finally {
     await session.endSession();
+  }
+}
+
+/**
+ * Starts a card payment for premium (SRS 6.2.1). Rejects with 409 if the
+ * recipient is already ACTIVE premium (no stacking — mirrors subscribePremium).
+ * Returns the Stripe Checkout URL; premium is granted later by the webhook.
+ */
+export async function createPremiumCheckout(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new UnauthorizedError("Session is no longer valid");
+  }
+  const profile = await recipientProfileRepository.findByUserId(userId);
+  if (!profile) {
+    throw new NotFoundError("Profile not found");
+  }
+  if (isPremiumActive(profile)) {
+    throw new ConflictError("You already have an active premium subscription");
+  }
+  return paymentsFacade.createCheckoutSession({
+    purpose: "premium",
+    userId,
+    amountVnd: PREMIUM_PRICE_VND,
+    productName: "AFF Premium (1 month)",
+    successPath: "/premium?status=success",
+    cancelPath: "/premium?status=cancel",
+  });
+}
+
+/**
+ * Payment webhook handler for a completed premium Checkout Session (registered
+ * with the payments module as purpose "premium"). Grants/extends premium
+ * WITHOUT touching the wallet, idempotently by Stripe session id, then sends the
+ * 6.1.2 confirmation email. Never throws for a duplicate delivery.
+ */
+export async function activatePremiumFromPayment(session) {
+  const userId = session?.metadata?.userId;
+  const stripeSessionId = session?.id;
+  if (!userId || !stripeSessionId) {
+    console.error("[premium] payment session missing userId or id");
+    return;
+  }
+
+  const profile = await recipientProfileRepository.findByUserId(userId);
+  if (!profile) {
+    console.error(`[premium] no profile for user ${userId}`);
+    return;
+  }
+
+  const now = new Date();
+  const newExpiry = nextExpiry(profile, now, PREMIUM_DURATION_MONTHS);
+  const updated = await recipientProfileRepository.activatePremiumForPayment(
+    userId,
+    newExpiry,
+    stripeSessionId,
+  );
+  if (!updated) {
+    // Already processed (duplicate webhook) — no-op.
+    return;
+  }
+
+  const user = await userRepository.findById(userId);
+  if (user?.email) {
+    sendMail({
+      to: user.email,
+      ...premiumConfirmationEmail({
+        premiumExpiryDate: newExpiry,
+        amountVnd: PREMIUM_PRICE_VND,
+      }),
+    }).catch((error) => {
+      console.error("[mail] premium confirmation failed", error);
+    });
   }
 }
