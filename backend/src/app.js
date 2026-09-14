@@ -25,10 +25,6 @@ app.use("/api/payments/stripe", paymentsWebhookRoutes);
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve uploaded images (avatars) as static files. Filenames are
-// server-generated; the DB stores only these URLs. Unauthenticated by design.
-app.use("/upload", express.static(env.upload.dir));
-
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",

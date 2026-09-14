@@ -31,10 +31,6 @@ Thumbs.db
 # Coverage
 coverage/
 
-# Uploaded images (created at runtime, served from local disk)
-backend/upload/
-
-
 CLAUDE.md
 AGENTS.md
 SESSION_NOTES.md

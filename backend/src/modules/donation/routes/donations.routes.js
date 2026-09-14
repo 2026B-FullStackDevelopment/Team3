@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { Router } from "express";
 
 import { requireAuth } from "../../../middleware/auth.js";
 import { loadDonorProfile } from "../../../middleware/donorProfile.js";
 import { requireRole } from "../../../middleware/role.js";
-import { imageUpload } from "../../../middleware/imageUpload.js";
+import { uploadImage } from "../../../middleware/uploadImage.js";
 import { userRole } from "../../identity/index.js";
 
 import {
@@ -21,6 +22,14 @@ import { manualDonationRoutes } from "./manualDonation.routes.js";
 
 export const donorListingRoutes = Router();
 
+const donationImageUpload = uploadImage({
+  fieldName: "image",
+  folder: "donations",
+  maxBytes: 5 * 1024 * 1024,
+  required: true,
+  keyFor: () => `donations/${Date.now()}-${randomUUID()}`,
+});
+
 donorListingRoutes.use(
   requireAuth,
   requireRole(userRole.Donor),
@@ -31,14 +40,7 @@ donorListingRoutes.use(
 donorListingRoutes
   .route("/")
   .get(listFoodListings)
-  .post(
-    imageUpload({
-      fieldName: "image",
-      subdirectory: "donations",
-      required: true,
-    }),
-    createFoodListing,
-  );
+  .post(donationImageUpload, createFoodListing);
 
 donorListingRoutes.post("/:id/duplicate", duplicateFoodListing);
 donorListingRoutes.get("/:id/donations", listFoodListingDonations);

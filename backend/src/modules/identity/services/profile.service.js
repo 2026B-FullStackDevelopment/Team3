@@ -3,10 +3,7 @@ import * as revokedTokenRepository from "../repositories/revokedToken.repository
 import * as passwordHelper from "../helpers/password.helper.js";
 import { toProfileDTO } from "../dtos/profile.dto.js";
 import { profileRepositoryFor } from "../helpers/profile.helper.js";
-import {
-  avatarUrlFor,
-  deleteAvatar,
-} from "../../../shared/upload/services/storage.js";
+import { deleteObject } from "../../../shared/upload/services/objectStore.js";
 import {
   ConflictError,
   NotFoundError,
@@ -15,8 +12,6 @@ import {
 } from "../../../shared/errors/errors.js";
 
 const DUPLICATE_KEY = 11000;
-
-
 
 /**
  * Loads the current user's full profile: the shared User fields plus the
@@ -71,7 +66,10 @@ export async function updateProfile(userId, patch) {
   let profile;
   if (Object.keys(profilePatch).length > 0) {
     try {
-      profile = await profileRepositoryFor(user.role).updateByUserId(userId, profilePatch);
+      profile = await profileRepositoryFor(user.role).updateByUserId(
+        userId,
+        profilePatch,
+      );
     } catch (error) {
       if (error?.code === DUPLICATE_KEY) {
         throw new ConflictError("userName is already in use");
@@ -130,7 +128,11 @@ export async function changePassword(
   // Revoke the current token so the cleared cookie can't be replayed. Idempotent:
   // an already-revoked jti (duplicate key) is treated as success.
   try {
-    await revokedTokenRepository.add({ jti, userId, expiresAt: tokenExpiresAt });
+    await revokedTokenRepository.add({
+      jti,
+      userId,
+      expiresAt: tokenExpiresAt,
+    });
   } catch (error) {
     if (error?.code !== DUPLICATE_KEY) {
       throw error;
@@ -140,24 +142,25 @@ export async function changePassword(
 
 /**
  * Sets the current user's avatar to a just-uploaded file and returns the updated
- * profile DTO. The file is already on disk (multer). Reads the old avatarUrl so
- * the replaced file can be cleaned up, persists the new URL, then best-effort
- * deletes the old file. If anything fails before the URL is persisted, the
- * newly-written file is removed so a failed upload never orphans a file.
+ * profile DTO. The file is already uploaded (its public URL is on req.file).
+ * Reads the old avatarUrl so the replaced asset can be cleaned up, persists the
+ * new URL, then best-effort deletes the old asset. If anything fails before the
+ * URL is persisted, the newly-uploaded asset is removed so a failed upload never
+ * orphans a stored file.
  */
 export async function updateAvatar(userId, role, file) {
-  const avatarUrl = avatarUrlFor(file.filename);
+  const avatarUrl = file.publicUrl;
 
   const user = await userRepository.findById(userId);
   if (!user) {
-    await deleteAvatar(avatarUrl);
+    await deleteObject(avatarUrl);
     throw new UnauthorizedError("Session is no longer valid");
   }
 
   const repo = profileRepositoryFor(role);
   const existing = await repo.findByUserId(userId);
   if (!existing) {
-    await deleteAvatar(avatarUrl);
+    await deleteObject(avatarUrl);
     throw new NotFoundError("Profile not found");
   }
   const oldAvatarUrl = existing.avatarUrl ?? null;
@@ -166,17 +169,17 @@ export async function updateAvatar(userId, role, file) {
   try {
     profile = await repo.updateByUserId(userId, { avatarUrl });
   } catch (error) {
-    await deleteAvatar(avatarUrl);
+    await deleteObject(avatarUrl);
     throw error;
   }
   if (!profile) {
-    await deleteAvatar(avatarUrl);
+    await deleteObject(avatarUrl);
     throw new NotFoundError("Profile not found");
   }
 
   // Replaced file is now unreferenced — best-effort remove it.
   if (oldAvatarUrl && oldAvatarUrl !== avatarUrl) {
-    await deleteAvatar(oldAvatarUrl);
+    await deleteObject(oldAvatarUrl);
   }
 
   return toProfileDTO(user, profile);
@@ -210,7 +213,7 @@ export async function removeAvatar(userId, role) {
     throw new NotFoundError("Profile not found");
   }
 
-  await deleteAvatar(oldAvatarUrl);
+  await deleteObject(oldAvatarUrl);
 
   return toProfileDTO(user, profile);
 }
