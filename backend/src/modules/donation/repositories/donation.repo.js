@@ -323,6 +323,52 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
   );
 }
 
+export async function applyManualDonation(
+  id,
+  donorProfileId,
+  quantity,
+  totalPaid,
+  options = {},
+) {
+  const closedAt = options.closedAt ?? new Date();
+
+  return Donation.findOneAndUpdate(
+    {
+      _id: id,
+      donorProfileId: String(donorProfileId),
+      status: DonationStatus.Active,
+      remainingQuantity: { $gte: quantity },
+    },
+    [
+      {
+        $set: {
+          remainingQuantity: { $subtract: ["$remainingQuantity", quantity] },
+          revenue: { $add: [{ $ifNull: ["$revenue", 0] }, totalPaid] },
+        },
+      },
+      {
+        $set: {
+          status: {
+            $cond: [
+              { $lt: ["$remainingQuantity", 1] },
+              DonationStatus.SoldOut,
+              "$status",
+            ],
+          },
+          closedAt: {
+            $cond: [
+              { $lt: ["$remainingQuantity", 1] },
+              closedAt,
+              "$closedAt",
+            ],
+          },
+        },
+      },
+    ],
+    { new: true, session: options.session },
+  );
+}
+
 export async function closeIfSoldOut(id, options = {}) {
   return Donation.findOneAndUpdate(
     {

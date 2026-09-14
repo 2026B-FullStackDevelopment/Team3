@@ -2,9 +2,9 @@ import { Reservation } from '../models/Reservation.js';
 import { Donation } from '../../donation/models/donation.model.js';
 
 /** Create new reservation */
-export async function createReservation(reservationData) {
+export async function createReservation(reservationData, options = {}) {
   const newReservation = new Reservation(reservationData);
-  return await newReservation.save();
+  return await newReservation.save({ session: options.session });
 }
 
 /** Fetch recipient by id */
