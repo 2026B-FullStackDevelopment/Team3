@@ -1,6 +1,5 @@
-import mongoose from "mongoose";
 import * as donationRepository from "../repositories/donation.repo.js";
-import * as reservationRepository from "../../reservation/repositories/reservationRepository.js";
+import * as reservationRepository from "../../reservation/repositories/ReservationRepository.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
   MeasurementUnit,

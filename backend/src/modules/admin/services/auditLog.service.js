@@ -16,7 +16,7 @@ import { env } from "../../../config/env.js";
 // (SRS A.3.1) -- never that module's Service layer directly.
 import * as identity from "../../identity/index.js";
 import * as donation from "../../donation/interfaces/donation.interface.js";
-
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
 
 const DEFAULT_PAGE = 1;
@@ -414,6 +414,10 @@ export async function finalizeExpiredEntries() {
       try {
         let updated;
         await session.withTransaction(async () => {
+          // withTransaction may retry this callback after a transient error.
+          // Never publish values captured by an aborted attempt.
+          updated = undefined;
+          createdNotifications = [];
           const now = new Date();
           const current = await auditLogRepository.findById(entry._id, {
             session,
@@ -469,12 +473,11 @@ export async function finalizeExpiredEntries() {
         await session.endSession();
       }
     } else {
-      finalized.push(
-        await auditLogRepository.updateStatus(
-          entry._id,
-          AuditLogStatus.Finalized,
-        ),
+      const updated = await auditLogRepository.updatePendingStatus(
+        entry._id,
+        AuditLogStatus.Finalized,
       );
+      if (updated) finalized.push(updated);
     }
   }
 

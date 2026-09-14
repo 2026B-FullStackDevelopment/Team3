@@ -78,13 +78,6 @@ export async function processReservation(
 
       // Trigger Real-Time "Sold Out" Notification if stock is depleted
       if (updatedDonation.remainingQuantity < 1) {
-        await Notification.create({
-          userId: donation.donorProfileId,
-          type: "ListingSoldOut",
-          relatedDonationId: donationId,
-          isRead: false,
-          createdAt: new Date(),
-        });
         const createdNotification = await notification.notifyListingSoldOut({
           donorProfileId: String(donation.donorProfileId),
           donationId: String(donationId),
