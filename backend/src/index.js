@@ -3,7 +3,6 @@ import { createServer } from "node:http";
 import mongoose from "mongoose";
 import app from "./app.js";
 import { connectDatabase } from "./config/database.js";
-import { ensureUploadDirs } from "./shared/upload/services/storage.js";
 import {
   startAuditLogSweep,
   stopAuditLogSweep,
@@ -19,7 +18,6 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     await connectDatabase();
-    await ensureUploadDirs();
     const httpServer = createServer(app);
     initializeNotificationGateway(httpServer);
     startAuditLogSweep();
