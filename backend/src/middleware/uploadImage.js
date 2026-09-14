@@ -46,7 +46,7 @@ export function uploadImage({
   }).single(fieldName);
 
   return function uploadSingleImage(req, res, next) {
-    runMulter(req, res, (error) => {
+    runMulter(req, res, async (error) => {
       if (error) {
         if (error instanceof multer.MulterError) {
           const message =
@@ -69,30 +69,31 @@ export function uploadImage({
           : next();
       }
 
-      Promise.resolve()
-        .then(() => {
-          if (sniffContent) {
-            const detected = sniffImageMime(
-              req.file.buffer.subarray(0, IMAGE_HEADER_BYTES),
+      try {
+        if (sniffContent) {
+          const detected = sniffImageMime(
+            req.file.buffer.subarray(0, IMAGE_HEADER_BYTES),
+          );
+          if (!detected || !ALLOWED_IMAGE_MIMES.has(detected)) {
+            throw new ValidationError(
+              "File is not a valid JPEG, PNG or WebP image",
             );
-            if (!detected || !ALLOWED_IMAGE_MIMES.has(detected)) {
-              throw new ValidationError(
-                "File is not a valid JPEG, PNG or WebP image",
-              );
-            }
           }
-          return putObject({
-            key: buildKey(req),
-            buffer: req.file.buffer,
-            transform,
-          });
-        })
-        .then(({ url }) => {
-          req.file.publicUrl = url;
-          delete req.file.buffer;
-          next();
-        })
-        .catch(next);
+        }
+
+        const { url } = await putObject({
+          key: buildKey(req),
+          folder: folder,
+          buffer: req.file.buffer,
+          transform,
+        });
+
+        req.file.publicUrl = url;
+        delete req.file.buffer;
+        next();
+      } catch (uploadError) {
+        next(uploadError);
+      }
     });
   };
 }

@@ -71,7 +71,7 @@ export function Hero({ ctaTo = '/register', ctaLabel = 'Get Started' }) {
                 aria-label={`Show slide ${i + 1}`}
                 aria-current={i === index}
                 className={cn(
-                  'h-1.5 rounded-full transition-all',
+                  'h-0.5 min-h-0 min-w-0 border-0 p-0 rounded-full transition-all',
                   i === index ? 'w-6 bg-danger' : 'w-6 bg-white/25 hover:bg-white/40',
                 )}
               />

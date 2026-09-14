@@ -17,9 +17,9 @@ cloudinary.config({ secure: true });
  * incoming transformation, so the STORED asset is the transformed one and its
  * secure_url delivers the resized image with no transform segment in the path.
  */
-export function putObject({ key, buffer, transform }) {
+export function putObject({ key, buffer,folder, transform }) {
   return new Promise((resolve, reject) => {
-    const options = { public_id: key, resource_type: "image", overwrite: true };
+    const options = { public_id: key,  asset_folder: folder , resource_type: "image", overwrite: true };
     if (transform) options.transformation = transform;
     const stream = cloudinary.uploader.upload_stream(
       options,
