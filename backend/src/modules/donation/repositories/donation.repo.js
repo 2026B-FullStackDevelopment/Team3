@@ -149,10 +149,7 @@ export async function findDonationsByDonor(donorProfileId, options = {}) {
   });
 }
 
-export function listReportingDimensionsByDonor(
-  donorProfileId,
-  options = {},
-) {
+export function listReportingDimensionsByDonor(donorProfileId, options = {}) {
   const query = Donation.find({ donorProfileId })
     .select("_id foodCategory measurementUnit")
     .lean();
@@ -367,16 +364,12 @@ export async function applyManualDonation(
             ],
           },
           closedAt: {
-            $cond: [
-              { $lt: ["$remainingQuantity", 1] },
-              closedAt,
-              "$closedAt",
-            ],
+            $cond: [{ $lt: ["$remainingQuantity", 1] }, closedAt, "$closedAt"],
           },
         },
       },
     ],
-    { new: true, session: options.session },
+    { new: true, session: options.session, updatePipeline: true },
   );
 }
 
