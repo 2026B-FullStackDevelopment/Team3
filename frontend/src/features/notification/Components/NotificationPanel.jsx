@@ -9,7 +9,9 @@ export function NotificationPanel({ panelRef, onClose }) {
   const { role } = useAuth();
   const {
     entries,
+    unreadEntries,
     unreadCount,
+    unreadStatus,
     status,
     socketStatus,
     error,
@@ -19,12 +21,19 @@ export function NotificationPanel({ panelRef, onClose }) {
     soundBlocked,
     enableSound,
     toggleSound,
+    loadUnread,
   } = useNotifications();
 
   const { filter, setFilter, visibleEntries } = useNotificationFilter(
     entries,
+    unreadEntries,
     5,
   );
+  const selectFilter = (value) => {
+    setFilter(value);
+    if (value === "unread") loadUnread();
+  };
+  const filteredStatus = filter === "unread" ? unreadStatus : status;
   const feedPath = role === "Donor" ? "/donor/notifications" : "/notifications";
 
   return (
@@ -58,7 +67,7 @@ export function NotificationPanel({ panelRef, onClose }) {
             <button
               key={value}
               type="button"
-              onClick={() => setFilter(value)}
+              onClick={() => selectFilter(value)}
               aria-pressed={filter === value}
               className={cn(
                 "min-h-11 rounded-full px-3 text-sm font-medium capitalize",
@@ -106,7 +115,7 @@ export function NotificationPanel({ panelRef, onClose }) {
       )}
 
       <div className="max-h-[min(60vh,30rem)] overflow-y-auto">
-        {status === "loading" && entries.length === 0 && (
+        {filteredStatus === "loading" && visibleEntries.length === 0 && (
           <div className="space-y-3 p-4" aria-label="Loading notifications">
             {[1, 2, 3].map((item) => (
               <div
@@ -116,7 +125,7 @@ export function NotificationPanel({ panelRef, onClose }) {
             ))}
           </div>
         )}
-        {status !== "loading" && visibleEntries.length === 0 && (
+        {filteredStatus !== "loading" && visibleEntries.length === 0 && (
           <div className="px-6 py-10 text-center">
             <p className="font-heading font-semibold">You're all caught up</p>
             <p className="mt-1 text-sm text-muted">

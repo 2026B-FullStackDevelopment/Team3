@@ -7,18 +7,35 @@ import { useNotifications } from "@/features/notification/Hook/useNotifications.
 export function NotificationPage() {
   const {
     entries,
+    unreadEntries,
     unreadCount,
+    unreadStatus,
     total,
     status,
     error,
     hasMore,
+    hasMoreUnread,
     selectNotification,
     markAllRead,
     loadMore,
+    loadUnread,
+    loadMoreUnread,
     refresh,
   } = useNotifications();
 
-  const { filter, setFilter, visibleEntries } = useNotificationFilter(entries);
+  const { filter, setFilter, visibleEntries } = useNotificationFilter(
+    entries,
+    unreadEntries,
+  );
+  const selectFilter = (value) => {
+    setFilter(value);
+    if (value === "unread") loadUnread();
+  };
+  const filteredStatus = filter === "unread" ? unreadStatus : status;
+  const filteredHasMore = filter === "unread" ? hasMoreUnread : hasMore;
+  const loadMoreFiltered =
+    filter === "unread" ? loadMoreUnread : loadMore;
+  const refreshFiltered = filter === "unread" ? loadUnread : refresh;
 
   return (
     <section className="mx-auto max-w-3xl">
@@ -51,7 +68,7 @@ export function NotificationPage() {
               <button
                 key={value}
                 type="button"
-                onClick={() => setFilter(value)}
+                onClick={() => selectFilter(value)}
                 aria-pressed={filter === value}
                 className={cn(
                   "min-h-11 rounded-full px-4 text-sm font-medium capitalize",
@@ -66,7 +83,7 @@ export function NotificationPage() {
           </div>
           <button
             type="button"
-            onClick={refresh}
+            onClick={refreshFiltered}
             className="min-h-11 px-2 text-sm font-semibold text-primary hover:text-primary-hover"
           >
             Refresh
@@ -78,12 +95,12 @@ export function NotificationPage() {
             {error}
           </p>
         )}
-        {status === "loading" && entries.length === 0 && (
+        {filteredStatus === "loading" && visibleEntries.length === 0 && (
           <p className="px-6 py-12 text-center text-muted">
             Loading notifications…
           </p>
         )}
-        {status !== "loading" && visibleEntries.length === 0 && (
+        {filteredStatus !== "loading" && visibleEntries.length === 0 && (
           <div className="px-6 py-14 text-center">
             <p className="font-heading text-lg font-semibold">
               You're all caught up
@@ -103,13 +120,13 @@ export function NotificationPage() {
           />
         ))}
 
-        {hasMore && filter === "all" && (
+        {filteredHasMore && (
           <div className="flex justify-center border-t border-khaki p-4">
             <Button
               variant="secondary"
               size="sm"
-              onClick={loadMore}
-              loading={status === "loading"}
+              onClick={loadMoreFiltered}
+              loading={filteredStatus === "loading"}
             >
               Load older notifications
             </Button>

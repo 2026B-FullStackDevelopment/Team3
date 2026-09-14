@@ -12,6 +12,11 @@ import { NotificationBellTrigger } from "@/features/notification/Components/Noti
 export function RoleLayout({ role }) {
   const { user, logout } = useAuth();
   const home = homePathForRole(user?.role);
+  const notificationActions =
+    role === "recipient" || role === "donor" ? (
+      <NotificationBellTrigger />
+    ) : null;
+
   return (
     <div className="min-h-screen bg-cream text-ink">
       <Navbar
@@ -19,7 +24,7 @@ export function RoleLayout({ role }) {
         user={user}
         home={home}
         onLogout={logout}
-        actions={<NotificationBellTrigger />}
+        actions={notificationActions}
       />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <Outlet />

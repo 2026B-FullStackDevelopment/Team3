@@ -13,6 +13,10 @@ const INITIAL_STATE = {
   total: 0,
   page: 0,
   limit: 20,
+  unreadEntries: [],
+  unreadTotal: 0,
+  unreadPage: 0,
+  unreadStatus: "idle",
   unreadCount: 0,
   status: "idle",
   socketStatus: "disconnected",
@@ -59,15 +63,48 @@ function reducer(state, action) {
         status: state.entries.length ? "ready" : "error",
         error: action.message,
       };
+    case "unread-load-start":
+      return {
+        ...state,
+        unreadStatus: state.unreadEntries.length ? "ready" : "loading",
+        error: null,
+      };
+    case "unread-load-success":
+      return {
+        ...state,
+        unreadEntries:
+          action.page === 1
+            ? action.entries
+            : mergeEntries(state.unreadEntries, action.entries),
+        unreadTotal: action.total,
+        unreadPage: action.page,
+        unreadStatus: "ready",
+        error: null,
+      };
+    case "unread-load-error":
+      return {
+        ...state,
+        unreadStatus: state.unreadEntries.length ? "ready" : "error",
+        error: action.message,
+      };
     case "count-success":
-      return { ...state, unreadCount: Math.max(0, action.count) };
+      return {
+        ...state,
+        unreadCount: Math.max(0, action.count),
+        unreadTotal: Math.max(0, action.count),
+      };
     case "socket-status":
       return { ...state, socketStatus: action.status };
     case "receive":
       return {
         ...state,
         entries: mergeEntries(state.entries, [action.notification]),
+        unreadEntries: action.notification.isRead
+          ? state.unreadEntries
+          : mergeEntries(state.unreadEntries, [action.notification]),
         total: state.total + 1,
+        unreadTotal:
+          state.unreadTotal + (action.notification.isRead ? 0 : 1),
         unreadCount: state.unreadCount + (action.notification.isRead ? 0 : 1),
         toast: action.notification,
       };
@@ -79,6 +116,10 @@ function reducer(state, action) {
         entries: state.entries.map((entry) =>
           entry.id === action.id ? { ...entry, isRead: true } : entry,
         ),
+        unreadEntries: state.unreadEntries.filter(
+          (entry) => entry.id !== action.id,
+        ),
+        unreadTotal: Math.max(0, state.unreadTotal - 1),
         unreadCount: Math.max(0, state.unreadCount - 1),
       };
     case "restore-one":
@@ -87,6 +128,8 @@ function reducer(state, action) {
         entries: state.entries.map((entry) =>
           entry.id === action.id ? { ...entry, isRead: false } : entry,
         ),
+        unreadEntries: mergeEntries(state.unreadEntries, [action.entry]),
+        unreadTotal: state.unreadTotal + 1,
         unreadCount: state.unreadCount + 1,
         error: action.message,
       };
@@ -96,6 +139,9 @@ function reducer(state, action) {
         entries: state.entries.map((entry) =>
           action.ids.has(entry.id) ? { ...entry, isRead: true } : entry,
         ),
+        unreadEntries: [],
+        unreadTotal: 0,
+        unreadPage: 0,
         unreadCount: 0,
       };
     case "restore-many":
@@ -104,6 +150,9 @@ function reducer(state, action) {
         entries: state.entries.map((entry) =>
           action.ids.has(entry.id) ? { ...entry, isRead: false } : entry,
         ),
+        unreadEntries: action.entries,
+        unreadTotal: action.previousUnreadCount,
+        unreadPage: action.previousUnreadPage,
         unreadCount: state.unreadCount + action.previousUnreadCount,
         error: action.message,
       };
@@ -193,6 +242,41 @@ export function useNotificationFeed() {
     },
     [currentRequest, isCurrentRequest],
   );
+
+  const loadUnreadPage = useCallback(
+    async (page = 1, request = currentRequest()) => {
+      if (!isCurrentRequest(request)) return false;
+      dispatch({ type: "unread-load-start" });
+      const result = await notificationService.list({
+        page,
+        limit: 20,
+        unreadOnly: true,
+      });
+      if (!isCurrentRequest(request)) return false;
+      if (!result.ok) {
+        dispatch({
+          type: "unread-load-error",
+          message: errorMessage(
+            result,
+            "Unread notifications could not be loaded.",
+          ),
+        });
+        return false;
+      }
+      const entries = (result.data?.entries ?? [])
+        .map(normalizeNotification)
+        .filter(Boolean);
+      entries.forEach((entry) => seenIds.current.add(entry.id));
+      dispatch({
+        type: "unread-load-success",
+        entries,
+        total: Number(result.data?.total) || entries.length,
+        page: Number(result.data?.page) || page,
+      });
+      return true;
+    },
+    [currentRequest, isCurrentRequest],
+  );
   const refresh = useCallback(
     async (request = currentRequest()) => {
       await Promise.all([loadPage(1, request), refreshCount(request)]);
@@ -269,6 +353,7 @@ export function useNotificationFeed() {
       dispatch({
         type: "restore-one",
         id,
+        entry,
         message: errorMessage(
           result,
           "The notification could not be marked as read.",
@@ -288,6 +373,8 @@ export function useNotificationFeed() {
       state.entries.filter((entry) => !entry.isRead).map((entry) => entry.id),
     );
     const previousUnreadCount = state.unreadCount;
+    const previousUnreadEntries = state.unreadEntries;
+    const previousUnreadPage = state.unreadPage;
     if (previousUnreadCount === 0) return true;
     dispatch({ type: "mark-all", ids });
     const request = currentRequest();
@@ -297,20 +384,44 @@ export function useNotificationFeed() {
     dispatch({
       type: "restore-many",
       ids,
+      entries: previousUnreadEntries,
       previousUnreadCount,
+      previousUnreadPage,
       message: errorMessage(
         result,
         "Notifications could not be marked as read.",
       ),
     });
     return false;
-  }, [currentRequest, isCurrentRequest, state.entries, state.unreadCount]);
+  }, [
+    currentRequest,
+    isCurrentRequest,
+    state.entries,
+    state.unreadCount,
+    state.unreadEntries,
+    state.unreadPage,
+  ]);
 
   const loadMore = useCallback(() => {
     if (state.entries.length >= state.total || state.status === "loading")
       return;
     loadPage(state.page + 1);
   }, [loadPage, state.entries.length, state.page, state.status, state.total]);
+  const loadUnread = useCallback(() => loadUnreadPage(1), [loadUnreadPage]);
+  const loadMoreUnread = useCallback(() => {
+    if (
+      state.unreadEntries.length >= state.unreadTotal ||
+      state.unreadStatus === "loading"
+    )
+      return;
+    loadUnreadPage(Math.floor(state.unreadEntries.length / state.limit) + 1);
+  }, [
+    loadUnreadPage,
+    state.unreadEntries.length,
+    state.limit,
+    state.unreadStatus,
+    state.unreadTotal,
+  ]);
   const dismissToast = useCallback(
     () => dispatch({ type: "dismiss-toast" }),
     [],
@@ -320,10 +431,13 @@ export function useNotificationFeed() {
     () => ({
       ...state,
       hasMore: state.entries.length < state.total,
+      hasMoreUnread: state.unreadEntries.length < state.unreadTotal,
       markRead,
       selectNotification,
       markAllRead,
       loadMore,
+      loadUnread,
+      loadMoreUnread,
       refresh,
       soundEnabled,
       soundBlocked,
@@ -333,6 +447,8 @@ export function useNotificationFeed() {
     [
       enableSound,
       loadMore,
+      loadMoreUnread,
+      loadUnread,
       markAllRead,
       markRead,
       refresh,
