@@ -12,6 +12,7 @@ import { notificationPreferenceRoutes } from "./modules/notification/routes/noti
 import { paymentsWebhookRoutes } from "./modules/payments/routes/paymentsWebhook.routes.js";
 import { registerPaymentHandlers } from "./modules/identity/index.js";
 import { notificationRoutes } from "./modules/notification/routes/notification.routes.js";
+import { feedbackRoutes } from "./modules/feedback/routes/feedback.routes.js";
 import { env } from "./config/env.js";
 
 const app = express();
@@ -54,8 +55,7 @@ app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/notifications", notificationRoutes);
-
-// TODO: mount remaining routers such as feedback as they are implemented.
+app.use("/api/feedback", feedbackRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "NOT_FOUND", message: "Route not found" });

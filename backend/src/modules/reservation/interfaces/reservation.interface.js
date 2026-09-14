@@ -24,6 +24,26 @@ function requireOptionalDate(value, fieldName) {
   return value;
 }
 
+function requireReservationId(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new ValidationError("reservationId is required");
+  }
+  return value.trim();
+}
+
+function toFeedbackDTO(reservation) {
+  if (!reservation) return reservation;
+
+  return {
+    id: reservation._id ?? reservation.id,
+    donationId: reservation.donationId,
+    recipientProfileId: reservation.recipientProfileId,
+    status: reservation.status,
+    feedback: reservation.feedback,
+    collectedAt: reservation.collectedAt,
+  };
+}
+
 export async function listAffectedRecipientProfileIds(
   donationId,
   options = {},
@@ -106,4 +126,21 @@ export async function summarizeCollectedReservationsByDonation(
     donationCount: Number(row.donationCount ?? 0),
     revenue: Number(row.revenue ?? 0),
   }));
+}
+
+/**
+ * Attach recipient feedback (SRS 5.2.4). recipientProfileId is trusted here
+ * -- it's resolved from a real RecipientProfile lookup one step earlier in
+ * the caller, not raw user input, same trust split as `options.session`
+ * elsewhere in this file. reservationId is a raw URL param, so that's the
+ * one arg actually validated at this boundary.
+ */
+export async function submitFeedback(reservationId, recipientProfileId, feedback) {
+  const updated = await reservationRepository.submitFeedback(
+    requireReservationId(reservationId),
+    recipientProfileId,
+    feedback,
+  );
+
+  return toFeedbackDTO(updated);
 }
