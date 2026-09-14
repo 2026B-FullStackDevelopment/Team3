@@ -1,19 +1,16 @@
-import mongoose from "mongoose";
 import * as donationRepository from "../repositories/donation.repo.js";
-import * as reservationRepository from "../../reservation/repositories/ReservationRepository.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import {
-  allowsOnlineReservationForMeasurementUnit,
   MeasurementUnit,
-  PerRequestDonationWarning,
   DonationStatus,
-  DonationSchema,
 } from "../models/donation.model.js";
 import {
   ConflictError,
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/errors.js";
-import { toDonationSummaryDTO } from "../dtos/donation.dto.js";
+import { FoodCategory } from "../../../shared/constants/foodCategory.js";
+import { toAdminDonationActionDTO } from "../dtos/donation.dto.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -21,7 +18,7 @@ const MAX_LIMIT = 100;
 
 const VALID_MEASUREMENT_UNIT = Object.values(MeasurementUnit);
 const VALID_STATUSES = Object.values(DonationStatus);
-const VALID_FOOD_CATEGORY = DonationSchema.foodCategory.enum;
+const VALID_FOOD_CATEGORY = Object.values(FoodCategory);
 const VALID_SORT_FIELDS = ["createdAt", "revenue"];
 const VALID_SORT_ORDERS = ["asc", "desc"];
 
@@ -30,28 +27,6 @@ function toPlainDonation(donation) {
   return typeof donation.toObject === "function"
     ? donation.toObject()
     : donation;
-}
-
-export function buildReservationPolicy(donation) {
-  const measurementUnit =
-    typeof donation === "string" ? donation : donation?.measurementUnit;
-  const allowsOnlineReservation =
-    allowsOnlineReservationForMeasurementUnit(measurementUnit);
-
-  return {
-    allowsOnlineReservation,
-    warningMessages: allowsOnlineReservation ? [] : PerRequestDonationWarning,
-  };
-}
-
-export function toDonationListingResponse(donation) {
-  const listing = toPlainDonation(donation);
-  if (!listing) return listing;
-
-  return {
-    ...listing,
-    reservationPolicy: buildReservationPolicy(listing),
-  };
 }
 
 //VALIDATION HELPERS
@@ -459,7 +434,7 @@ export async function listFoodListingDonations(
   const listing = await getOwnedDonation(donationId, donorProfileId);
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
-  const result = await reservationRepository.findByDonationId(listing.id, {
+  const result = await reservation.listReservationsByDonation(listing.id, {
     page,
     limit,
   });
@@ -604,7 +579,7 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
   }
 
   if (status === DonationStatus.Cancelled) {
-    await reservationRepository.cancelActiveReservationsForDonation(id);
+    await reservation.cancelActiveReservationsByDonation(id);
   }
 
   return updated;
@@ -627,20 +602,9 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
  */
 export async function adminCancelDonation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const requestedAt = options.requestedAt ?? new Date();
-  const deadline = options.deadline;
-  if (!(deadline instanceof Date) || Number.isNaN(deadline.getTime())) {
-    throw new ValidationError("A valid cancellation deadline is required");
-  }
 
   const updated = await donationRepository.requestAdminCancellation(
     donationId,
-    {
-      requestedAt,
-      deadline,
-      requestedBy: requireNonEmptyString(options.requestedBy, "requestedBy"),
-      auditLogId: requireNonEmptyString(options.auditLogId, "auditLogId"),
-    },
     options,
   );
   if (!updated) {
@@ -649,7 +613,7 @@ export async function adminCancelDonation(id, options = {}) {
     );
   }
 
-  return toDonationSummaryDTO(updated);
+  return toAdminDonationActionDTO(updated);
 }
 
 /**
@@ -663,14 +627,13 @@ export async function reinstateDonation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
   const updated = await donationRepository.reinstateAdminCancellation(
     donationId,
-    options.now ?? new Date(),
     options,
   );
   if (!updated) {
     throw new ConflictError("The cancellation can no longer be undone");
   }
 
-  return toDonationSummaryDTO(updated);
+  return toAdminDonationActionDTO(updated);
 }
 
 /**
@@ -681,10 +644,8 @@ export async function reinstateDonation(id, options = {}) {
  */
 export async function finalizeCancellation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const now = options.now ?? new Date();
   const updated = await donationRepository.finalizeAdminCancellation(
     donationId,
-    now,
     options,
   );
   if (!updated) {
@@ -692,7 +653,7 @@ export async function finalizeCancellation(id, options = {}) {
       "The listing is not an expired pending cancellation",
     );
   }
-  return toDonationSummaryDTO(updated);
+  return toAdminDonationActionDTO(updated);
 }
 //ADD DELETION
 export async function deleteDonation(id, donorProfileId) {

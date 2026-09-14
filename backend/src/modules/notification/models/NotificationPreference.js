@@ -1,13 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-export const foodCategory = {
-  Fruit: "Fruit",
-  Vegetable: "Vegetable",
-  Meat: "Meat",
-  CookedDish: "CookedDish",
-  BakedGoods: "BakedGoods",
-  Drink: "Drink",
-};
+import { FoodCategory } from "../../../shared/constants/foodCategory.js";
 
 const NotificationPreferenceSchema = new Schema({
   _id: {
@@ -22,7 +15,7 @@ const NotificationPreferenceSchema = new Schema({
   },
   foodCategory: {
     type: [String],
-    enum: Object.values(foodCategory),
+    enum: Object.values(FoodCategory),
   },
   isVegetarian: {
     type: Boolean,

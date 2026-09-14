@@ -149,6 +149,17 @@ export async function findDonationsByDonor(donorProfileId, options = {}) {
   });
 }
 
+export function listReportingDimensionsByDonor(
+  donorProfileId,
+  options = {},
+) {
+  const query = Donation.find({ donorProfileId })
+    .select("_id foodCategory measurementUnit")
+    .lean();
+  if (options.session) query.session(options.session);
+  return query;
+}
+
 export async function findActiveDonations(filters = {}) {
   return findAll({
     ...filters,
@@ -323,6 +334,52 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
   );
 }
 
+export async function applyManualDonation(
+  id,
+  donorProfileId,
+  quantity,
+  totalPaid,
+  options = {},
+) {
+  const closedAt = options.closedAt ?? new Date();
+
+  return Donation.findOneAndUpdate(
+    {
+      _id: id,
+      donorProfileId: String(donorProfileId),
+      status: DonationStatus.Active,
+      remainingQuantity: { $gte: quantity },
+    },
+    [
+      {
+        $set: {
+          remainingQuantity: { $subtract: ["$remainingQuantity", quantity] },
+          revenue: { $add: [{ $ifNull: ["$revenue", 0] }, totalPaid] },
+        },
+      },
+      {
+        $set: {
+          status: {
+            $cond: [
+              { $lt: ["$remainingQuantity", 1] },
+              DonationStatus.SoldOut,
+              "$status",
+            ],
+          },
+          closedAt: {
+            $cond: [
+              { $lt: ["$remainingQuantity", 1] },
+              closedAt,
+              "$closedAt",
+            ],
+          },
+        },
+      },
+    ],
+    { new: true, session: options.session },
+  );
+}
+
 export async function closeIfSoldOut(id, options = {}) {
   return Donation.findOneAndUpdate(
     {
@@ -352,50 +409,26 @@ export async function deleteOwnedDonation(id, donorProfileId) {
   });
 }
 
-export function requestAdminCancellation(id, cancellation, options = {}) {
+export function requestAdminCancellation(id, options = {}) {
   return Donation.findOneAndUpdate(
     { _id: id, status: DonationStatus.Active, closedAt: null },
-    {
-      $set: {
-        status: DonationStatus.PendingCancellation,
-        cancellationRequestedAt: cancellation.requestedAt,
-        cancellationDeadline: cancellation.deadline,
-        cancellationRequestedBy: cancellation.requestedBy,
-        cancellationAuditLogId: cancellation.auditLogId,
-      },
-    },
+    { $set: { status: DonationStatus.PendingCancellation } },
     { new: true, runValidators: true, session: options.session },
   );
 }
 
-export function reinstateAdminCancellation(id, now, options = {}) {
+export function reinstateAdminCancellation(id, options = {}) {
   return Donation.findOneAndUpdate(
-    {
-      _id: id,
-      status: DonationStatus.PendingCancellation,
-      cancellationDeadline: { $gt: now },
-    },
-    {
-      $set: { status: DonationStatus.Active, closedAt: null },
-      $unset: {
-        cancellationRequestedAt: "",
-        cancellationDeadline: "",
-        cancellationRequestedBy: "",
-        cancellationAuditLogId: "",
-      },
-    },
+    { _id: id, status: DonationStatus.PendingCancellation },
+    { $set: { status: DonationStatus.Active, closedAt: null } },
     { new: true, runValidators: true, session: options.session },
   );
 }
 
-export function finalizeAdminCancellation(id, now, options = {}) {
+export function finalizeAdminCancellation(id, options = {}) {
   return Donation.findOneAndUpdate(
-    {
-      _id: id,
-      status: DonationStatus.PendingCancellation,
-      cancellationDeadline: { $lte: now },
-    },
-    { $set: { status: DonationStatus.Cancelled, closedAt: now } },
+    { _id: id, status: DonationStatus.PendingCancellation },
+    { $set: { status: DonationStatus.Cancelled, closedAt: new Date() } },
     { new: true, runValidators: true, session: options.session },
   );
 }

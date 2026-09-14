@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
 
 import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
-import {
-  Reservation,
-  ReservationStatus,
-} from "../../reservation/models/Reservation.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import * as identity from "../../identity/index.js";
 import * as wallet from "../../wallet/index.js";
 import {
@@ -14,7 +11,8 @@ import {
   ValidationError,
 } from "../../../shared/errors/errors.js";
 import { buildSoldOutAlert } from "./soldOutAlert.service.js";
-import { Donation, DonationStatus } from "../models/donation.model.js";
+import { DonationStatus } from "../models/donation.model.js";
+import * as donationRepository from "../repositories/donation.repo.js";
 import { validateManualDonationInput } from "../validators/manualDonation.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
 
@@ -33,7 +31,7 @@ export async function createManualDonation(
   let createdNotifications = [];
 
   const execute = async () => {
-    const listing = await Donation.findById(donationId).session(session);
+    const listing = await donationRepository.findById(donationId, { session });
     if (!listing) throw new NotFoundError("Food listing not found");
     if (String(listing.donorProfileId) !== String(donorProfileId)) {
       throw new ForbiddenError("The food listing belongs to another donor");
@@ -89,40 +87,27 @@ export async function createManualDonation(
       amountReceived = totalPrice;
     }
 
-    const remainingQuantity = listing.remainingQuantity - data.quantity;
-    const soldOut = remainingQuantity < 1;
-    const updatedListing = await Donation.findOneAndUpdate(
-      {
-        _id: donationId,
-        donorProfileId: String(donorProfileId),
-        status: DonationStatus.Active,
-        remainingQuantity: { $gte: data.quantity },
-      },
-      {
-        $inc: { remainingQuantity: -data.quantity, revenue: totalPrice },
-        ...(soldOut
-          ? { $set: { status: DonationStatus.SoldOut, closedAt: new Date() } }
-          : {}),
-      },
-      { new: true, session },
+    const updatedListing = await donationRepository.applyManualDonation(
+      donationId,
+      donorProfileId,
+      data.quantity,
+      totalPrice,
+      { session },
     );
     if (!updatedListing) {
       throw new ConflictError("The listing changed; retry the manual donation");
     }
+    const soldOut = updatedListing.status === DonationStatus.SoldOut;
 
-    const [reservation] = await Reservation.create(
-      [
-        {
-          donationId,
-          recipientProfileId: data.recipientProfileId,
-          manualRecipientName: data.recipientName,
-          quantity: data.quantity,
-          status: ReservationStatus.Collected,
-          totalPaid: totalPrice,
-          paymentMethod,
-          collectedAt: new Date(),
-        },
-      ],
+    const reservationResult = await reservation.recordManualCollection(
+      {
+        donationId,
+        recipientProfileId: data.recipientProfileId,
+        manualRecipientName: data.recipientName,
+        quantity: data.quantity,
+        totalPaid: totalPrice,
+        paymentMethod,
+      },
       { session },
     );
 
@@ -133,7 +118,7 @@ export async function createManualDonation(
         {
           type: wallet.TransactionType.FoodPurchase,
           method: PaymentMethod.Wallet,
-          relatedReservationId: reservation._id,
+          relatedReservationId: reservationResult._id,
         },
         { session },
       );
@@ -148,7 +133,7 @@ export async function createManualDonation(
     }
 
     return {
-      donation: reservation,
+      donation: reservationResult,
       payment: {
         method: paymentMethod ?? null,
         totalPrice,

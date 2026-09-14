@@ -1,4 +1,4 @@
-import * as reservationRepository from "../../reservation/repositories/ReservationRepository.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import { NotFoundError } from "../../../shared/errors/errors.js";
 
 /**
@@ -8,7 +8,7 @@ import { NotFoundError } from "../../../shared/errors/errors.js";
  * doesn't call for finer-grained error cases.
  */
 export async function submitFeedback(reservationId, recipientProfileId, feedbackText) {
-  const updated = await reservationRepository.submitFeedback(
+  const updated = await reservation.submitFeedback(
     reservationId,
     recipientProfileId,
     feedbackText,

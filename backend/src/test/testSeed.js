@@ -8,10 +8,8 @@ import { RecipientProfile } from "../modules/users/models/RecipientProfile.js";
 
 import { DonorProfile } from "../modules/users/models/DonorProfile.js";
 
-import {
-  NotificationPreference,
-  foodCategory,
-} from "../modules/notification/models/NotificationPreference.js";
+import { NotificationPreference } from "../modules/notification/models/NotificationPreference.js";
+import { FoodCategory } from "../shared/constants/foodCategory.js";
 
 import { Wallet } from "../modules/wallet/models/Wallet.js";
 
@@ -295,7 +293,7 @@ async function createNotificationPreference(recipientProfileId) {
     recipientProfileId,
 
     // Adjust enum names here if your model differs.
-    foodCategory: [foodCategory.Fruit],
+    foodCategory: [FoodCategory.Fruit],
 
     isVegetarian: false,
 
@@ -339,7 +337,7 @@ async function createDonations(donorProfileId) {
 
     measurementUnit: MeasurementUnit.Unit,
 
-    foodCategory: foodCategory.BakedGoods,
+    foodCategory: FoodCategory.BakedGoods,
 
     isVegetarian: true,
 
@@ -373,7 +371,7 @@ async function createDonations(donorProfileId) {
 
     measurementUnit: MeasurementUnit.KG,
 
-    foodCategory: foodCategory.Fruit,
+    foodCategory: FoodCategory.Fruit,
 
     isVegetarian: true,
 
@@ -551,7 +549,7 @@ async function createDonorReportItem(donorReportId) {
   const item = await DonorReportItem.create({
     donorReportId,
 
-    foodCategory: foodCategory.Fruit,
+    foodCategory: FoodCategory.Fruit,
 
     measurementUnit: MeasurementUnit.KG,
 
