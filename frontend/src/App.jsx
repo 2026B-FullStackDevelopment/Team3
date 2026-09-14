@@ -1,6 +1,6 @@
 import { RouterProvider } from "react-router-dom";
 import { AuthProvider } from "@/context/auth/AuthProvider.jsx";
-import { NotificationProvider } from "@/features/notification/Context/NotificationProvider.jsx";
+import { NotificationProvider } from "@/features/notification/Components/NotificationProvider.jsx";
 import { router } from "@/routes/index.jsx";
 import { RouteErrorBoundary } from "@/app/RouteErrorBoundary.jsx";
 /**
