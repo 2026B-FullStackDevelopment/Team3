@@ -7,7 +7,7 @@ import { ReportPeriodControls } from "@/features/donation/components/report/Repo
 import {
   buildPresetRange,
   REPORT_PERIODS,
-} from "@/features/donation/components/report/reportUtils.js";
+} from "@/features/donation/models/reportUtils.js";
 import { CATEGORY_LABELS, UNIT_LABELS } from "@/lib/donation.js";
 import { formatDateTime, formatVnd } from "@/lib/formatters.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
