@@ -1,5 +1,5 @@
 import * as donorListingService from "../services/donation.service.js";
-import { toDonationListingResponse } from "../services/donation.service.js";
+import { toDonorListingDTO } from "../dtos/donation.dto.js";
 import { removeUploadedImage } from "../../../middleware/imageUpload.js";
 
 function getDonorProfileId(req) {
@@ -43,7 +43,7 @@ export async function listFoodListings(req, res, next) {
     const totalPages = Math.ceil(result.total / result.limit);
 
     res.status(200).json({
-      entries: result.entries.map(toDonationListingResponse),
+      entries: result.entries.map(toDonorListingDTO),
       metadata: {
         total: result.total,
         page: result.page,
@@ -78,7 +78,7 @@ export async function createFoodListing(req, res, next) {
     });
 
     res.status(201).json({
-      listing: toDonationListingResponse(listing),
+      listing: toDonorListingDTO(listing),
     });
   } catch (error) {
     // If validation or persistence failed, the uploaded file has no DB owner.
@@ -99,7 +99,7 @@ export async function getFoodListing(req, res, next) {
     );
 
     res.status(200).json({
-      listing: toDonationListingResponse(listing),
+      listing: toDonorListingDTO(listing),
     });
   } catch (error) {
     next(error);
@@ -148,7 +148,7 @@ export async function updateFoodListing(req, res, next) {
     );
 
     res.status(200).json({
-      listing: toDonationListingResponse(listing),
+      listing: toDonorListingDTO(listing),
     });
   } catch (error) {
     next(error);
@@ -181,7 +181,7 @@ export async function updateListingStatus(req, res, next) {
     );
 
     res.status(200).json({
-      listing: toDonationListingResponse(listing),
+      listing: toDonorListingDTO(listing),
     });
   } catch (error) {
     next(error);
@@ -201,7 +201,7 @@ export async function updateListingRation(req, res, next) {
     );
 
     res.status(200).json({
-      listing: toDonationListingResponse(listing),
+      listing: toDonorListingDTO(listing),
     });
   } catch (error) {
     next(error);
@@ -221,7 +221,7 @@ export async function duplicateFoodListing(req, res, next) {
     );
 
     res.status(201).json({
-      listing: toDonationListingResponse(listing),
+      listing: toDonorListingDTO(listing),
     });
   } catch (error) {
     next(error);

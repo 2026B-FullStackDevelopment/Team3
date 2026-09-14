@@ -631,13 +631,10 @@ export async function listAllFoodListings(filters = {}) {
   );
 
   return {
-    listings: entries.map((entry) => {
-      const summary = donation.toDonationSummaryDTO(entry);
-      return {
-        ...summary,
-        donorName: donorNameById.get(summary.donorProfileId) ?? null,
-      };
-    }),
+    listings: entries.map((entry) => ({
+      ...entry,
+      donorName: donorNameById.get(entry.donorProfileId) ?? null,
+    })),
     total,
     page: resolvedPage,
     limit: resolvedLimit,
@@ -670,10 +667,9 @@ export async function cancelDonation(adminId, donationId) {
   try {
     let after;
     await session.withTransaction(async () => {
-      const beforeDonation = await donation.readDonationById(donationId, {
+      const before = await donation.readDonationById(donationId, {
         session,
       });
-      const before = donation.toDonationSummaryDTO(beforeDonation);
       after = await donation.adminCancelDonation(donationId, { session });
 
       await createAuditLog(

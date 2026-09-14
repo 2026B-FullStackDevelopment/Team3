@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
-import { foodCategory } from "../../notification/models/NotificationPreference.js";
+import { FoodCategory } from "../../../shared/constants/foodCategory.js";
 import { MeasurementUnit } from "../../donation/models/donation.model.js";
 
 const DonorReportItemSchema = new Schema({
@@ -16,7 +16,7 @@ const DonorReportItemSchema = new Schema({
   },
   foodCategory: {
     type: String,
-    enum: Object.values(foodCategory),
+    enum: Object.values(FoodCategory),
   },
   measurementUnit: {
     type: String,
