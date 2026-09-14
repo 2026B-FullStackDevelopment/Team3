@@ -19,6 +19,8 @@ import { Placeholder } from '@/routes/pages/Placeholder.jsx'
 import { DonationDashboardPage } from '@/features/donation/pages/DonationDashboardPage.jsx'
 import { ListingFormPage } from '@/features/donation/pages/ListingFormPage.jsx'
 import { ManualDonationPage } from '@/features/donation/pages/ManualDonationPage.jsx'
+import { ListingDonationsPage } from '@/features/donation/pages/ListingDonationsPage.jsx'
+import { CollectionHistoryPage } from '@/features/reservation/pages/CollectionHistoryPage.jsx'
 import { UserManagementPage } from '@/features/admin/pages/UserManagementPage.jsx'
 import { ListingModerationPage } from '@/features/admin/pages/ListingModerationPage.jsx'
 import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx'
@@ -54,7 +56,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/profile', element: <RecipientProfilePage /> },
               { path: '/browse', element: <Placeholder name="Browse" /> },
-              { path: '/history', element: <Placeholder name="History" /> },
+              { path: '/history', element: <CollectionHistoryPage /> },
               { path: '/notifications', element: <NotificationPreferencesPage /> },
               { path: '/wallet', element: <WalletPage /> },
               { path: '/premium', element: <PremiumPage /> },
@@ -74,6 +76,7 @@ export const router = createBrowserRouter([
               { path: '/donor/listings/new', element: <ListingFormPage /> },
               { path: '/donor/listings/:listingId/edit', element: <ListingFormPage mode="edit" /> },
               { path: '/donor/listings/:listingId/duplicate', element: <ListingFormPage mode="duplicate" /> },
+              { path: '/donor/listings/:listingId/donations', element: <ListingDonationsPage /> },
               { path: '/donor/manual-donations', element: <ManualDonationPage /> },
               { path: '/donor/profile', element: <DonorProfilePage /> },
             ],

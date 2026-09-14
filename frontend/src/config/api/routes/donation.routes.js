@@ -5,5 +5,6 @@ export const donationRoutes = {
   duplicate: (id) => `/api/donor/food-listings/${id}/duplicate`,
   status: (id) => `/api/donor/food-listings/${id}/status`,
   ration: (id) => `/api/donor/food-listings/${id}/ration`,
+  donations: (id) => `/api/donor/food-listings/${id}/donations`,
   reports: '/api/donor/reports/dashboard',
 }

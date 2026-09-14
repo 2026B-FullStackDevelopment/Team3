@@ -118,6 +118,18 @@ export const donationService = {
     return apiFetch(donationRoutes.listing(id), { method: "DELETE" });
   },
 
+  /** Fetches the paginated list of reservations/donations for one listing (SRS 4.2.5). */
+  async listingDonations(id, filters = {}, signal) {
+    const payload = await apiFetch(
+      `${donationRoutes.donations(id)}${queryString(filters)}`,
+      { signal },
+    );
+    return {
+      entries: payload?.entries ?? [],
+      metadata: payload?.metadata ?? {},
+    };
+  },
+
   /** Records an in-person donation and returns its updated normalized listing. */
   async manualDonation(id, body) {
     const payload = await apiFetch(
