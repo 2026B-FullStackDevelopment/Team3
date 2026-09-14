@@ -1,6 +1,6 @@
 import { cn } from '@/shared/utils/cn.js'
 
-/** Multi-line text control, styled to match Input.jsx. Presentation only. */
+/** Multi-line text control, styled to match the shared Input.jsx. Presentation only. */
 
 const base =
   'w-full rounded-xl border bg-surface px-4 py-3 text-sm text-ink placeholder:text-muted/70 ' +

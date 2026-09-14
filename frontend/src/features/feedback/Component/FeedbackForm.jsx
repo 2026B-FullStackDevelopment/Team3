@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/shared/components/Button.jsx'
-import { Textarea } from '@/shared/components/Textarea.jsx'
+import { Textarea } from '@/features/feedback/Component/Textarea.jsx'
 
 const MAX_LENGTH = 1000
 
