@@ -1,4 +1,4 @@
-import { Reservation } from '../models/Reservation.js';
+import { Reservation, ReservationStatus } from '../models/Reservation.js';
 import { Donation } from '../../donation/models/donation.model.js';
 
 /** Create new reservation */
@@ -51,6 +51,24 @@ export async function findByDonationId(donationId, options = {}) {
     Reservation.countDocuments({ donationId }),
   ]);
   return { entries, total, page, limit };
+}
+
+/**
+ * Attach recipient feedback (SRS 5.2.4). Ownership and "already collected"
+ * are enforced by the query filter itself so a single findOneAndUpdate
+ * covers both checks — a null result just means "not eligible", which the
+ * caller reports as one generic error.
+ */
+export async function submitFeedback(reservationId, recipientProfileId, feedback) {
+  return await Reservation.findOneAndUpdate(
+    {
+      _id: reservationId,
+      recipientProfileId,
+      status: { $in: [ReservationStatus.Collected, ReservationStatus.CollectedByRecipient] },
+    },
+    { feedback },
+    { new: true },
+  );
 }
 
 export async function cancelActiveReservationsForDonation(donationId) {
