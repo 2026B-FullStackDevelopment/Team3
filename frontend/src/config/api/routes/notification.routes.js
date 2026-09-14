@@ -1,5 +1,9 @@
-/** Notification API routes (SRS A.2.a). */
+/** Owner-scoped Notification API routes. */
 export const notificationRoutes = {
-  preferences: '/api/notification-preferences',
+  feed: "/api/notifications",
+  unreadCount: "/api/notifications/unread-count",
+  markRead: (id) => `/api/notifications/${id}/read`,
+  markAllRead: "/api/notifications/read-all",
+  preferences: "/api/notification-preferences",
   preference: (id) => `/api/notification-preferences/${id}`,
-}
+};
