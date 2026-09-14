@@ -177,6 +177,22 @@ export async function listActiveListingsForAdmin(filters = {}) {
   };
 }
 
+export async function listDonorReportingDimensions(
+  donorProfileId,
+  options = {},
+) {
+  const donations = await donationRepository.listReportingDimensionsByDonor(
+    requireNonEmptyString(donorProfileId, "donorProfileId"),
+    options,
+  );
+
+  return donations.map((donation) => ({
+    donationId: String(donation._id ?? donation.id),
+    foodCategory: donation.foodCategory ?? null,
+    measurementUnit: donation.measurementUnit ?? null,
+  }));
+}
+
 export async function canAcceptReservations(
   id,
   requestedQuantity,

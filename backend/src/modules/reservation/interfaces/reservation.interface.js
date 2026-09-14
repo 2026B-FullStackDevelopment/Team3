@@ -9,6 +9,21 @@ function requireDonationId(value) {
   return value.trim();
 }
 
+function requireDonationIds(values) {
+  if (!Array.isArray(values)) {
+    throw new ValidationError("donationIds must be an array");
+  }
+  return [...new Set(values.map(requireDonationId))];
+}
+
+function requireOptionalDate(value, fieldName) {
+  if (value === undefined) return undefined;
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+    throw new ValidationError(`${fieldName} must be a valid Date`);
+  }
+  return value;
+}
+
 export async function listAffectedRecipientProfileIds(
   donationId,
   options = {},
@@ -60,4 +75,35 @@ export function recordManualCollection(data, options = {}) {
     },
     options,
   );
+}
+
+export async function summarizeCollectedReservationsByDonation(
+  donationIds,
+  options = {},
+) {
+  const periodStart = requireOptionalDate(options.periodStart, "periodStart");
+  const periodEnd = requireOptionalDate(options.periodEnd, "periodEnd");
+  if (
+    periodStart !== undefined &&
+    periodEnd !== undefined &&
+    periodStart > periodEnd
+  ) {
+    throw new ValidationError("periodStart cannot be after periodEnd");
+  }
+
+  const rows = await reservationRepository.aggregateCollectedByDonationIds(
+    requireDonationIds(donationIds),
+    {
+      periodStart,
+      periodEnd,
+      session: options.session,
+    },
+  );
+
+  return rows.map((row) => ({
+    donationId: String(row.donationId),
+    donatedQuantity: Number(row.donatedQuantity ?? 0),
+    donationCount: Number(row.donationCount ?? 0),
+    revenue: Number(row.revenue ?? 0),
+  }));
 }
