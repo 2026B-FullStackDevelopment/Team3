@@ -352,50 +352,26 @@ export async function deleteOwnedDonation(id, donorProfileId) {
   });
 }
 
-export function requestAdminCancellation(id, cancellation, options = {}) {
+export function requestAdminCancellation(id, options = {}) {
   return Donation.findOneAndUpdate(
     { _id: id, status: DonationStatus.Active, closedAt: null },
-    {
-      $set: {
-        status: DonationStatus.PendingCancellation,
-        cancellationRequestedAt: cancellation.requestedAt,
-        cancellationDeadline: cancellation.deadline,
-        cancellationRequestedBy: cancellation.requestedBy,
-        cancellationAuditLogId: cancellation.auditLogId,
-      },
-    },
+    { $set: { status: DonationStatus.PendingCancellation } },
     { new: true, runValidators: true, session: options.session },
   );
 }
 
-export function reinstateAdminCancellation(id, now, options = {}) {
+export function reinstateAdminCancellation(id, options = {}) {
   return Donation.findOneAndUpdate(
-    {
-      _id: id,
-      status: DonationStatus.PendingCancellation,
-      cancellationDeadline: { $gt: now },
-    },
-    {
-      $set: { status: DonationStatus.Active, closedAt: null },
-      $unset: {
-        cancellationRequestedAt: "",
-        cancellationDeadline: "",
-        cancellationRequestedBy: "",
-        cancellationAuditLogId: "",
-      },
-    },
+    { _id: id, status: DonationStatus.PendingCancellation },
+    { $set: { status: DonationStatus.Active, closedAt: null } },
     { new: true, runValidators: true, session: options.session },
   );
 }
 
-export function finalizeAdminCancellation(id, now, options = {}) {
+export function finalizeAdminCancellation(id, options = {}) {
   return Donation.findOneAndUpdate(
-    {
-      _id: id,
-      status: DonationStatus.PendingCancellation,
-      cancellationDeadline: { $lte: now },
-    },
-    { $set: { status: DonationStatus.Cancelled, closedAt: now } },
+    { _id: id, status: DonationStatus.PendingCancellation },
+    { $set: { status: DonationStatus.Cancelled, closedAt: new Date() } },
     { new: true, runValidators: true, session: options.session },
   );
 }

@@ -104,24 +104,6 @@ export const DonationSchema = {
     type: Date,
     default: null,
   },
-  cancellationRequestedAt: {
-    type: Date,
-    default: null,
-  },
-  cancellationDeadline: {
-    type: Date,
-    default: null,
-  },
-  cancellationRequestedBy: {
-    type: String,
-    ref: "User",
-    default: null,
-  },
-  cancellationAuditLogId: {
-    type: String,
-    ref: "AuditLog",
-    default: null,
-  },
 };
 
 export const Donation = mongoose.model("Donation", DonationSchema);

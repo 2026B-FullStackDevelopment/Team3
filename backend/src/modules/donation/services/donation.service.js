@@ -626,20 +626,9 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
  */
 export async function adminCancelDonation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const requestedAt = options.requestedAt ?? new Date();
-  const deadline = options.deadline;
-  if (!(deadline instanceof Date) || Number.isNaN(deadline.getTime())) {
-    throw new ValidationError("A valid cancellation deadline is required");
-  }
 
   const updated = await donationRepository.requestAdminCancellation(
     donationId,
-    {
-      requestedAt,
-      deadline,
-      requestedBy: requireNonEmptyString(options.requestedBy, "requestedBy"),
-      auditLogId: requireNonEmptyString(options.auditLogId, "auditLogId"),
-    },
     options,
   );
   if (!updated) {
@@ -662,7 +651,6 @@ export async function reinstateDonation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
   const updated = await donationRepository.reinstateAdminCancellation(
     donationId,
-    options.now ?? new Date(),
     options,
   );
   if (!updated) {
@@ -680,10 +668,8 @@ export async function reinstateDonation(id, options = {}) {
  */
 export async function finalizeCancellation(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const now = options.now ?? new Date();
   const updated = await donationRepository.finalizeAdminCancellation(
     donationId,
-    now,
     options,
   );
   if (!updated) {
