@@ -331,21 +331,37 @@ export async function undoAction(auditLogId, actorId) {
   try {
     let reverted;
     await session.withTransaction(async () => {
-      if (entry.action === AdminActionType.DeactivateUser) {
-        reverted = await identity.reactivateAccount(entry.targetId, {
+      const current = await auditLogRepository.findById(auditLogId, {
+        session,
+      });
+      const now = new Date();
+      if (
+        !current ||
+        current.status !== AuditLogStatus.Pending ||
+        !current.undoDeadline ||
+        current.undoDeadline.getTime() <= now.getTime()
+      ) {
+        throw new ConflictError(
+          `Audit log ${auditLogId} can no longer be undone`,
+        );
+      }
+
+      if (current.action === AdminActionType.DeactivateUser) {
+        reverted = await identity.reactivateAccount(current.targetId, {
           session,
         });
-      } else if (entry.action === AdminActionType.ReactivateUser) {
-        reverted = await identity.deactivateAccount(entry.targetId, {
+      } else if (current.action === AdminActionType.ReactivateUser) {
+        reverted = await identity.deactivateAccount(current.targetId, {
           session,
         });
-      } else if (entry.action === AdminActionType.CancelDonation) {
-        reverted = await donation.reinstateDonation(entry.targetId, {
+      } else if (current.action === AdminActionType.CancelDonation) {
+        reverted = await donation.reinstateDonation(current.targetId, {
           session,
+          now,
         });
       } else {
         throw new NotImplementedError(
-          `Undo is not available for ${entry.action}`,
+          `Undo is not available for ${current.action}`,
         );
       }
 
@@ -652,6 +668,10 @@ export async function cancelDonation(adminId, donationId) {
   try {
     let after;
     await session.withTransaction(async () => {
+      const requestedAt = new Date();
+      const undoDeadline = new Date(
+        requestedAt.getTime() + env.admin.undoWindowMs,
+      );
       const beforeDonation = await donation.readDonationById(donationId, {
         session,
       });
