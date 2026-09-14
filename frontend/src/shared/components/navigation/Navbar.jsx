@@ -99,7 +99,7 @@ function PublicBar({ user, onLogout }) {
   );
 }
 
-function AuthedBar({ role, user, onLogout }) {
+function AuthedBar({ role, user, onLogout, actions }) {
   const links = ROLE_LINKS[role] ?? [];
   return (
     <header className="sticky top-0 z-20 bg-ink">
@@ -116,18 +116,21 @@ function AuthedBar({ role, user, onLogout }) {
             </Link>
           ))}
         </nav>
-        <UserMenu
-          user={user}
-          items={MENU_ITEMS[role] ?? []}
-          onLogout={onLogout}
-          tone="light"
-        />
+        <div className="flex items-center gap-3">
+          {actions}
+          <UserMenu
+            user={user}
+            items={MENU_ITEMS[role] ?? []}
+            onLogout={onLogout}
+            tone="light"
+          />
+        </div>
       </div>
     </header>
   );
 }
 
-export function Navbar({ role = "public", user, onLogout }) {
+export function Navbar({ role = "public", user, onLogout, actions }) {
   if (role === "public") return <PublicBar user={user} onLogout={onLogout} />;
-  return <AuthedBar role={role} user={user} onLogout={onLogout} />;
+  return <AuthedBar role={role} user={user} onLogout={onLogout} actions={actions} />;
 }
