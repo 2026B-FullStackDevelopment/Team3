@@ -20,10 +20,13 @@ const INITIAL_STATE = {
   toast: null,
 };
 
-function mergeEntries(first, second) {
+function mergeEntries(existingEntries, incomingEntries) {
   return [
     ...new Map(
-      [...first, ...second].map((entry) => [entry.id, entry]),
+      [...existingEntries, ...incomingEntries].map((entry) => [
+        entry.id,
+        entry,
+      ]),
     ).values(),
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
@@ -39,7 +42,7 @@ function reducer(state, action) {
         error: null,
       };
     case "load-success": {
-      const entries = mergeEntries(action.entries, state.entries);
+      const entries = mergeEntries(state.entries, action.entries);
       return {
         ...state,
         entries,
@@ -63,7 +66,7 @@ function reducer(state, action) {
     case "receive":
       return {
         ...state,
-        entries: mergeEntries([action.notification], state.entries),
+        entries: mergeEntries(state.entries, [action.notification]),
         total: state.total + 1,
         unreadCount: state.unreadCount + (action.notification.isRead ? 0 : 1),
         toast: action.notification,
@@ -114,9 +117,11 @@ function errorMessage(result, fallback) {
 }
 
 export function useNotificationFeed() {
-  const { status: authStatus, role } = useAuth();
+  const { user, status: authStatus, role } = useAuth();
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const seenIds = useRef(new Set());
+  const generationRef = useRef(0);
+  const activeRequestRef = useRef({ sessionKey: null, generation: 0 });
   const {
     enabled: soundEnabled,
     blocked: soundBlocked,
@@ -133,67 +138,97 @@ export function useNotificationFeed() {
   const enabledForRole =
     authStatus === "authenticated" &&
     (role === "Donor" || role === "Recipient");
+  const sessionKey = enabledForRole ? `${user?.id}:${role}` : null;
 
-  const loadPage = useCallback(async (page = 1) => {
-    dispatch({ type: "load-start" });
-    const result = await notificationService.list({ page, limit: 20 });
-    if (!result.ok) {
-      dispatch({
-        type: "load-error",
-        message: errorMessage(result, "Notifications could not be loaded."),
-      });
-      return false;
-    }
-    const entries = (result.data?.entries ?? [])
-      .map(normalizeNotification)
-      .filter(Boolean);
-    entries.forEach((entry) => seenIds.current.add(entry.id));
-    dispatch({
-      type: "load-success",
-      entries,
-      total: Number(result.data?.total) || entries.length,
-      page: Number(result.data?.page) || page,
-      limit: Number(result.data?.limit) || 20,
-    });
-    return true;
-  }, []);
+  const isCurrentRequest = useCallback(
+    ({ sessionKey: requestSessionKey, generation }) =>
+      Boolean(requestSessionKey) &&
+      activeRequestRef.current.sessionKey === requestSessionKey &&
+      generationRef.current === generation,
+    [],
+  );
 
-  const refreshCount = useCallback(async () => {
-    const result = await notificationService.unreadCount();
-    if (result.ok)
+  const currentRequest = useCallback(() => activeRequestRef.current, []);
+
+  const loadPage = useCallback(
+    async (page = 1, request = currentRequest()) => {
+      if (!isCurrentRequest(request)) return false;
+      dispatch({ type: "load-start" });
+      const result = await notificationService.list({ page, limit: 20 });
+      if (!isCurrentRequest(request)) return false;
+      if (!result.ok) {
+        dispatch({
+          type: "load-error",
+          message: errorMessage(result, "Notifications could not be loaded."),
+        });
+        return false;
+      }
+      const entries = (result.data?.entries ?? [])
+        .map(normalizeNotification)
+        .filter(Boolean);
+      entries.forEach((entry) => seenIds.current.add(entry.id));
       dispatch({
-        type: "count-success",
-        count: Number(result.data?.count) || 0,
+        type: "load-success",
+        entries,
+        total: Number(result.data?.total) || entries.length,
+        page: Number(result.data?.page) || page,
+        limit: Number(result.data?.limit) || 20,
       });
-  }, []);
-  const refresh = useCallback(async () => {
-    await Promise.all([loadPage(1), refreshCount()]);
-  }, [loadPage, refreshCount]);
+      return true;
+    },
+    [currentRequest, isCurrentRequest],
+  );
+
+  const refreshCount = useCallback(
+    async (request = currentRequest()) => {
+      if (!isCurrentRequest(request)) return false;
+      const result = await notificationService.unreadCount();
+      if (!isCurrentRequest(request)) return false;
+      if (result.ok)
+        dispatch({
+          type: "count-success",
+          count: Number(result.data?.count) || 0,
+        });
+      return result.ok;
+    },
+    [currentRequest, isCurrentRequest],
+  );
+  const refresh = useCallback(
+    async (request = currentRequest()) => {
+      await Promise.all([loadPage(1, request), refreshCount(request)]);
+    },
+    [currentRequest, loadPage, refreshCount],
+  );
 
   useEffect(() => {
-    if (!enabledForRole) {
-      seenIds.current.clear();
-      stopSound();
-      dispatch({ type: "reset" });
-      return undefined;
-    }
+    const generation = ++generationRef.current;
+    const request = { sessionKey, generation };
+    activeRequestRef.current = request;
     let active = true;
+    const isCurrent = () => active && isCurrentRequest(request);
+
+    seenIds.current.clear();
+    stopSound();
+    dispatch({ type: "reset" });
+    if (!sessionKey) return undefined;
+
     const socket = createNotificationSocket();
     const handleConnect = () => {
-      if (active) {
+      if (isCurrent()) {
         dispatch({ type: "socket-status", status: "connected" });
-        refresh();
+        refresh(request);
       }
     };
     const handleDisconnect = () => {
-      if (active) dispatch({ type: "socket-status", status: "disconnected" });
+      if (isCurrent())
+        dispatch({ type: "socket-status", status: "disconnected" });
     };
     const handleConnectError = () => {
-      if (active) dispatch({ type: "socket-status", status: "error" });
+      if (isCurrent()) dispatch({ type: "socket-status", status: "error" });
     };
     const handleNotification = (payload) => {
       const notification = normalizeNotification(payload);
-      if (!active || !notification || seenIds.current.has(notification.id))
+      if (!isCurrent() || !notification || seenIds.current.has(notification.id))
         return;
       seenIds.current.add(notification.id);
       dispatch({ type: "receive", notification });
@@ -201,8 +236,8 @@ export function useNotificationFeed() {
         playSoundRef.current(notification.id);
     };
     dispatch({ type: "socket-status", status: "connecting" });
-    loadPage(1);
-    refreshCount();
+    loadPage(1, request);
+    refreshCount(request);
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
@@ -210,18 +245,27 @@ export function useNotificationFeed() {
     socket.connect();
     return () => {
       active = false;
+      if (generationRef.current === generation) {
+        generationRef.current += 1;
+        activeRequestRef.current = {
+          sessionKey: null,
+          generation: generationRef.current,
+        };
+      }
       socket.removeAllListeners();
       socket.disconnect();
     };
-  }, [enabledForRole, loadPage, refresh, refreshCount, stopSound]);
+  }, [isCurrentRequest, loadPage, refresh, refreshCount, sessionKey, stopSound]);
 
   const markRead = useCallback(
     async (id) => {
       const entry = state.entries.find((item) => item.id === id);
       if (!entry || entry.isRead) return true;
       dispatch({ type: "mark-one", id });
+      const request = currentRequest();
       const result = await notificationService.markRead(id);
       if (result.ok) return true;
+      if (!isCurrentRequest(request)) return false;
       dispatch({
         type: "restore-one",
         id,
@@ -232,7 +276,7 @@ export function useNotificationFeed() {
       });
       return false;
     },
-    [state.entries],
+    [currentRequest, isCurrentRequest, state.entries],
   );
   const selectNotification = useCallback(
     (notification) => markRead(notification.id),
@@ -246,8 +290,10 @@ export function useNotificationFeed() {
     const previousUnreadCount = state.unreadCount;
     if (previousUnreadCount === 0) return true;
     dispatch({ type: "mark-all", ids });
+    const request = currentRequest();
     const result = await notificationService.markAllRead();
     if (result.ok) return true;
+    if (!isCurrentRequest(request)) return false;
     dispatch({
       type: "restore-many",
       ids,
@@ -258,7 +304,7 @@ export function useNotificationFeed() {
       ),
     });
     return false;
-  }, [state.entries, state.unreadCount]);
+  }, [currentRequest, isCurrentRequest, state.entries, state.unreadCount]);
 
   const loadMore = useCallback(() => {
     if (state.entries.length >= state.total || state.status === "loading")

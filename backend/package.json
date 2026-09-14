@@ -7,7 +7,6 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node src/scripts/seed.js",
-    "migrate:notification-indexes": "node src/modules/notification/scripts/migrateNotificationIndexes.js",
     "lint": "eslint src",
     "format:check": "prettier --check src",
     "test:repository": "node --test src/modules/*/repositories/__tests__/*.test.js",
