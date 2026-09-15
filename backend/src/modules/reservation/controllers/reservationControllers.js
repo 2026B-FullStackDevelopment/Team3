@@ -1,37 +1,45 @@
-import * as ReservationService from '../services/reservationService.js';
-import { RecipientProfile } from '../../identity/models/RecipientProfile.js';
+import * as ReservationService from "../services/reservationService.js";
+import { RecipientProfile } from "../../identity/models/RecipientProfile.js";
+import { donorListingRoutes } from "../../donation/routes/donations.routes.js";
 
-/** 
+/**
  * POST /api/reservations
  * Take input from the frontend and passes it to the Service
  */
 export async function createReservation(req, res, next) {
   try {
     // Unpack the data sent from the React frontend
-    const { donationId, quantity, paymentMethod, manualRecipientName } = req.body;
+    const { donationId, quantity, paymentMethod, manualRecipientName } =
+      req.body;
 
-    const recipientProfile = await RecipientProfile.findOne({ userId: req.user.userId });
+    const recipientProfile = await RecipientProfile.findOne({
+      userId: req.user.userId,
+    });
 
     if (!recipientProfile) {
-      return res.status(401).json({ error: "UNAUTHENTICATED", message: "Recipient profile ID is missing." });
+      return res
+        .status(401)
+        .json({
+          error: "UNAUTHENTICATED",
+          message: "Recipient profile ID is missing.",
+        });
     }
 
     const recipientProfileId = recipientProfile._id;
 
     // Pass the unpacked data to service
     const newReservation = await ReservationService.processReservation(
-      recipientProfileId, 
-      donationId, 
-      quantity, 
-      paymentMethod, 
-      manualRecipientName
+      recipientProfileId,
+      donationId,
+      quantity,
+      paymentMethod,
+      manualRecipientName,
     );
 
     //Send the successful receipt back to the frontend
     res.status(201).json({ reservation: newReservation });
-
   } catch (error) {
-    next(error); 
+    next(error);
   }
 }
 
@@ -41,18 +49,24 @@ export async function createReservation(req, res, next) {
  */
 export async function getHistory(req, res, next) {
   try {
-    const recipientProfile = await RecipientProfile.findOne({ userId: req.user.userId });
+    const recipientProfile = await RecipientProfile.findOne({
+      userId: req.user.userId,
+    });
 
     if (!recipientProfile) {
-      return res.status(401).json({ error: "UNAUTHENTICATED", message: "Recipient profile ID is missing." });
+      return res
+        .status(401)
+        .json({
+          error: "UNAUTHENTICATED",
+          message: "Recipient profile ID is missing.",
+        });
     }
 
     const recipientProfileId = recipientProfile._id;
 
     const history = await ReservationService.getHistory(recipientProfileId);
-    
-    res.status(200).json({ history });
 
+    res.status(200).json({ history });
   } catch (error) {
     next(error);
   }

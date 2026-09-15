@@ -13,6 +13,7 @@ import { paymentsWebhookRoutes } from "./modules/payments/routes/paymentsWebhook
 import { registerPaymentHandlers } from "./modules/identity/index.js";
 import { notificationRoutes } from "./modules/notification/routes/notification.routes.js";
 import { feedbackRoutes } from "./modules/feedback/routes/feedback.routes.js";
+import { recipientListingRoutes } from "./modules/donation/routes/recipientListing.routes.js";
 import { env } from "./config/env.js";
 
 const app = express();
@@ -50,6 +51,7 @@ app.use("/api/notification-preferences", notificationPreferenceRoutes);
 app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/donations", recipientListingRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
