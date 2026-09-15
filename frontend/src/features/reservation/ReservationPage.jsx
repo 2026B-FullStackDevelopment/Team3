@@ -52,8 +52,6 @@ export function ReservationPage() {
           onConfirm={confirmReservation}
         />
       )}
-
-      <HistoryView />
     </div>
   );
 }
