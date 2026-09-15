@@ -10,5 +10,8 @@ reservationRoutes.use(requireAuth);
 // POST /api/reservations
 reservationRoutes.post("/", reservationController.createReservation);
 
-// 3. GET /api/reservations/history
+// GET /api/reservations/history
 reservationRoutes.get("/history", reservationController.getHistory);
+
+// POST /api/reservations/checkout
+reservationRoutes.post("/checkout", reservationController.createCheckoutSession);

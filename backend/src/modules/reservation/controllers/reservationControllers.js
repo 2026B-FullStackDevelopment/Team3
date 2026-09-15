@@ -62,3 +62,27 @@ export async function getHistory(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * POST /api/reservations/checkout
+ * Generates a Stripe checkout URL for Card payments
+ */
+export async function createCheckoutSession(req, res, next) {
+  try {
+    const { donationId, quantity } = req.body;
+    
+    const recipientProfile = await requireRecipientProfile(req, res);
+    if (!recipientProfile) return;
+
+    const session = await ReservationService.createReservationCheckout(
+      req.user.userId,
+      recipientProfile._id,
+      donationId,
+      quantity
+    );
+
+    res.status(200).json(session);
+  } catch (error) {
+    next(error);
+  }
+}
