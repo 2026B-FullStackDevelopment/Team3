@@ -4,6 +4,7 @@ import {
   Copy,
   HandCoins,
   Leaf,
+  ListChecks,
   PackageOpen,
   Pencil,
   Pause,
@@ -214,6 +215,12 @@ export function ListingCard({ listing }) {
           to={`/donor/listings/${listing.id}/duplicate`}
         >
           <Copy size={16} /> Duplicate
+        </Link>
+        <Link
+          className="button-secondary"
+          to={`/donor/listings/${listing.id}/donations`}
+        >
+          <ListChecks size={16} /> Reservations
         </Link>
         {listing.status === DonationStatus.ACTIVE && (
           <button

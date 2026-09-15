@@ -1,6 +1,6 @@
 import * as feedbackService from "../services/feedback.js";
 import { validateFeedbackText } from "../validators/feedback.js";
-import { RecipientProfile } from "../../identity/models/RecipientProfile.js";
+import * as identity from "../../identity/index.js";
 import { UnauthorizedError } from "../../../shared/errors/errors.js";
 
 /**
@@ -12,7 +12,7 @@ export async function submitFeedback(req, res, next) {
   try {
     const feedbackText = validateFeedbackText(req.body);
 
-    const recipientProfile = await RecipientProfile.findOne({ userId: req.user.userId });
+    const recipientProfile = await identity.loadRecipientProfile(req.user.userId);
     if (!recipientProfile) {
       throw new UnauthorizedError("Recipient profile not found");
     }
