@@ -14,6 +14,11 @@ import * as authService from "./services/auth.service.js";
 import * as premiumHelper from "./helpers/premium.helper.js";
 import * as subscriptionService from "./services/subscription.service.js";
 import * as paymentsFacade from "../payments/index.js";
+import {
+  toDonorProfileRefDTO,
+  toRecipientProfileRefDTO,
+  toUserContactDTO,
+} from "./dtos/crossModuleRef.dto.js";
 
 // Role + account-status vocabulary is part of Identity's public surface — other
 // modules and the auth middleware read it from here (the facade), never from the
@@ -43,29 +48,39 @@ export function loadAuthUser(userId) {
   return authService.getAuthUser(userId);
 }
 
-/** Returns the DonorProfile linked to an authenticated User, or null. */
-export function loadDonorProfile(userId) {
-  return donorProfileRepository.findByUserId(userId);
+/** Returns the DonorProfile (ref DTO) linked to an authenticated User, or null. */
+export async function loadDonorProfile(userId) {
+  return toDonorProfileRefDTO(await donorProfileRepository.findByUserId(userId));
 }
 
-/** Returns a DonorProfile by profile id for profile-to-User resolution. */
-export function loadDonorProfileById(donorProfileId, options) {
-  return donorProfileRepository.findById(donorProfileId, options);
+/** Returns a DonorProfile (ref DTO) by profile id for profile-to-User resolution. */
+export async function loadDonorProfileById(donorProfileId, options) {
+  return toDonorProfileRefDTO(
+    await donorProfileRepository.findById(donorProfileId, options),
+  );
 }
 
-/** Returns a RecipientProfile linked to an authenticated User, or null. */
-export function loadRecipientProfile(userId, options) {
-  return recipientProfileRepository.findByUserId(userId, options);
+/** Returns a RecipientProfile (ref DTO) linked to an authenticated User, or null. */
+export async function loadRecipientProfile(userId, options) {
+  return toRecipientProfileRefDTO(
+    await recipientProfileRepository.findByUserId(userId, options),
+  );
 }
 
-/** Returns a RecipientProfile by id so other modules can resolve its User. */
-export function loadRecipientProfileById(recipientProfileId, options) {
-  return recipientProfileRepository.findById(recipientProfileId, options);
+/** Returns a RecipientProfile (ref DTO) by id so other modules can resolve its User. */
+export async function loadRecipientProfileById(recipientProfileId, options) {
+  return toRecipientProfileRefDTO(
+    await recipientProfileRepository.findById(recipientProfileId, options),
+  );
 }
 
-/** Batch-resolves RecipientProfile ids for cross-module notification fan-out. */
-export function loadRecipientProfilesByIds(recipientProfileIds, options) {
-  return recipientProfileRepository.findByIds(recipientProfileIds, options);
+/** Batch-resolves RecipientProfile (ref DTOs) for cross-module notification fan-out. */
+export async function loadRecipientProfilesByIds(recipientProfileIds, options) {
+  const profiles = await recipientProfileRepository.findByIds(
+    recipientProfileIds,
+    options,
+  );
+  return profiles.map(toRecipientProfileRefDTO);
 }
 
 /**
@@ -108,9 +123,13 @@ export function reactivateAccount(userId, options) {
   return accountService.reactivateAccount(userId, options);
 }
 
-/** Batch-fetches DonorProfiles by id, for the Admin module's food-listing views. */
-export function getDonorProfilesByIds(donorProfileIds, options) {
-  return accountService.getDonorProfilesByIds(donorProfileIds, options);
+/** Batch-fetches DonorProfiles (ref DTOs) by id, for the Admin module's food-listing views. */
+export async function getDonorProfilesByIds(donorProfileIds, options) {
+  const profiles = await accountService.getDonorProfilesByIds(
+    donorProfileIds,
+    options,
+  );
+  return profiles.map(toDonorProfileRefDTO);
 }
 
 /** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */
@@ -118,9 +137,10 @@ export function findDonorProfileIdsByName(namePattern) {
   return accountService.findDonorProfileIdsByName(namePattern);
 }
 
-/** Batch-fetches Users by id, for the Admin module's Audit Log admin-email join. */
-export function getUsersByIds(userIds, options) {
-  return accountService.getUsersByIds(userIds, options);
+/** Batch-fetches Users (contact DTOs) by id, for the Admin module's Audit Log admin-email join. */
+export async function getUsersByIds(userIds, options) {
+  const users = await accountService.getUsersByIds(userIds, options);
+  return users.map(toUserContactDTO);
 }
 
 /** Finds Admin user ids whose email matches a search term (Audit Log search). */

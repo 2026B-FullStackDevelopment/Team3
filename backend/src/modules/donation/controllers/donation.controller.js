@@ -1,6 +1,6 @@
 import * as donorListingService from "../services/donation.service.js";
 import { toDonorListingDTO } from "../dtos/donation.dto.js";
-import { removeUploadedImage } from "../../../middleware/imageUpload.js";
+import { deleteObject } from "../../../shared/upload/services/objectStore.js";
 
 function getDonorProfileId(req) {
   return req.user?.donorProfileId;
@@ -66,7 +66,7 @@ export async function createFoodListing(req, res, next) {
   try {
     const donorProfileId = requireDonorProfileId(req, res);
     if (!donorProfileId) {
-      await removeUploadedImage(req.file);
+      await deleteObject(req.file?.publicUrl);
       return;
     }
 
@@ -82,7 +82,7 @@ export async function createFoodListing(req, res, next) {
     });
   } catch (error) {
     // If validation or persistence failed, the uploaded file has no DB owner.
-    if (!listing) await removeUploadedImage(req.file);
+    if (!listing) await deleteObject(req.file?.publicUrl);
     next(error);
   }
 }
