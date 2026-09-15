@@ -1,8 +1,7 @@
-// frontend/src/features/reservation/HistoryView.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import * as reservationService from './ReservationService.js';
 
-export default function HistoryView() {
+export function HistoryPage() {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
