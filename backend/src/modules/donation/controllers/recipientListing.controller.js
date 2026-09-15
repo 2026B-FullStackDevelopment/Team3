@@ -1,4 +1,4 @@
-import * as donorListingService from "../services/donorListing.service.js";
+import * as donorListingService from "../services/donation.service.js";
 
 export async function getActiveDonations(req, res, next) {
   try {
