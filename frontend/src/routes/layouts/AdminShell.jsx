@@ -1,13 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { cn } from '@/shared/utils/cn.js'
-import { Brand } from '@/shared/components/Brand.jsx'
 
 /**
- * Sidebar shell for the admin route group: a fixed green nav rail (logo +
- * section links) beside the routed page. Kept separate from RoleLayout
- * (top Navbar) because the admin design uses a persistent sidebar rather
- * than a top bar — branching RoleLayout on role would mix two different
- * layout paradigms in one component.
+ * Secondary nav rail for the three Admin screens (Listing Moderation, User
+ * Management, Audit Log). Nested inside RoleLayout, which already supplies
+ * the shared top bar (brand, account menu, logout) — this component only
+ * owns the rail + routing the Outlet between the three admin pages, so it
+ * doesn't duplicate any of that chrome.
  */
 
 const NAV_ITEMS = [
@@ -18,27 +17,26 @@ const NAV_ITEMS = [
 
 export function AdminShell() {
   return (
-    <div className="flex min-h-screen bg-cream text-ink">
-      <aside className="flex w-64 shrink-0 flex-col gap-8 bg-primary px-6 py-8">
-        <Brand tone="light" to="/admin" />
-        <nav className="flex flex-col gap-4">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'text-base transition-colors',
-                  isActive ? 'font-bold text-white' : 'font-medium text-white/60 hover:text-white/80',
-                )
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+    <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+      <aside className="flex shrink-0 gap-2 overflow-x-auto rounded-card bg-primary p-3 md:w-56 md:flex-col md:overflow-visible">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                'whitespace-nowrap rounded-card px-3 py-2 text-sm transition-colors',
+                isActive
+                  ? 'bg-white/15 font-bold text-white'
+                  : 'font-medium text-white/70 hover:bg-white/10 hover:text-white',
+              )
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </aside>
-      <main className="flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1">
         <Outlet />
       </main>
     </div>
