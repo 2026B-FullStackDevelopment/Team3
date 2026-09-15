@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as reservationService from './ReservationService.js';
 
+const HISTORY_IMAGE_FALLBACK =
+  'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=80&w=400';
+
 function getPickupLocation(donation) {
   const donor = donation?.donorProfileId;
   const coordinates = donor?.location?.coordinates;
@@ -84,11 +87,8 @@ export function HistoryPage() {
           // Check against the exact backend ReservationStatus enum
           const isCollected = item.status === 'Collected' || item.status === 'CollectedByRecipient';
           
-          // The backend only populates 'name' and 'foodCategory' on donationId
+          // The backend populates the donation details needed by each history card.
           const donation = item.donationId || {};
-          
-          // Fallbacks for data not returned by the current backend query
-          const fallbackImage = 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=80&w=400';
           const pickupLocation = getPickupLocation(donation);
           
           return (
@@ -99,7 +99,15 @@ export function HistoryPage() {
                   <span className="absolute top-2 left-2 bg-[#e6efd6] text-ink px-3 py-1 rounded-full text-xs font-bold z-10 shadow-sm">
                     {donation.foodCategory || 'Food'}
                   </span>
-                  <img src={fallbackImage} alt={donation.name || 'Food item'} className="w-full h-full object-cover" />
+                  <img
+                    src={donation.imageUrl || HISTORY_IMAGE_FALLBACK}
+                    alt={donation.name || 'Food item'}
+                    className="w-full h-full object-cover"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = HISTORY_IMAGE_FALLBACK;
+                    }}
+                  />
                 </div>
                 
                 <div className="flex flex-col w-full sm:w-auto text-left gap-1 mt-2 sm:mt-0">

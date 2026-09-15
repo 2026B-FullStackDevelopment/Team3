@@ -327,7 +327,7 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
         },
       },
     ],
-    { new: true, session: options.session },
+    { new: true, session: options.session, updatePipeline: true },
   );
 }
 

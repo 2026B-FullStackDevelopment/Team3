@@ -1,9 +1,12 @@
-// backend/src/modules/reservation/services/reservationService.js
-
+import { randomUUID } from "node:crypto";
 import * as ReservationRepository from "../repositories/ReservationRepository.js";
-import { Wallet } from "../../wallet/models/Wallet.js";
+import {
+  applyReservation,
+  readListingById,
+  restoreReservationQuantity,
+} from "../../donation/interfaces/donorListing.interface.js";
+import { credit, debit, TransactionType } from "../../wallet/index.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
-import { Donation } from "../../donation/models/donation.model.js";
 
 export async function processReservation(
   recipientProfileId,
@@ -15,7 +18,15 @@ export async function processReservation(
 ) {
   try {
     // Validate Input
-    const donation = await Donation.findById(donationId);
+    let donation;
+    try {
+      donation = await readListingById(donationId);
+    } catch (error) {
+      if (error.message === "Donation not found") {
+        throw new Error("This food listing is not active or unavailable.");
+      }
+      throw error;
+    }
 
     if (!donation || donation.status !== "Active") {
       throw new Error("This food listing is not active or unavailable.");
@@ -44,24 +55,39 @@ export async function processReservation(
 
     // Handle Payments
     const totalPaid = donation.price > 0 ? donation.price * quantity : 0;
+    const reservationId = randomUUID();
 
     if (totalPaid > 0 && paymentMethod === "Wallet") {
-      const wallet = await Wallet.findOneAndUpdate(
-        { userId, balance: { $gte: totalPaid } },
-        { $inc: { balance: -totalPaid } },
-      );
-      if (!wallet) throw new Error("Insufficient wallet balance.");
+      try {
+        await debit(userId, totalPaid, {
+          type: TransactionType.FoodPurchase,
+          method: "Wallet",
+          relatedReservationId: reservationId,
+        });
+      } catch (error) {
+        if (error.message === "Insufficient wallet balance") {
+          throw new Error("Insufficient wallet balance.");
+        }
+        throw error;
+      }
     }
 
     // Stock Deduction
-    const updatedDonation = await ReservationRepository.deductDonationStock(
-      donationId,
-      quantity,
-    );
+    let reservationApplication;
+    try {
+      reservationApplication = await applyReservation(
+        donationId,
+        quantity,
+        totalPaid,
+      );
+    } catch {
+      throw new Error("Insufficient stock or donation not found.");
+    }
 
     try {
       // Save Reservation Ticket
       const reservationData = {
+        _id: reservationId,
         donationId,
         recipientProfileId,
         manualRecipientName,
@@ -75,23 +101,23 @@ export async function processReservation(
         await ReservationRepository.createReservation(reservationData);
 
       // Trigger Real-Time "Sold Out" Notification if stock is depleted
-      if (updatedDonation.remainingQuantity < 1) {
-        const createdNotification = await notification.notifyListingSoldOut({
-          donorProfileId: String(donation.donorProfileId),
-          donationId: String(donationId),
-        });
+      if (reservationApplication.soldOut) {
+        const createdNotification = await notification.notifyListingSoldOut(
+          reservationApplication.soldOutAlert,
+        );
         notification.publishCreatedNotifications(createdNotification);
       }
 
       return newReservation;
     } catch (error) {
       // Restore food stock and refund wallet if the database fails to save the ticket
-      await ReservationRepository.restoreDonationStock(donationId, quantity);
+      await restoreReservationQuantity(donationId, quantity);
       if (totalPaid > 0 && paymentMethod === "Wallet") {
-        await Wallet.findOneAndUpdate(
-          { userId },
-          { $inc: { balance: totalPaid } },
-        );
+        await credit(userId, totalPaid, {
+          type: TransactionType.FoodPurchase,
+          method: "Wallet",
+          relatedReservationId: reservationId,
+        });
       }
       throw new Error(`Failed to create reservation ticket: ${error.message}`);
     }

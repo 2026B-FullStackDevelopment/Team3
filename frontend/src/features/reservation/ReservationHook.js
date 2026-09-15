@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as reservationService from './ReservationService.js';
+import { useNotifications } from '@/features/notification/Hook/useNotifications.js';
 
 export function useReservation() {
+  const { showToast } = useNotifications();
   const [walletBalance, setWalletBalance] = useState(0);
   const [selectedQuantity, setSelectedQuantity] = useState(0);
   const [selectedTotal, setSelectedTotal] = useState(0);
@@ -70,10 +72,16 @@ export function useReservation() {
             manualRecipientName: "Self" // Since recipients book for themselves online
         });
         
+        const reservedItemName = selectedItem.name || 'Food item';
+
         // Close the payment modal and refresh the grid/balance
         closeModals();
-        loadListingsAndBalance();
-        alert("Reservation successful!"); // Replace with a toast notification if your team uses them
+        await loadListingsAndBalance();
+        showToast({
+          type: 'ReservationCreated',
+          title: 'Reservation successful',
+          message: `${selectedQuantity} unit${selectedQuantity === 1 ? '' : 's'} of ${reservedItemName} reserved successfully.`,
+        });
     } catch (err) {
         setPaymentError(err.message);
     } finally {

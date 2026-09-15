@@ -1,5 +1,16 @@
 import * as ReservationService from "../services/reservationService.js";
-import { RecipientProfile } from "../../identity/models/RecipientProfile.js";
+import { loadRecipientProfile } from "../../identity/index.js";
+
+async function requireRecipientProfile(req, res) {
+  const recipientProfile = await loadRecipientProfile(req.user.userId);
+  if (recipientProfile) return recipientProfile;
+
+  res.status(401).json({
+    error: "UNAUTHENTICATED",
+    message: "Recipient profile ID is missing.",
+  });
+  return null;
+}
 
 /**
  * POST /api/reservations
@@ -11,18 +22,8 @@ export async function createReservation(req, res, next) {
     const { donationId, quantity, paymentMethod, manualRecipientName } =
       req.body;
 
-    const recipientProfile = await RecipientProfile.findOne({
-      userId: req.user.userId,
-    });
-
-    if (!recipientProfile) {
-      return res
-        .status(401)
-        .json({
-          error: "UNAUTHENTICATED",
-          message: "Recipient profile ID is missing.",
-        });
-    }
+    const recipientProfile = await requireRecipientProfile(req, res);
+    if (!recipientProfile) return;
 
     const recipientProfileId = recipientProfile._id;
 
@@ -49,18 +50,8 @@ export async function createReservation(req, res, next) {
  */
 export async function getHistory(req, res, next) {
   try {
-    const recipientProfile = await RecipientProfile.findOne({
-      userId: req.user.userId,
-    });
-
-    if (!recipientProfile) {
-      return res
-        .status(401)
-        .json({
-          error: "UNAUTHENTICATED",
-          message: "Recipient profile ID is missing.",
-        });
-    }
+    const recipientProfile = await requireRecipientProfile(req, res);
+    if (!recipientProfile) return;
 
     const recipientProfileId = recipientProfile._id;
 

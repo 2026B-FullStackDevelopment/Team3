@@ -11,7 +11,15 @@ export function NotificationToast({ notification, onDismiss }) {
     return () => window.clearTimeout(timer);
   }, [notification, onDismiss]);
 
-  const content = notification ? notificationContent(notification.type) : null;
+  const defaultContent = notification
+    ? notificationContent(notification.type)
+    : null;
+  const content = notification
+    ? {
+        title: notification.title ?? defaultContent.title,
+        message: notification.message ?? defaultContent.message,
+      }
+    : null;
 
   return (
     <AnimatePresence>
