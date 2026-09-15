@@ -110,6 +110,8 @@ function reducer(state, action) {
       };
     case "dismiss-toast":
       return { ...state, toast: null };
+    case "show-toast":
+      return { ...state, toast: action.notification };
     case "mark-one":
       return {
         ...state,
@@ -426,6 +428,17 @@ export function useNotificationFeed() {
     () => dispatch({ type: "dismiss-toast" }),
     [],
   );
+  const showToast = useCallback(({ title, message, type = "LocalUpdate" }) => {
+    dispatch({
+      type: "show-toast",
+      notification: {
+        id: `local-${Date.now()}`,
+        type,
+        title,
+        message,
+      },
+    });
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -443,6 +456,7 @@ export function useNotificationFeed() {
       soundBlocked,
       enableSound,
       toggleSound,
+      showToast,
     }),
     [
       enableSound,
@@ -456,6 +470,7 @@ export function useNotificationFeed() {
       soundBlocked,
       soundEnabled,
       state,
+      showToast,
       toggleSound,
     ],
   );

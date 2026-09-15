@@ -1,4 +1,3 @@
-import { Donation } from "../../donation/models/donation.model.js";
 import { Reservation, ReservationStatus } from "../models/Reservation.js";
 
 /** Create new reservation */
@@ -12,44 +11,25 @@ export async function createReservation(reservationData, options = {}) {
  * with the donor's name so the frontend never needs a reservedAt fallback.
  */
 export async function getReservationsByRecipient(recipientProfileId) {
-  return await Reservation.find({
-    recipientProfileId,
-    status: { $in: [ReservationStatus.Collected, ReservationStatus.CollectedByRecipient] },
-  })
-    .sort({ collectedAt: -1 })
+  return await Reservation.find({ recipientProfileId })
+    .sort({ reservedAt: -1 })
     .populate({
       path: "donationId",
-      select: "name foodCategory donorProfileId",
-      populate: { path: "donorProfileId", select: "companyName" },
+      select: "name foodCategory imageUrl donorProfileId",
+      populate: {
+        path: "donorProfileId",
+        select: "companyName address city location",
+      },
     });
-}
-
-/** Deduct the remaining stock */
-export async function deductDonationStock(donationId, quantityToDeduct) {
-  const updatedDonation = await Donation.findOneAndUpdate(
-    { _id: donationId, remainingQuantity: { $gte: quantityToDeduct } },
-    { $inc: { remainingQuantity: -quantityToDeduct } },
-    { new: true },
-  );
-
-  if (!updatedDonation) {
-    throw new Error("Insufficient stock or donation not found.");
-  }
-  return updatedDonation;
-}
-
-/** Undo the deduction when reservation failed */
-export async function restoreDonationStock(donationId, quantityToRestore) {
-  return await Donation.findByIdAndUpdate(
-    donationId,
-    { $inc: { remainingQuantity: quantityToRestore } },
-    { new: true },
-  );
 }
 
 /** Check if a reservation already exists for this recipient and donation */
 export async function checkExistingReservation(recipientProfileId, donationId) {
-  return await Reservation.findOne({ recipientProfileId, donationId });
+  return await Reservation.findOne({
+    recipientProfileId,
+    donationId,
+    status: ReservationStatus.Reserved,
+  });
 }
 
 export async function findByDonationId(donationId, options = {}) {
@@ -131,12 +111,21 @@ export async function listAffectedRecipientProfileIds(
  * covers both checks — a null result just means "not eligible", which the
  * caller reports as one generic error.
  */
-export async function submitFeedback(reservationId, recipientProfileId, feedback) {
+export async function submitFeedback(
+  reservationId,
+  recipientProfileId,
+  feedback,
+) {
   return await Reservation.findOneAndUpdate(
     {
       _id: reservationId,
       recipientProfileId,
-      status: { $in: [ReservationStatus.Collected, ReservationStatus.CollectedByRecipient] },
+      status: {
+        $in: [
+          ReservationStatus.Collected,
+          ReservationStatus.CollectedByRecipient,
+        ],
+      },
     },
     { feedback },
     { new: true },

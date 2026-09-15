@@ -1,19 +1,17 @@
-// frontend/src/features/reservation/ReservationView.jsx
-import { useReservation } from "./ReservationHook.js";
-import FoodBrowsing from "./components/FoodBrowsing.jsx";
-import DonationDetail from "./components/DonationDetail.jsx";
-import Payment from "./components/Payment.jsx";
-import HistoryView from "./HistoryView.jsx";
-import "./Reservation.css";
+import { useReservation } from './ReservationHook.js';
+import FoodBrowsing from './components/FoodBrowsing.jsx';
+import DonationDetail from './components/DonationDetail.jsx';
+import Payment from './components/Payment.jsx';
+import './Reservation.css';
 
-export default function ReservationView() {
+export function ReservationPage() {
   const {
     listings,
     isLoading,
     error,
+    paymentError,
     selectedItem,
     currentStep,
-    selectedQuantity,
     selectedTotal,
     walletBalance,
     openDonationDetail,
@@ -47,15 +45,13 @@ export default function ReservationView() {
       {currentStep === "payment" && selectedItem && (
         <Payment
           item={selectedItem}
-          quantity={selectedQuantity}
           totalPrice={selectedTotal}
           walletBalance={walletBalance}
+          error={paymentError}
           onClose={closeModals}
           onConfirm={confirmReservation}
         />
       )}
-
-      <HistoryView />
     </div>
   );
 }

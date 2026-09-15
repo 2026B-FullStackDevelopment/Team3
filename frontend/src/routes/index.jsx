@@ -4,6 +4,7 @@ import { ProtectedRoute } from "@/routes/guards/ProtectedRoute.jsx";
 import { GuestOnlyRoute } from "@/routes/guards/GuestOnlyRoute.jsx";
 import { RequireRole } from "@/routes/guards/RequireRole.jsx";
 import { RoleLayout } from "@/routes/layouts/RoleLayout.jsx";
+import { AdminShell } from "@/routes/layouts/AdminShell.jsx";
 import { LandingPage } from "@/features/marketing/Page/LandingPage.jsx";
 import { LoginPage } from "@/features/identity/Page/auth/LoginPage.jsx";
 import { RegisterPage } from "@/features/identity/Page/auth/RegisterPage.jsx";
@@ -23,9 +24,8 @@ import { UserManagementPage } from "@/features/admin/pages/UserManagementPage.js
 import { ListingModerationPage } from "@/features/admin/pages/ListingModerationPage.jsx";
 import { AuditLogPage } from "@/features/admin/pages/AuditLogPage.jsx";
 import { NotificationPage } from "@/features/notification/Page/NotificationPage.jsx";
-import { ReservationPage } from "@/routes/pages/ReservationPage.jsx";
-import { HistoryPage } from "@/routes/pages/HistoryPage.jsx";
-import { AdminShell } from "@/routes/layouts/AdminShell.jsx";
+import { ReservationPage } from "@/features/reservation/ReservationPage.jsx";
+import { HistoryPage } from "@/features/reservation/HistoryPage.jsx";
 
 /**
  * Application route tree, gated by role (SRS A.2.c). Public pages render
