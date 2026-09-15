@@ -8,6 +8,7 @@ export function useReservation() {
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [paymentError, setPaymentError] = useState(null);
 
   // Modal and Flow State
   const [selectedItem, setSelectedItem] = useState(null);
@@ -31,21 +32,26 @@ export function useReservation() {
   };
 
   useEffect(() => {
+    // Initial async hydration intentionally updates this hook's loading state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadListingsAndBalance();
   }, []);
 
   const openDonationDetail = (item) => {
+    setPaymentError(null);
     setSelectedItem(item);
     setCurrentStep('detail');
   };
 
   const proceedToPayment = (quantity, total) => {
+    setPaymentError(null);
     setSelectedQuantity(quantity);
     setSelectedTotal(total);
     setCurrentStep('payment');
   };
 
   const closeModals = () => {
+    setPaymentError(null);
     setSelectedItem(null);
     setSelectedQuantity(0);
     setSelectedTotal(0);
@@ -54,6 +60,7 @@ export function useReservation() {
 
   const confirmReservation = async (paymentMethod) => {
     setIsLoading(true);
+    setPaymentError(null);
     try {
         await reservationService.createReservation({
             // Handle both _id and id depending on exactly how your backend formats it
@@ -68,7 +75,7 @@ export function useReservation() {
         loadListingsAndBalance();
         alert("Reservation successful!"); // Replace with a toast notification if your team uses them
     } catch (err) {
-        setError(err.message);
+        setPaymentError(err.message);
     } finally {
         setIsLoading(false);
     }
@@ -79,6 +86,7 @@ export function useReservation() {
     listings,
     isLoading,
     error,
+    paymentError,
     selectedQuantity,
     selectedTotal,
     selectedItem,

@@ -1,6 +1,5 @@
 import * as ReservationService from "../services/reservationService.js";
 import { RecipientProfile } from "../../identity/models/RecipientProfile.js";
-import { donorListingRoutes } from "../../donation/routes/donations.routes.js";
 
 /**
  * POST /api/reservations
@@ -30,6 +29,7 @@ export async function createReservation(req, res, next) {
     // Pass the unpacked data to service
     const newReservation = await ReservationService.processReservation(
       recipientProfileId,
+      req.user.userId,
       donationId,
       quantity,
       paymentMethod,

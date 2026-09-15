@@ -404,8 +404,7 @@
 
 /* --- Error Banners --- */
 .error-banner {
-  /* Removed absolute positioning so it flows naturally in the column */
-  margin-top: -1.5rem; /* Pulls it up slightly to overlap the card bottom */
+  margin-top: 1rem;
   width: 90%;
   max-width: 750px;
   text-align: center;
@@ -417,6 +416,10 @@
   font-weight: 700;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   z-index: 60;
+}
+
+.payment-error {
+  max-width: 450px;
 }
 
 /* Hide the up/down arrows on number inputs for a cleaner look */

@@ -7,6 +7,7 @@ import { Donation } from "../../donation/models/donation.model.js";
 
 export async function processReservation(
   recipientProfileId,
+  userId,
   donationId,
   quantity,
   paymentMethod,
@@ -15,9 +16,6 @@ export async function processReservation(
   try {
     // Validate Input
     const donation = await Donation.findById(donationId);
-
-    // Add this temporary debug log:
-    console.log("DEBUG FOUND DONATION:", donation);
 
     if (!donation || donation.status !== "Active") {
       throw new Error("This food listing is not active or unavailable.");
@@ -49,7 +47,7 @@ export async function processReservation(
 
     if (totalPaid > 0 && paymentMethod === "Wallet") {
       const wallet = await Wallet.findOneAndUpdate(
-        { recipientProfileId, balance: { $gte: totalPaid } },
+        { userId, balance: { $gte: totalPaid } },
         { $inc: { balance: -totalPaid } },
       );
       if (!wallet) throw new Error("Insufficient wallet balance.");
@@ -91,7 +89,7 @@ export async function processReservation(
       await ReservationRepository.restoreDonationStock(donationId, quantity);
       if (totalPaid > 0 && paymentMethod === "Wallet") {
         await Wallet.findOneAndUpdate(
-          { recipientProfileId },
+          { userId },
           { $inc: { balance: totalPaid } },
         );
       }

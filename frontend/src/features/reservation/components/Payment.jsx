@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-export default function Payment({ item, quantity, totalPrice, walletBalance, onClose, onConfirm }) {
+export default function Payment({ item, totalPrice, walletBalance, error, onClose, onConfirm }) {
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   
   const isInsufficient = paymentMethod === 'Wallet' && totalPrice > walletBalance;
@@ -79,6 +79,7 @@ export default function Payment({ item, quantity, totalPrice, walletBalance, onC
           </div>
         </div>
       </div>
+      {error && <div className="error-banner payment-error">Error: {error}</div>}
     </div>
   );
 }

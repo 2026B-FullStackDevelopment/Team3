@@ -9,9 +9,9 @@ export function ReservationPage() {
     listings,
     isLoading,
     error,
+    paymentError,
     selectedItem,
     currentStep,
-    selectedQuantity,
     selectedTotal,
     walletBalance,
     openDonationDetail,
@@ -45,9 +45,9 @@ export function ReservationPage() {
       {currentStep === 'payment' && selectedItem && (
         <Payment 
           item={selectedItem}
-          quantity={selectedQuantity}
           totalPrice={selectedTotal}
           walletBalance={walletBalance}
+          error={paymentError}
           onClose={closeModals}
           onConfirm={confirmReservation}
         />
