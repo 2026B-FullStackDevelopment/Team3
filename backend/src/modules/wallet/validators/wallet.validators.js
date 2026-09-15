@@ -13,13 +13,23 @@ function validateAmount(body, min) {
   const { amount } = body;
 
   if (typeof amount !== "number" || !Number.isInteger(amount)) {
-    throw new ValidationError("amount must be an integer");
+    throw new ValidationError("Amount must be an integer");
   }
   if (amount < min) {
-    throw new ValidationError(`amount must be at least ${min} VND`);
+    throw new ValidationError(
+      `Amount must be at least ${new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }).format(min)} VND`,
+    );
   }
   if (amount > MAX_DEPOSIT) {
-    throw new ValidationError(`amount must not exceed ${MAX_DEPOSIT} VND`);
+    throw new ValidationError(
+      `Amount must not exceed ${new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }).format(MAX_DEPOSIT)} VND`,
+    );
   }
 
   return { amount };
