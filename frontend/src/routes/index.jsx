@@ -18,6 +18,7 @@ import { Placeholder } from "@/routes/pages/Placeholder.jsx";
 import { DonationDashboardPage } from "@/features/donation/pages/DonationDashboardPage.jsx";
 import { ListingFormPage } from "@/features/donation/pages/ListingFormPage.jsx";
 import { ManualDonationPage } from "@/features/donation/pages/ManualDonationPage.jsx";
+import { ListingDonationsPage } from "@/features/donation/pages/ListingDonationsPage.jsx";
 import { UserManagementPage } from "@/features/admin/pages/UserManagementPage.jsx";
 import { ListingModerationPage } from "@/features/admin/pages/ListingModerationPage.jsx";
 import { AuditLogPage } from "@/features/admin/pages/AuditLogPage.jsx";
@@ -56,7 +57,10 @@ export const router = createBrowserRouter([
             children: [
               { path: "/profile", element: <RecipientProfilePage /> },
               { path: "/browse", element: <ReservationPage /> },
-              { path: '/reservations', element: <Placeholder name="My Reservations" /> },
+              {
+                path: "/reservations",
+                element: <Placeholder name="My Reservations" />,
+              },
               { path: "/history", element: <HistoryPage /> },
               { path: "/notifications", element: <NotificationPage /> },
               {
@@ -94,6 +98,10 @@ export const router = createBrowserRouter([
                 element: <ListingFormPage mode="duplicate" />,
               },
               {
+                path: "/donor/listings/:listingId/donations",
+                element: <ListingDonationsPage />,
+              },
+              {
                 path: "/donor/manual-donations",
                 element: <ManualDonationPage />,
               },
@@ -110,23 +118,29 @@ export const router = createBrowserRouter([
             element: <RoleLayout role="admin" />,
             children: [
               {
-                path: "/admin",
-                element: <Navigate to="/admin/listing-moderation" replace />,
+                element: <AdminShell />,
+                children: [
+                  {
+                    path: "/admin",
+                    element: (
+                      <Navigate to="/admin/listing-moderation" replace />
+                    ),
+                  },
+                  {
+                    path: "/admin/listing-moderation",
+                    element: <ListingModerationPage />,
+                  },
+                  {
+                    path: "/admin/user-management",
+                    element: <UserManagementPage />,
+                  },
+                  { path: "/admin/audit-log", element: <AuditLogPage /> },
+                ],
               },
-              {
-                path: "/admin/listing-moderation",
-                element: <ListingModerationPage />,
-              },
-              {
-                path: "/admin/user-management",
-                element: <UserManagementPage />,
-              },
-              { path: "/admin/audit-log", element: <AuditLogPage /> },
             ],
           },
         ],
       },
-
     ],
   },
 

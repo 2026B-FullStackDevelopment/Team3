@@ -19,6 +19,15 @@ export function useDonationDetail(id) {
   });
 }
 
+/** Fetches and caches the reservations/donations list for one listing (SRS 4.2.5). */
+export function useListingDonations(id, filters = {}) {
+  return useQuery({
+    queryKey: donationKeys.listingDonations(id, filters),
+    queryFn: ({ signal }) => donationService.listingDonations(id, filters, signal),
+    enabled: Boolean(id),
+  });
+}
+
 /** Fetches and caches donation report data using optional React Query settings. */
 export function useDonationReport(filters = {}, options = {}) {
   return useQuery({

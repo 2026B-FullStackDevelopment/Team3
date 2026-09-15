@@ -17,7 +17,7 @@ export function ReservationPage() {
     openDonationDetail,
     proceedToPayment,
     closeModals,
-    confirmReservation
+    confirmReservation,
   } = useReservation();
 
   return (
@@ -27,23 +27,23 @@ export function ReservationPage() {
         <p>Find Surplus Food Near You</p>
       </header>
 
-      <FoodBrowsing 
-        listings={listings} 
-        isLoading={isLoading} 
-        error={error} 
-        onSelectItem={openDonationDetail} 
+      <FoodBrowsing
+        listings={listings}
+        isLoading={isLoading}
+        error={error}
+        onSelectItem={openDonationDetail}
       />
 
-      {currentStep === 'detail' && selectedItem && (
-        <DonationDetail 
-          item={selectedItem} 
+      {currentStep === "detail" && selectedItem && (
+        <DonationDetail
+          item={selectedItem}
           onClose={closeModals}
           onProceed={proceedToPayment}
         />
       )}
 
-      {currentStep === 'payment' && selectedItem && (
-        <Payment 
+      {currentStep === "payment" && selectedItem && (
+        <Payment
           item={selectedItem}
           totalPrice={selectedTotal}
           walletBalance={walletBalance}
@@ -52,6 +52,8 @@ export function ReservationPage() {
           onConfirm={confirmReservation}
         />
       )}
+
+      <HistoryView />
     </div>
   );
 }

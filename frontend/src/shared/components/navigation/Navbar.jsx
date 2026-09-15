@@ -3,6 +3,7 @@ import { cn } from "@/shared/utils/cn.js";
 import { Brand } from "@/shared/components/Brand.jsx";
 import { Button } from "@/shared/components/Button.jsx";
 import { UserMenu } from "@/shared/components/navigation/UserMenu.jsx";
+import { USER_ROLES } from "@/config/constants.js";
 
 /**
  * Role-aware top bar (presentation only — session data arrives via props).
@@ -31,7 +32,7 @@ const ROLE_LINKS = {
     { label: "My Listings", to: "/donor/listings" },
     { label: "Manual Entries", to: "/donor/manual-donations" },
   ],
-  admin: [],
+  admin: [{ label: "Admin", to: "/admin" }],
 };
 
 // Account dropdown items per role.
@@ -104,7 +105,16 @@ function PublicBar({ user, onLogout }) {
 }
 
 function AuthedBar({ role, user, onLogout, actions }) {
-  const links = ROLE_LINKS[role] ?? [];
+  // The `role` prop is already route-guard-restricted (RequireRole), but the
+  // Admin tab specifically is re-checked against the real authenticated
+  // user's role, not just the layout prop -- so it can never render off a
+  // mismatched/stale `role` value passed into RoleLayout.
+  const links =
+    role === "admin"
+      ? user?.role === USER_ROLES.ADMIN
+        ? ROLE_LINKS.admin
+        : []
+      : (ROLE_LINKS[role] ?? []);
   return (
     <header className="sticky top-0 z-20 bg-ink">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
