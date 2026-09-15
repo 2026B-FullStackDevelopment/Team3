@@ -46,7 +46,7 @@ export async function restoreDonationStock(donationId, quantityToRestore) {
 
 /** Check if a reservation already exists for this recipient and donation */
 export async function checkExistingReservation(recipientProfileId, donationId) {
-  return await Reservation.findOne({ recipientProfileId, donationId });
+  return await Reservation.findOne({ recipientProfileId, donationId, status: "Reserved" });
 }
 
 export async function findByDonationId(donationId, options = {}) {
