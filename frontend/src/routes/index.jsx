@@ -22,6 +22,9 @@ import { UserManagementPage } from "@/features/admin/pages/UserManagementPage.js
 import { ListingModerationPage } from "@/features/admin/pages/ListingModerationPage.jsx";
 import { AuditLogPage } from "@/features/admin/pages/AuditLogPage.jsx";
 import { NotificationPage } from "@/features/notification/Page/NotificationPage.jsx";
+import { ReservationPage } from '@/routes/pages/ReservationPage.jsx'
+import { HistoryPage } from '@/routes/pages/HistoryPage.jsx'
+import { AdminShell } from '@/routes/layouts/AdminShell.jsx'
 
 /**
  * Application route tree, gated by role (SRS A.2.c). Public pages render
@@ -53,8 +56,9 @@ export const router = createBrowserRouter([
             element: <RoleLayout role="recipient" />,
             children: [
               { path: "/profile", element: <RecipientProfilePage /> },
-              { path: "/browse", element: <Placeholder name="Browse" /> },
-              { path: "/history", element: <Placeholder name="History" /> },
+              { path: "/browse", element: <ReservationPage /> },
+              { path: '/reservations', element: <Placeholder name="My Reservations" /> },
+              { path: "/history", element: <HistoryPage /> },
               { path: "/notifications", element: <NotificationPage /> },
               {
                 path: "/notification-preferences",
@@ -123,6 +127,7 @@ export const router = createBrowserRouter([
           },
         ],
       },
+
     ],
   },
 
