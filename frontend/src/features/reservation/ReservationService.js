@@ -1,3 +1,9 @@
+import { httpClient } from '@/config/api/httpClient.js';
+
+export async function createCheckoutSession(donationId, quantity) {
+    return httpClient.post('/api/reservations/checkout', { donationId, quantity });
+}
+
 export async function fetchActiveDonation() {
     const response = await fetch('/api/donations/active', {
         method: 'GET',

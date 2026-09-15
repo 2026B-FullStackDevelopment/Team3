@@ -63,6 +63,23 @@ export function useReservation() {
   const confirmReservation = async (paymentMethod) => {
     setIsLoading(true);
     setPaymentError(null);
+
+    if (paymentMethod === 'Card') {
+      const res = await reservationService.createCheckoutSession(
+        selectedItem._id || selectedItem.id,
+        selectedQuantity,
+      );
+
+      if (res.ok) {
+        window.location.href = res.data.url;
+        return;
+      }
+
+      setPaymentError(res.error?.message || res.error);
+      setIsLoading(false);
+      return;
+    }
+
     try {
         await reservationService.createReservation({
             // Handle both _id and id depending on exactly how your backend formats it

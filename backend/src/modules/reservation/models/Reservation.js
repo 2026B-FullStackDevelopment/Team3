@@ -50,6 +50,11 @@ export const ReservationSchema = {
     type: String,
     enum: Object.values(PaymentMethod),
   },
+  stripeSessionId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
   feedback: {
     type: String,
     default: null,

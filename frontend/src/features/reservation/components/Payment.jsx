@@ -58,6 +58,21 @@ export default function Payment({ item, totalPrice, walletBalance, error, onClos
                 )}
               </div>
             </label>
+
+            {/* Stripe Card Option */}
+            <label className={`payment-option ${paymentMethod === 'Card' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="Card"
+                checked={paymentMethod === 'Card'}
+                onChange={() => setPaymentMethod('Card')}
+              />
+              <div className="payment-info">
+                <strong>Credit/Debit Card (Stripe)</strong>
+                <span>Complete payment securely with Stripe</span>
+              </div>
+            </label>
           </div>
 
           <div className="total-price-display">

@@ -36,6 +36,7 @@ export async function createCheckoutSession({
   productName,
   successPath,
   cancelPath,
+  metadata = {},
 }) {
   if (!isStripeEnabled()) {
     throw new ConflictError("Card payment is not available");
@@ -54,7 +55,11 @@ export async function createCheckoutSession({
         quantity: 1,
       },
     ],
-    metadata: { userId, purpose },
+    metadata: {
+      ...metadata,
+      userId: String(userId),
+      purpose: String(purpose),
+    },
     success_url: `${env.stripe.frontendUrl}${successPath}`,
     cancel_url: `${env.stripe.frontendUrl}${cancelPath}`,
   });

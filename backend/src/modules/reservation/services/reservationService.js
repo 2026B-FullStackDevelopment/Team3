@@ -16,6 +16,7 @@ export async function processReservation(
   quantity,
   paymentMethod,
   manualRecipientName = null,
+  options = {},
 ) {
   try {
     // Validate Input
@@ -96,6 +97,9 @@ export async function processReservation(
         status: "Reserved",
         paymentMethod: paymentMethod,
         totalPaid: totalPaid,
+        ...(options.stripeSessionId
+          ? { stripeSessionId: options.stripeSessionId }
+          : {}),
       };
 
       const newReservation =
@@ -167,6 +171,15 @@ export async function createReservationCheckout(
     throw new Error("Insufficient stock.");
   }
 
+  const existingReservation =
+    await ReservationRepository.checkExistingReservation(
+      recipientProfileId,
+      donationId,
+    );
+  if (existingReservation) {
+    throw new Error("You have already reserved this listing.");
+  }
+
   // 3. Calculate total price and ensure it's not a free item
   const totalPaid = donation.price > 0 ? donation.price * quantity : 0;
   if (totalPaid === 0) {
@@ -188,4 +201,47 @@ export async function createReservationCheckout(
       recipientProfileId: String(recipientProfileId)
     }
   });
+}
+
+/** Fulfil one paid Stripe Checkout Session. Safe to call again on retries. */
+export async function fulfillReservationCheckout(session) {
+  const stripeSessionId = session?.id;
+  if (!stripeSessionId) {
+    throw new Error("Stripe session ID is missing.");
+  }
+
+  const fulfilledReservation =
+    await ReservationRepository.findByStripeSessionId(stripeSessionId);
+  if (fulfilledReservation) return fulfilledReservation;
+
+  if (session.payment_status !== "paid") {
+    throw new Error("Stripe checkout session is not paid.");
+  }
+
+  const { donationId, recipientProfileId, userId } = session.metadata ?? {};
+  const quantity = Number(session.metadata?.quantity);
+  if (!donationId || !recipientProfileId || !userId) {
+    throw new Error("Reservation checkout metadata is incomplete.");
+  }
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error("Reservation checkout quantity is invalid.");
+  }
+
+  try {
+    return await processReservation(
+      recipientProfileId,
+      userId,
+      donationId,
+      quantity,
+      "Card",
+      "Self",
+      { stripeSessionId },
+    );
+  } catch (error) {
+    // A concurrent delivery may have completed while this one was running.
+    const concurrentReservation =
+      await ReservationRepository.findByStripeSessionId(stripeSessionId);
+    if (concurrentReservation) return concurrentReservation;
+    throw error;
+  }
 }
