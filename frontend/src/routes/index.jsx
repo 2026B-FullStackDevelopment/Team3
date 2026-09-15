@@ -19,7 +19,6 @@ import { DonationDashboardPage } from "@/features/donation/pages/DonationDashboa
 import { ListingFormPage } from "@/features/donation/pages/ListingFormPage.jsx";
 import { ManualDonationPage } from "@/features/donation/pages/ManualDonationPage.jsx";
 import { ListingDonationsPage } from "@/features/donation/pages/ListingDonationsPage.jsx";
-import { CollectionHistoryPage } from "@/features/reservation/pages/CollectionHistoryPage.jsx";
 import { UserManagementPage } from "@/features/admin/pages/UserManagementPage.jsx";
 import { ListingModerationPage } from "@/features/admin/pages/ListingModerationPage.jsx";
 import { AuditLogPage } from "@/features/admin/pages/AuditLogPage.jsx";

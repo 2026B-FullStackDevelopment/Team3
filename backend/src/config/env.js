@@ -58,7 +58,7 @@ export const env = {
 
   // Cloudinary connection string (cloudinary://<key>:<secret>@<cloud>). Required
   // in every environment — Cloudinary is the only image storage backend.
-  cloudinaryUrl: required("CLOUDINARY_URL"),
+  // cloudinaryUrl: required("CLOUDINARY_URL"),
 
   mail: {
     // Resend API key. When unset, the mailer no-ops and logs a skip line, so
