@@ -11,7 +11,14 @@ export async function createReservation(reservationData, options = {}) {
 export async function getReservationsByRecipient(recipientProfileId) {
   return await Reservation.find({ recipientProfileId })
     .sort({ reservedAt: -1 })
-    .populate("donationId", "name foodCategory");
+    .populate({
+      path: "donationId",
+      select: "name foodCategory imageUrl donorProfileId",
+      populate: {
+        path: "donorProfileId",
+        select: "companyName address city location",
+      },
+    });
 }
 
 /** Deduct the remaining stock */

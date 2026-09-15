@@ -1,6 +1,47 @@
 import { useState, useEffect } from 'react';
 import * as reservationService from './ReservationService.js';
 
+function getPickupLocation(donation) {
+  const donor = donation?.donorProfileId;
+  const coordinates = donor?.location?.coordinates;
+  const longitude = Number(coordinates?.[0]);
+  const latitude = Number(coordinates?.[1]);
+  const hasCoordinates =
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180;
+
+  return {
+    donorName: donor?.companyName || 'Local Donor',
+    address: donor?.address || donor?.city || 'Pickup address unavailable',
+    latitude: hasCoordinates ? latitude : null,
+    longitude: hasCoordinates ? longitude : null,
+  };
+}
+
+function getMapUrl({ latitude, longitude }) {
+  if (latitude === null || longitude === null) return null;
+  const offset = 0.008;
+  const params = new URLSearchParams({
+    bbox: `${longitude - offset},${latitude - offset},${longitude + offset},${latitude + offset}`,
+    layer: 'mapnik',
+    marker: `${latitude},${longitude}`,
+  });
+  return `https://www.openstreetmap.org/export/embed.html?${params}`;
+}
+
+function getDirectionsUrl(location) {
+  const destination =
+    location.latitude !== null && location.longitude !== null
+      ? `${location.latitude},${location.longitude}`
+      : location.address;
+  const params = new URLSearchParams({ api: '1', destination });
+  return `https://www.google.com/maps/dir/?${params}`;
+}
+
 export function HistoryPage() {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +89,7 @@ export function HistoryPage() {
           
           // Fallbacks for data not returned by the current backend query
           const fallbackImage = 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=80&w=400';
-          const donorName = 'Local Donor'; 
+          const pickupLocation = getPickupLocation(donation);
           
           return (
             <div key={item._id} className="bg-white rounded-[1.5rem] p-4 flex flex-col sm:flex-row items-center justify-between shadow-sm border border-gray-100">
@@ -63,7 +104,7 @@ export function HistoryPage() {
                 
                 <div className="flex flex-col w-full sm:w-auto text-left gap-1 mt-2 sm:mt-0">
                   <h3 className="text-xl font-bold text-ink">{donation.name || 'Unknown Item'}</h3>
-                  <p className="text-sm text-gray-500 mb-2">{donorName}</p>
+                  <p className="text-sm text-gray-500 mb-2">{pickupLocation.donorName}</p>
                   
                   <p className="text-sm text-ink font-medium">
                     Reserved on: <span className="font-normal">{formatDateTime(item.reservedAt)}</span>
@@ -90,7 +131,7 @@ export function HistoryPage() {
 
                 {!isCollected && (
                   <button 
-                    onClick={() => setSelectedLocation("Pickup Location (Address unavailable)")}
+                    onClick={() => setSelectedLocation(pickupLocation)}
                     className="bg-[#e6efd6] text-[#5f7d1f] font-bold px-6 py-2.5 rounded-full text-sm hover:bg-[#c9dca8] transition-colors w-full sm:w-auto mt-auto"
                   >
                     DIRECTION TO PICKUP
@@ -108,18 +149,38 @@ export function HistoryPage() {
       {selectedLocation && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl overflow-hidden w-full max-w-lg relative shadow-2xl">
-            <div className="w-full h-80 bg-blue-50 relative">
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800" alt="Map placeholder" className="w-full h-full object-cover opacity-60" />
+            <div className="w-full h-80 bg-blue-50">
+              {getMapUrl(selectedLocation) ? (
+                <iframe
+                  title={`Map to ${selectedLocation.donorName}`}
+                  src={getMapUrl(selectedLocation)}
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center px-8 text-center text-gray-600">
+                  A map preview is unavailable because this donor has no saved coordinates.
+                </div>
+              )}
             </div>
-            <div className="absolute bottom-4 left-4 right-4 bg-black text-white rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-gray-900 transition-colors">
+            <a
+              href={getDirectionsUrl(selectedLocation)}
+              target="_blank"
+              rel="noreferrer"
+              className="m-4 bg-black text-white rounded-2xl p-4 flex items-center justify-between hover:bg-gray-900 transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-sm font-medium leading-snug">{selectedLocation}</span>
+                <span className="text-sm font-medium leading-snug">
+                  <strong className="block">{selectedLocation.donorName}</strong>
+                  {selectedLocation.address}
+                </span>
               </div>
-            </div>
+              <span className="ml-3 shrink-0 text-xs font-bold uppercase">Get directions</span>
+            </a>
             <button onClick={() => setSelectedLocation(null)} className="absolute top-4 right-4 bg-white text-black rounded-full p-2 shadow-md hover:bg-gray-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
