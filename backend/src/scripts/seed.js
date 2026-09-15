@@ -10,10 +10,8 @@ import {
 
 import { RecipientProfile } from "../modules/identity/models/RecipientProfile.js";
 import { DonorProfile } from "../modules/identity/models/DonorProfile.js";
-import {
-  NotificationPreference,
-  foodCategory,
-} from "../modules/notification/models/NotificationPreference.js";
+import { NotificationPreference } from "../modules/notification/models/NotificationPreference.js";
+import { FoodCategory } from "../shared/constants/foodCategory.js";
 import { Wallet } from "../modules/wallet/models/Wallet.js";
 
 import {
@@ -154,7 +152,7 @@ async function seedNotificationPreference(recipientProfileId) {
 
   return NotificationPreference.create({
     recipientProfileId,
-    foodCategory: [foodCategory.Fruit, foodCategory.Vegetable],
+    foodCategory: [FoodCategory.Fruit, FoodCategory.Vegetable],
 
     isVegetarian: false,
     priceRangeMin: 0,
@@ -181,7 +179,7 @@ async function seedDonations(donorProfileId) {
     description: "Fresh bread available for same-day collection.",
     imageUrl: "https://example.com/images/fresh-bread.jpg",
     measurementUnit: MeasurementUnit.Unit,
-    foodCategory: foodCategory.BakedGoods,
+    foodCategory: FoodCategory.BakedGoods,
     isVegetarian: true,
     donationLimit: 5,
     price: 0,
@@ -196,7 +194,7 @@ async function seedDonations(donorProfileId) {
     description: "Mixed apples, bananas, and oranges.",
     imageUrl: "https://example.com/images/mixed-fresh-fruit.jpg",
     measurementUnit: MeasurementUnit.KG,
-    foodCategory: foodCategory.Fruit,
+    foodCategory: FoodCategory.Fruit,
     isVegetarian: true,
     donationLimit: 3,
     price: 0,
@@ -310,8 +308,6 @@ async function seedNotification(userId, donationId) {
     userId,
     type: NotificationType.ListingMatched,
     relatedDonationId: donationId,
-    isRead: false,
-    createdAt: new Date(),
   });
 }
 
@@ -366,7 +362,7 @@ async function seedDonorReportItems(donorReportId) {
 
   const breadItem = await DonorReportItem.create({
     donorReportId,
-    foodCategory: foodCategory.BakedGoods,
+    foodCategory: FoodCategory.BakedGoods,
     measurementUnit: MeasurementUnit.Unit,
     donatedQuantity: 20,
     revenue: 0,
@@ -375,7 +371,7 @@ async function seedDonorReportItems(donorReportId) {
 
   const fruitItem = await DonorReportItem.create({
     donorReportId,
-    foodCategory: foodCategory.Fruit,
+    foodCategory: FoodCategory.Fruit,
     measurementUnit: MeasurementUnit.KG,
     donatedQuantity: 15,
     revenue: 0,

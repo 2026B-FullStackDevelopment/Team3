@@ -32,6 +32,13 @@ export const RecipientProfileSchema = new Schema({
     type: Date,
     default: null,
   },
+  // Stripe Checkout Session id of the last card premium payment applied. Used to
+  // make the payment webhook idempotent (a re-delivered event for the same
+  // session is a no-op). Null/undefined for wallet-path or never-card users.
+  lastPremiumSessionId: {
+    type: String,
+    default: undefined,
+  },
 });
 
 export const RecipientProfile = mongoose.model(

@@ -1,7 +1,8 @@
-import { Outlet } from 'react-router-dom'
-import { useAuth } from '@/context/auth/useAuth.js'
-import { Navbar } from '@/shared/components/navigation/Navbar.jsx'
-import { homePathForRole } from '@/shared/utils/routing.js'
+import { Outlet } from "react-router-dom";
+import { useAuth } from "@/context/auth/useAuth.js";
+import { Navbar } from "@/shared/components/navigation/Navbar.jsx";
+import { homePathForRole } from "@/shared/utils/routing.js";
+import { NotificationBellTrigger } from "@/features/notification/Components/NotificationBellTrigger.jsx";
 
 /**
  * Authenticated shell for a role: the role-aware Navbar over a centered page
@@ -9,14 +10,25 @@ import { homePathForRole } from '@/shared/utils/routing.js'
  * here and passed into the presentational Navbar.
  */
 export function RoleLayout({ role }) {
-  const { user, logout } = useAuth()
-  const home = homePathForRole(user?.role)
+  const { user, logout } = useAuth();
+  const home = homePathForRole(user?.role);
+  const notificationActions =
+    role === "recipient" || role === "donor" ? (
+      <NotificationBellTrigger />
+    ) : null;
+
   return (
     <div className="min-h-screen bg-cream text-ink">
-      <Navbar role={role} user={user} home={home} onLogout={logout} />
+      <Navbar
+        role={role}
+        user={user}
+        home={home}
+        onLogout={logout}
+        actions={notificationActions}
+      />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

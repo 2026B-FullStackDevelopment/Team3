@@ -10,11 +10,11 @@ import {
   Play,
   Trash2,
 } from "lucide-react";
-import { donationService } from "@/features/donation/service/donationService.js";
+import { donationService } from "@/features/donation/service/donation.service.js";
 import {
   useDeleteDonation,
   useDonationMutation,
-} from "@/features/donation/hooks/useDonationData.js";
+} from "@/features/donation/hooks/donation.hooks.js";
 import {
   CATEGORY_LABELS,
   DonationStatus,

@@ -8,17 +8,23 @@ import { donorReportRoutes } from "./modules/donorReport/routes/donorReport.rout
 import { auditLogRoutes } from "./modules/admin/routes/auditLog.routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { reservationRoutes } from "./modules/reservation/routes/reservationRoutes.js";
+import { notificationPreferenceRoutes } from "./modules/notification/routes/notificationPreference.routes.js";
+import { paymentsWebhookRoutes } from "./modules/payments/routes/paymentsWebhook.routes.js";
+import { registerPaymentHandlers } from "./modules/identity/index.js";
+import { notificationRoutes } from "./modules/notification/routes/notification.routes.js";
+import { feedbackRoutes } from "./modules/feedback/routes/feedback.routes.js";
 import { recipientListingRoutes } from "./modules/donation/routes/recipientListing.routes.js";
 import { env } from "./config/env.js";
 
 const app = express();
 
+registerPaymentHandlers();
+
+// Stripe webhook needs the raw body — mount before the JSON parser.
+app.use("/api/payments/stripe", paymentsWebhookRoutes);
+
 app.use(express.json());
 app.use(cookieParser());
-
-// Serve uploaded images (avatars) as static files. Filenames are
-// server-generated; the DB stores only these URLs. Unauthenticated by design.
-app.use("/upload", express.static(env.upload.dir));
 
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -41,12 +47,13 @@ app.use("/api/donor/reports", donorReportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/notification-preferences", notificationPreferenceRoutes);
+app.use("/api/donor/food-listings", donorListingRoutes);
 app.use("/api/admin", auditLogRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/donations", recipientListingRoutes);
-
-// TODO: mount the remaining routers (donation, reservation, feedback,
-// notification, admin) as they are implemented.
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "NOT_FOUND", message: "Route not found" });

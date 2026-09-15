@@ -1,15 +1,15 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { donationService } from "@/features/donation/service/donationService.js";
+import { donationService } from "@/features/donation/service/donation.service.js";
 import {
   useDonationDetail,
   useDonationMutation,
-} from "@/features/donation/hooks/useDonationData.js";
+} from "@/features/donation/hooks/donation.hooks.js";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
-import { ListingForm } from "@/features/donation/components/listing-form/ListingForm.jsx";
+import { ListingForm } from "@/features/donation/components/report/ListingForm.jsx";
 import {
   buildEditListingPayload,
   buildListingPayload,
-} from "@/features/donation/components/listing-form/listingFormPayload.js";
+} from "@/features/donation/models/listingFormPayload.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
 /** Coordinates listing data, API mutations, and navigation for the form. */

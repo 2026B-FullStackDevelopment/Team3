@@ -3,9 +3,14 @@ import {
   adminCancelDonation,
   finalizeCancellation,
   reinstateDonation,
-  listActiveListingsForAdmin,
+  listActiveListingsForAdmin as listActiveListingsForAdminService,
 } from "../services/donation.service.js";
-import { toDonationSummaryDTO } from "../dtos/donation.dto.js";
+import {
+  toAdminDonationSummaryDTO,
+  toDonationAuditSnapshotDTO,
+  toReservationDonationDTO,
+  toReservationDonationStateDTO,
+} from "../dtos/donation.dto.js";
 import { buildSoldOutAlert } from "../services/soldOutAlert.service.js";
 import {
   allowsOnlineReservationForMeasurementUnit,
@@ -129,7 +134,7 @@ function buildReservationResult(listing, quantity) {
   };
 }
 
-export async function readDonationById(id, options = {}) {
+async function findDonationDocumentById(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
   const donation = await donationRepository.findById(donationId, options);
 
@@ -140,8 +145,52 @@ export async function readDonationById(id, options = {}) {
   return donation;
 }
 
+async function assertDonationCanAcceptReservations(
+  id,
+  requestedQuantity,
+  options = {},
+) {
+  const quantity = requirePositiveNumber(requestedQuantity, "quantity");
+  const listing = await findDonationDocumentById(id, options);
+
+  return buildReservationResult(listing, quantity);
+}
+
+export async function readDonationById(id, options = {}) {
+  const donation = await findDonationDocumentById(id, options);
+  return toDonationAuditSnapshotDTO(donation);
+}
+
 export async function readListingById(id, options = {}) {
-  return readDonationById(id, options);
+  const donation = await findDonationDocumentById(id, options);
+  return toReservationDonationDTO(donation);
+}
+
+export async function listActiveListingsForAdmin(filters = {}) {
+  const result = await listActiveListingsForAdminService(filters);
+
+  return {
+    entries: result.entries.map(toAdminDonationSummaryDTO),
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+  };
+}
+
+export async function listDonorReportingDimensions(
+  donorProfileId,
+  options = {},
+) {
+  const donations = await donationRepository.listReportingDimensionsByDonor(
+    requireNonEmptyString(donorProfileId, "donorProfileId"),
+    options,
+  );
+
+  return donations.map((donation) => ({
+    donationId: String(donation._id ?? donation.id),
+    foodCategory: donation.foodCategory ?? null,
+    measurementUnit: donation.measurementUnit ?? null,
+  }));
 }
 
 export async function canAcceptReservations(
@@ -149,7 +198,7 @@ export async function canAcceptReservations(
   requestedQuantity,
   options = {},
 ) {
-  const listing = await readDonationById(id, options);
+  const listing = await findDonationDocumentById(id, options);
   const quantity =
     requestedQuantity === undefined
       ? undefined
@@ -163,10 +212,17 @@ export async function assertListingCanAcceptReservations(
   requestedQuantity,
   options = {},
 ) {
-  const quantity = requirePositiveNumber(requestedQuantity, "quantity");
-  const listing = await readDonationById(id, options);
+  const result = await assertDonationCanAcceptReservations(
+    id,
+    requestedQuantity,
+    options,
+  );
 
-  return buildReservationResult(listing, quantity);
+  return {
+    listing: toReservationDonationDTO(result.listing),
+    quantity: result.quantity,
+    policy: result.policy,
+  };
 }
 
 export async function applyReservation(
@@ -179,7 +235,7 @@ export async function applyReservation(
   const quantity = requirePositiveNumber(requestedQuantity, "quantity");
   const reservationRevenue = requireNonNegativeNumber(totalPaid, "totalPaid");
 
-  await assertListingCanAcceptReservations(donationId, quantity, options);
+  await assertDonationCanAcceptReservations(donationId, quantity, options);
 
   const updatedListing = await donationRepository.applyReservation(
     donationId,
@@ -193,7 +249,7 @@ export async function applyReservation(
   }
 
   return {
-    listing: updatedListing,
+    listing: toReservationDonationStateDTO(updatedListing),
     soldOut: updatedListing.status === DonationStatus.SoldOut,
     soldOutAlert: getSoldOutAlertDataFromListing(updatedListing),
   };
@@ -206,7 +262,7 @@ export async function restoreReservationQuantity(
 ) {
   const donationId = requireNonEmptyString(id, "donationId");
   const quantity = requirePositiveNumber(cancelledQuantity, "quantity");
-  const listing = await readDonationById(donationId, options);
+  const listing = await findDonationDocumentById(donationId, options);
 
   if (listing.status === DonationStatus.Cancelled) {
     throw new ConflictError("A cancelled donation cannot restore quantity");
@@ -222,15 +278,15 @@ export async function restoreReservationQuantity(
     throw new NotFoundError("Donation not found");
   }
 
-  return updatedListing;
+  return toReservationDonationStateDTO(updatedListing);
 }
 
 export async function closeListingWhenSoldOut(id, options = {}) {
   const donationId = requireNonEmptyString(id, "donationId");
-  const listing = await readDonationById(donationId, options);
+  const listing = await findDonationDocumentById(donationId, options);
 
   if (listing.status === DonationStatus.SoldOut) {
-    return listing;
+    return toReservationDonationStateDTO(listing);
   }
   if (listing.status !== DonationStatus.Active || listing.closedAt) {
     throw new ConflictError(
@@ -241,7 +297,11 @@ export async function closeListingWhenSoldOut(id, options = {}) {
     return null;
   }
 
-  return donationRepository.closeIfSoldOut(donationId, options);
+  const updatedListing = await donationRepository.closeIfSoldOut(
+    donationId,
+    options,
+  );
+  return toReservationDonationStateDTO(updatedListing);
 }
 
 function getSoldOutAlertDataFromListing(listing) {
@@ -260,7 +320,7 @@ function getSoldOutAlertDataFromListing(listing) {
 export async function getSoldOutAlertData(donationOrId, options = {}) {
   const listing =
     typeof donationOrId === "string"
-      ? await readDonationById(donationOrId, options)
+      ? await findDonationDocumentById(donationOrId, options)
       : donationOrId;
 
   if (!listing) {
@@ -277,6 +337,4 @@ export {
   adminCancelDonation,
   finalizeCancellation,
   reinstateDonation,
-  listActiveListingsForAdmin,
-  toDonationSummaryDTO,
 };

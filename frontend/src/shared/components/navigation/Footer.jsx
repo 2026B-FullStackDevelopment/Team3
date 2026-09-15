@@ -3,9 +3,9 @@ import { Brand } from '@/shared/components/Brand.jsx'
 
 /**
  * Public site footer shown beneath the Landing page: brand blurb, the two link
- * columns (Recipients / Donors), and the "Get Started" email capture, over the
- * dark ink surface from the sketch. Presentation only — the email field is a
- * static capture stub (wired in a later pass). Tailwind classes inlined.
+ * columns (Recipients / Donors), and the "Get Started" call-to-action linking to
+ * registration, over the dark ink surface from the sketch. Presentation only.
+ * Tailwind classes inlined.
  */
 
 const RECIPIENT_LINKS = [
@@ -64,23 +64,12 @@ export function Footer() {
             <p className="mt-4 text-sm leading-relaxed text-white/60">
               Sign up free and start finding food near you.
             </p>
-            <form
-              className="mt-4 flex items-center gap-2"
-              onSubmit={(e) => e.preventDefault()}
+            <Link
+              to="/register"
+              className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
             >
-              <input
-                type="email"
-                aria-label="Email address"
-                placeholder="you@email.com"
-                className="h-10 min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="h-10 shrink-0 rounded-full bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-              >
-                Join
-              </button>
-            </form>
+              Create free account
+            </Link>
           </div>
         </div>
 

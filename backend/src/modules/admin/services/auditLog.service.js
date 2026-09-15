@@ -16,6 +16,8 @@ import { env } from "../../../config/env.js";
 // (SRS A.3.1) -- never that module's Service layer directly.
 import * as identity from "../../identity/index.js";
 import * as donation from "../../donation/interfaces/donation.interface.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
+import * as notification from "../../notification/interfaces/notification.interface.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -165,12 +167,12 @@ export async function createAuditLog(input, options = {}) {
  * returning null so callers get an explicit, typed signal rather than each
  * having to re-check for a missing entry themselves.
  */
-export async function getAuditLogById(id) {
+export async function getAuditLogById(id, options = {}) {
   if (!isNonEmptyString(id)) {
     throw new ValidationError("id is required");
   }
 
-  const entry = await auditLogRepository.findById(id);
+  const entry = await auditLogRepository.findById(id, options);
   if (!entry) {
     throw new NotFoundError(`Audit log ${id} not found`);
   }
@@ -329,31 +331,50 @@ export async function undoAction(auditLogId, actorId) {
   try {
     let reverted;
     await session.withTransaction(async () => {
-      if (entry.action === AdminActionType.DeactivateUser) {
-        reverted = await identity.reactivateAccount(entry.targetId, {
+      const current = await auditLogRepository.findById(auditLogId, {
+        session,
+      });
+      const now = new Date();
+      if (
+        !current ||
+        current.status !== AuditLogStatus.Pending ||
+        !current.undoDeadline ||
+        current.undoDeadline.getTime() <= now.getTime()
+      ) {
+        throw new ConflictError(
+          `Audit log ${auditLogId} can no longer be undone`,
+        );
+      }
+
+      if (current.action === AdminActionType.DeactivateUser) {
+        reverted = await identity.reactivateAccount(current.targetId, {
           session,
         });
-      } else if (entry.action === AdminActionType.ReactivateUser) {
-        reverted = await identity.deactivateAccount(entry.targetId, {
+      } else if (current.action === AdminActionType.ReactivateUser) {
+        reverted = await identity.deactivateAccount(current.targetId, {
           session,
         });
-      } else if (entry.action === AdminActionType.CancelDonation) {
-        reverted = await donation.reinstateDonation(entry.targetId, {
+      } else if (current.action === AdminActionType.CancelDonation) {
+        reverted = await donation.reinstateDonation(current.targetId, {
           session,
         });
       } else {
         throw new NotImplementedError(
-          `Undo is not available for ${entry.action}`,
+          `Undo is not available for ${current.action}`,
         );
       }
 
-      await auditLogRepository.updateStatus(
-        entry.id,
+      const updatedAudit = await auditLogRepository.updatePendingStatus(
+        current._id,
         AuditLogStatus.Undone,
-        new Date(),
-        actorId,
+        { undoneAt: now, undoneBy: actorId },
         { session },
       );
+      if (!updatedAudit) {
+        throw new ConflictError(
+          `Audit log ${auditLogId} can no longer be undone`,
+        );
+      }
     });
     return reverted;
   } finally {
@@ -363,9 +384,8 @@ export async function undoAction(auditLogId, actorId) {
 
 /**
  * Sweeps Pending entries whose undo window has passed and finalizes them.
- * Meant to be called by a scheduled job (see the Scheduled Job Worker in
- * the architecture diagram), not a user-facing route -- wiring an actual
- * cron trigger for it is a separate task.
+ * Called by jobs/auditLogSweep.job.js on startup and once per configured
+ * interval; this is an internal worker, not a user-facing route.
  *
  * Most actions (DeactivateUser, ReactivateUser) already took full effect at
  * action time, so finalizing one is just closing the audit record -- a
@@ -381,35 +401,82 @@ export async function undoAction(auditLogId, actorId) {
  * a latency-sensitive path, so sequential is fine.
  */
 export async function finalizeExpiredEntries() {
-  const expired = await auditLogRepository.findExpiredPending();
+  const expired = await auditLogRepository.findExpiredPending({
+    limit: env.admin.sweepBatchSize,
+  });
 
   const finalized = [];
   for (const entry of expired) {
     if (entry.action === AdminActionType.CancelDonation) {
       const session = await mongoose.startSession();
+      let createdNotifications = [];
       try {
         let updated;
         await session.withTransaction(async () => {
-          await donation.finalizeCancellation(entry.targetId, { session });
-          updated = await auditLogRepository.updateStatus(
-            entry._id,
-            AuditLogStatus.Finalized,
-            undefined,
-            undefined,
+          // withTransaction may retry this callback after a transient error.
+          // Never publish values captured by an aborted attempt.
+          updated = undefined;
+          createdNotifications = [];
+          const now = new Date();
+          const current = await auditLogRepository.findById(entry._id, {
+            session,
+          });
+          if (
+            !current ||
+            current.status !== AuditLogStatus.Pending ||
+            !current.undoDeadline ||
+            current.undoDeadline.getTime() > now.getTime()
+          ) {
+            return;
+          }
+
+          const recipientProfileIds =
+            await reservation.listAffectedRecipientProfileIds(
+              current.targetId,
+              { session },
+            );
+          const cancelledListing = await donation.finalizeCancellation(
+            current.targetId,
             { session },
           );
+          await reservation.cancelActiveReservationsByAdmin(current.targetId, {
+            session,
+          });
+          createdNotifications =
+            await notification.notifyListingCancelledByAdmin(
+              {
+                donationId: String(cancelledListing.id),
+                recipientProfileIds,
+              },
+              { session },
+            );
+          updated = await auditLogRepository.updatePendingStatus(
+            entry._id,
+            AuditLogStatus.Finalized,
+            {},
+            { session },
+          );
+          if (!updated) {
+            throw new ConflictError(
+              `Audit log ${entry._id} was already finalized or undone`,
+            );
+          }
         });
-        finalized.push(updated);
+        if (updated) {
+          finalized.push(updated);
+          notification.publishCreatedNotifications(createdNotifications);
+        }
+      } catch (error) {
+        if (!(error instanceof ConflictError)) throw error;
       } finally {
         await session.endSession();
       }
     } else {
-      finalized.push(
-        await auditLogRepository.updateStatus(
-          entry._id,
-          AuditLogStatus.Finalized,
-        ),
+      const updated = await auditLogRepository.updatePendingStatus(
+        entry._id,
+        AuditLogStatus.Finalized,
       );
+      if (updated) finalized.push(updated);
     }
   }
 
@@ -564,13 +631,10 @@ export async function listAllFoodListings(filters = {}) {
   );
 
   return {
-    listings: entries.map((entry) => {
-      const summary = donation.toDonationSummaryDTO(entry);
-      return {
-        ...summary,
-        donorName: donorNameById.get(summary.donorProfileId) ?? null,
-      };
-    }),
+    listings: entries.map((entry) => ({
+      ...entry,
+      donorName: donorNameById.get(entry.donorProfileId) ?? null,
+    })),
     total,
     page: resolvedPage,
     limit: resolvedLimit,
@@ -603,10 +667,9 @@ export async function cancelDonation(adminId, donationId) {
   try {
     let after;
     await session.withTransaction(async () => {
-      const beforeDonation = await donation.readDonationById(donationId, {
+      const before = await donation.readDonationById(donationId, {
         session,
       });
-      const before = donation.toDonationSummaryDTO(beforeDonation);
       after = await donation.adminCancelDonation(donationId, { session });
 
       await createAuditLog(

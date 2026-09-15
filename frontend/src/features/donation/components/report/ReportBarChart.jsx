@@ -12,7 +12,7 @@ import { ReportDataTable } from "@/features/donation/components/report/ReportDat
 import {
   displayLabel,
   formatCompactNumber,
-} from "@/features/donation/components/report/reportUtils.js";
+} from "@/features/donation/models/reportUtils.js";
 
 /** Renders a sorted horizontal report chart with an optional accessible table. */
 export function ReportBarChart({

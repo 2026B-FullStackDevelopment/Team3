@@ -1,5 +1,6 @@
-import * as dashboardStatsRepository from "../repositories/dashboardStats.repository.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
+import * as donation from "../../donation/interfaces/donation.interface.js";
+import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 
 function parseDate(value, fieldName, endOfDay = false) {
   if (value === undefined || value === null || value === "") return undefined;
@@ -63,22 +64,95 @@ export function toDashboardStatsDto(
   };
 }
 
+function addBreakdownValue(breakdowns, label, values) {
+  const current = breakdowns.get(label) ?? {
+    donatedQuantity: 0,
+    donationCount: 0,
+    revenue: 0,
+  };
+  current.donatedQuantity += values.donatedQuantity;
+  current.donationCount += values.donationCount;
+  current.revenue += values.revenue;
+  breakdowns.set(label, current);
+}
+
+function compareBreakdownLabels(left, right, labelField) {
+  const leftLabel = left[labelField];
+  const rightLabel = right[labelField];
+  if (leftLabel === rightLabel) return 0;
+  if (leftLabel === null || leftLabel === undefined) return -1;
+  if (rightLabel === null || rightLabel === undefined) return 1;
+  return String(leftLabel).localeCompare(String(rightLabel));
+}
+
+function toBreakdownRows(breakdowns, labelField) {
+  return [...breakdowns.entries()]
+    .map(([label, values]) => ({ [labelField]: label, ...values }))
+    .sort((left, right) =>
+      compareBreakdownLabels(left, right, labelField),
+    );
+}
+
+export function buildDashboardAggregates(dimensions, collectedRows) {
+  const dimensionsByDonationId = new Map(
+    dimensions.map((dimension) => [dimension.donationId, dimension]),
+  );
+  const summary = {
+    totalDonatedQuantity: 0,
+    totalRevenue: 0,
+    donationCount: 0,
+  };
+  const categories = new Map();
+  const measurementUnits = new Map();
+
+  for (const row of collectedRows) {
+    const dimension = dimensionsByDonationId.get(row.donationId);
+    if (!dimension) continue;
+
+    const values = {
+      donatedQuantity: Number(row.donatedQuantity ?? 0),
+      donationCount: Number(row.donationCount ?? 0),
+      revenue: Number(row.revenue ?? 0),
+    };
+    summary.totalDonatedQuantity += values.donatedQuantity;
+    summary.totalRevenue += values.revenue;
+    summary.donationCount += values.donationCount;
+    addBreakdownValue(categories, dimension.foodCategory, values);
+    addBreakdownValue(
+      measurementUnits,
+      dimension.measurementUnit,
+      values,
+    );
+  }
+
+  return {
+    summary,
+    categoryRows: toBreakdownRows(categories, "foodCategory"),
+    measurementUnitRows: toBreakdownRows(
+      measurementUnits,
+      "measurementUnit",
+    ),
+  };
+}
+
 export async function getDashboardStats(donorProfileId, filters = {}) {
   if (!donorProfileId) {
     throw new ValidationError("donorProfileId is required");
   }
 
   const normalizedFilters = normalizeDashboardFilters(filters);
-  const repositoryFilters = {
+  const dimensions = await donation.listDonorReportingDimensions(
     donorProfileId,
-    ...normalizedFilters,
-  };
-
-  const [summary, categoryRows, measurementUnitRows] = await Promise.all([
-    dashboardStatsRepository.aggregateSummary(repositoryFilters),
-    dashboardStatsRepository.aggregateByCategory(repositoryFilters),
-    dashboardStatsRepository.aggregateByMeasurementUnit(repositoryFilters),
-  ]);
+  );
+  const collectedRows =
+    dimensions.length === 0
+      ? []
+      : await reservation.summarizeCollectedReservationsByDonation(
+          dimensions.map((dimension) => dimension.donationId),
+          normalizedFilters,
+        );
+  const { summary, categoryRows, measurementUnitRows } =
+    buildDashboardAggregates(dimensions, collectedRows);
 
   return toDashboardStatsDto(
     summary,
