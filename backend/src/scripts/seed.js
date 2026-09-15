@@ -327,7 +327,7 @@ async function uploadImageFile(filePath, folder) {
   const buffer = await readFile(filePath);
   const { name } = parse(filePath);
   const { url } = await putObject({
-    key: `aff-seed-${name}`,
+    key: `${name}`,
     folder,
     buffer,
   });
@@ -347,7 +347,7 @@ async function uploadSeedImages() {
       key,
       await uploadImageFile(
         join(REAL_IMAGES_DIRECTORY, "donation-avatar", avatarFile),
-        "aff-seed-avatars",
+        "avatars",
       ),
     ]),
   );
@@ -356,7 +356,7 @@ async function uploadSeedImages() {
       key,
       await uploadImageFile(
         join(REAL_IMAGES_DIRECTORY, "donations", "food-donations", imageFile),
-        "aff-seed-donations",
+        "donation",
       ),
     ]),
   );
