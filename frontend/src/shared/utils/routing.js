@@ -1,4 +1,4 @@
-import { USER_ROLES } from '@/config/constants.js'
+import { USER_ROLES } from "@/config/constants.js";
 
 /**
  * The landing route for an authenticated user of a given role. Single source of
@@ -7,12 +7,12 @@ import { USER_ROLES } from '@/config/constants.js'
 export function homePathForRole(role) {
   switch (role) {
     case USER_ROLES.RECIPIENT:
-      return '/profile'
+      return "/browse";
     case USER_ROLES.DONOR:
-      return '/donor/profile'
+      return "/donor/dashboard";
     case USER_ROLES.ADMIN:
-      return '/admin'
+      return "/admin";
     default:
-      return '/'
+      return "/";
   }
 }
