@@ -7,7 +7,11 @@ import { NotFoundError } from "../../../shared/errors/errors.js";
  * "not collected yet" alike — reported as one generic 404 since SRS 5.2.4
  * doesn't call for finer-grained error cases.
  */
-export async function submitFeedback(reservationId, recipientProfileId, feedbackText) {
+export async function submitFeedback(
+  reservationId,
+  recipientProfileId,
+  feedbackText,
+) {
   const updated = await reservation.submitFeedback(
     reservationId,
     recipientProfileId,
@@ -15,7 +19,9 @@ export async function submitFeedback(reservationId, recipientProfileId, feedback
   );
 
   if (!updated) {
-    throw new NotFoundError("Reservation not found or not eligible for feedback");
+    throw new NotFoundError(
+      "Reservation not found or not eligible for feedback",
+    );
   }
 
   return updated;

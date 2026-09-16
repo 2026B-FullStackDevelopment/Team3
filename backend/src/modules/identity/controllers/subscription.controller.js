@@ -21,7 +21,9 @@ export async function subscribe(req, res, next) {
  */
 export async function subscribeCheckout(req, res, next) {
   try {
-    const result = await subscriptionService.createPremiumCheckout(req.user.userId);
+    const result = await subscriptionService.createPremiumCheckout(
+      req.user.userId,
+    );
     res.status(201).json(result);
   } catch (error) {
     next(error);

@@ -9,7 +9,9 @@ const handlers = new Map();
 
 export function registerHandler(purpose, handler) {
   if (handlers.has(purpose)) {
-    throw new Error(`Payment handler already registered for purpose "${purpose}"`);
+    throw new Error(
+      `Payment handler already registered for purpose "${purpose}"`,
+    );
   }
   handlers.set(purpose, handler);
 }
@@ -18,7 +20,9 @@ export async function dispatch(session) {
   const purpose = session?.metadata?.purpose;
   const handler = purpose ? handlers.get(purpose) : undefined;
   if (!handler) {
-    console.log(`[payments] no handler for purpose "${purpose ?? "(none)"}" — ignoring`);
+    console.log(
+      `[payments] no handler for purpose "${purpose ?? "(none)"}" — ignoring`,
+    );
     return;
   }
   await handler(session);

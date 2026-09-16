@@ -34,7 +34,7 @@ const DonorProfileSchema = new Schema({
 
   avatarUrl: {
     type: String,
-    default:null,
+    default: null,
   },
 
   location: {

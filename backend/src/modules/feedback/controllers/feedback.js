@@ -12,7 +12,9 @@ export async function submitFeedback(req, res, next) {
   try {
     const feedbackText = validateFeedbackText(req.body);
 
-    const recipientProfile = await identity.loadRecipientProfile(req.user.userId);
+    const recipientProfile = await identity.loadRecipientProfile(
+      req.user.userId,
+    );
     if (!recipientProfile) {
       throw new UnauthorizedError("Recipient profile not found");
     }

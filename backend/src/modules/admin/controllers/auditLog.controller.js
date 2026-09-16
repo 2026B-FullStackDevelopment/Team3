@@ -32,7 +32,10 @@ export async function getAuditLogById(req, res) {
  * caller can't undo an action and attribute it to someone else.
  */
 export async function undoAuditLogAction(req, res) {
-  const entry = await auditLogService.undoAction(req.params.id, req.user.userId);
+  const entry = await auditLogService.undoAction(
+    req.params.id,
+    req.user.userId,
+  );
   res.status(200).json(entry);
 }
 

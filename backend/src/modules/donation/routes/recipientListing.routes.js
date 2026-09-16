@@ -9,10 +9,7 @@ import {
 
 export const recipientListingRoutes = Router();
 
-recipientListingRoutes.use(
-  requireAuth,
-  requireRole(userRole.Recipient),
-);
+recipientListingRoutes.use(requireAuth, requireRole(userRole.Recipient));
 
 // GET /api/donations/active
 recipientListingRoutes.get("/active", getActiveDonations);

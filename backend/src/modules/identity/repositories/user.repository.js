@@ -75,7 +75,11 @@ export async function updatePasswordHash(id, passwordHash) {
  * map to a 409. `runValidators` keeps schema-level email rules in force.
  */
 export async function updateEmail(id, email) {
-  return User.findByIdAndUpdate(id, { email }, { returnDocument: "after", runValidators: true });
+  return User.findByIdAndUpdate(
+    id,
+    { email },
+    { returnDocument: "after", runValidators: true },
+  );
 }
 
 /**
@@ -120,7 +124,11 @@ export async function resetLockout(id) {
   return User.updateOne(
     { _id: id },
     {
-      $set: { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
+      $set: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastFailedLoginAt: null,
+      },
     },
   );
 }
@@ -131,7 +139,12 @@ export async function resetLockout(id) {
  * countDocuments() concurrently via Promise.all, same as
  * donorListing.repository.findAll / auditLog.repository.findAll.
  */
-export async function findAll({ roles, accountStatus, page = 1, limit = 20 } = {}) {
+export async function findAll({
+  roles,
+  accountStatus,
+  page = 1,
+  limit = 20,
+} = {}) {
   const query = {};
   if (Array.isArray(roles) && roles.length > 0) {
     query.role = { $in: roles };
@@ -171,7 +184,9 @@ export async function findByIds(ids, options = {}) {
 export async function findAdminIdsByEmailLike(emailPattern) {
   const trimmedPattern = String(emailPattern).trim();
   const regex = new RegExp(escapeRegExp(trimmedPattern), "i");
-  const users = await User.find({ role: userRole.Admin, email: regex }).select("_id");
+  const users = await User.find({ role: userRole.Admin, email: regex }).select(
+    "_id",
+  );
   return users.map((user) => user._id);
 }
 

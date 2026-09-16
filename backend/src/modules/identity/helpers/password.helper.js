@@ -12,9 +12,15 @@ import { ValidationError } from "../../../shared/errors/errors.js";
 // Password strength: >=8 chars, >=1 digit, >=1 special char, >=1 uppercase.
 const MIN_PASSWORD_LENGTH = 8;
 const PASSWORD_RULES = [
-  { test: (pw) => pw.length >= MIN_PASSWORD_LENGTH, label: "at least 8 characters" },
+  {
+    test: (pw) => pw.length >= MIN_PASSWORD_LENGTH,
+    label: "at least 8 characters",
+  },
   { test: (pw) => /[0-9]/.test(pw), label: "at least 1 number" },
-  { test: (pw) => /[^A-Za-z0-9]/.test(pw), label: "at least 1 special character" },
+  {
+    test: (pw) => /[^A-Za-z0-9]/.test(pw),
+    label: "at least 1 special character",
+  },
   { test: (pw) => /[A-Z]/.test(pw), label: "at least 1 uppercase letter" },
 ];
 

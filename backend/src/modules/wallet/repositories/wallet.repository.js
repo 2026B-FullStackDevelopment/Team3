@@ -8,7 +8,12 @@ export async function getOrCreate(userId, session) {
   return Wallet.findOneAndUpdate(
     { userId },
     { $setOnInsert: { userId } },
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true, session },
+    {
+      returnDocument: "after",
+      upsert: true,
+      setDefaultsOnInsert: true,
+      session,
+    },
   );
 }
 
@@ -26,7 +31,12 @@ export async function incrementBalance(userId, amount, session) {
   return Wallet.findOneAndUpdate(
     { userId },
     { $inc: { balance: amount } },
-    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true, session },
+    {
+      returnDocument: "after",
+      upsert: true,
+      setDefaultsOnInsert: true,
+      session,
+    },
   );
 }
 

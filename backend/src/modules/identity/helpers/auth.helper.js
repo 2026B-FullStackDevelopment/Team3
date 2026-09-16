@@ -46,7 +46,9 @@ export function validateEmail(value) {
     );
   }
   if (!EMAIL_RE.test(email)) {
-    throw new ValidationError("A valid email is required — e.g. jane.doe@example.com");
+    throw new ValidationError(
+      "A valid email is required — e.g. jane.doe@example.com",
+    );
   }
   return email;
 }

@@ -9,4 +9,7 @@ export const feedbackRoutes = Router();
 feedbackRoutes.use(requireAuth, requireRole(userRole.Recipient));
 
 // POST /api/feedback/reservations/:reservationId
-feedbackRoutes.post("/reservations/:reservationId", feedbackController.submitFeedback);
+feedbackRoutes.post(
+  "/reservations/:reservationId",
+  feedbackController.submitFeedback,
+);

@@ -85,7 +85,7 @@ export async function getMyReservations(req, res, next) {
 export async function createCheckoutSession(req, res, next) {
   try {
     const { donationId, quantity } = req.body;
-    
+
     const recipientProfile = await requireRecipientProfile(req, res);
     if (!recipientProfile) return;
 
@@ -93,7 +93,7 @@ export async function createCheckoutSession(req, res, next) {
       req.user.userId,
       recipientProfile._id,
       donationId,
-      quantity
+      quantity,
     );
 
     res.status(200).json(session);

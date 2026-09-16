@@ -258,8 +258,9 @@ function normalizeRecipientListingQuery(filters = {}) {
 async function resolveRecipientMunicipalityFilter(filters) {
   if (!filters.municipality) return filters;
 
-  const donorProfileIds =
-    await identity.findDonorProfileIdsByMunicipality(filters.municipality);
+  const donorProfileIds = await identity.findDonorProfileIdsByMunicipality(
+    filters.municipality,
+  );
   const resolvedFilters = { ...filters };
   delete resolvedFilters.municipality;
   return {
@@ -464,9 +465,7 @@ function distanceKm(origin, donor) {
 
 async function attachDonorSummaries(result) {
   const donorProfileIds = [
-    ...new Set(
-      result.entries.map((entry) => String(entry.donorProfileId)),
-    ),
+    ...new Set(result.entries.map((entry) => String(entry.donorProfileId))),
   ];
   if (donorProfileIds.length === 0) return result;
 
@@ -506,7 +505,8 @@ export async function listActiveDonations(userId, filters = {}) {
   const recipient = await identity.getRecipientContext(userId);
 
   if (!recipient?.isPremium) {
-    const result = await donationRepository.findActiveDonations(resolvedFilters);
+    const result =
+      await donationRepository.findActiveDonations(resolvedFilters);
     return attachDonorSummaries(result);
   }
 
@@ -514,7 +514,8 @@ export async function listActiveDonations(userId, filters = {}) {
     recipient.recipientProfileId,
   );
   if (preferences.length === 0) {
-    const result = await donationRepository.findActiveDonations(resolvedFilters);
+    const result =
+      await donationRepository.findActiveDonations(resolvedFilters);
     return attachDonorSummaries(result);
   }
 
@@ -543,10 +544,7 @@ export async function listActiveDonations(userId, filters = {}) {
     };
   });
   ranked.sort((left, right) => {
-    if (
-      !coordinates &&
-      left.isRecipientCity !== right.isRecipientCity
-    ) {
+    if (!coordinates && left.isRecipientCity !== right.isRecipientCity) {
       return left.isRecipientCity ? -1 : 1;
     }
     if (left.isMatch !== right.isMatch) return left.isMatch ? -1 : 1;

@@ -88,9 +88,7 @@ function compareBreakdownLabels(left, right, labelField) {
 function toBreakdownRows(breakdowns, labelField) {
   return [...breakdowns.entries()]
     .map(([label, values]) => ({ [labelField]: label, ...values }))
-    .sort((left, right) =>
-      compareBreakdownLabels(left, right, labelField),
-    );
+    .sort((left, right) => compareBreakdownLabels(left, right, labelField));
 }
 
 export function buildDashboardAggregates(dimensions, collectedRows) {
@@ -118,20 +116,13 @@ export function buildDashboardAggregates(dimensions, collectedRows) {
     summary.totalRevenue += values.revenue;
     summary.donationCount += values.donationCount;
     addBreakdownValue(categories, dimension.foodCategory, values);
-    addBreakdownValue(
-      measurementUnits,
-      dimension.measurementUnit,
-      values,
-    );
+    addBreakdownValue(measurementUnits, dimension.measurementUnit, values);
   }
 
   return {
     summary,
     categoryRows: toBreakdownRows(categories, "foodCategory"),
-    measurementUnitRows: toBreakdownRows(
-      measurementUnits,
-      "measurementUnit",
-    ),
+    measurementUnitRows: toBreakdownRows(measurementUnits, "measurementUnit"),
   };
 }
 
@@ -141,9 +132,8 @@ export async function getDashboardStats(donorProfileId, filters = {}) {
   }
 
   const normalizedFilters = normalizeDashboardFilters(filters);
-  const dimensions = await donation.listDonorReportingDimensions(
-    donorProfileId,
-  );
+  const dimensions =
+    await donation.listDonorReportingDimensions(donorProfileId);
   const collectedRows =
     dimensions.length === 0
       ? []

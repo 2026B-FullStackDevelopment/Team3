@@ -1,7 +1,10 @@
 import * as walletRepository from "../repositories/wallet.repository.js";
 import * as transactionRepository from "../repositories/transaction.repository.js";
 import { toWalletDTO } from "../dtos/wallet.dto.js";
-import { toTransactionDTO, toTransactionDTOList } from "../dtos/transaction.dto.js";
+import {
+  toTransactionDTO,
+  toTransactionDTOList,
+} from "../dtos/transaction.dto.js";
 import { TransactionType } from "../models/Transaction.js";
 import { PaymentMethod } from "../../../shared/constants/paymentMethod.js";
 import { ValidationError } from "../../../shared/errors/errors.js";
@@ -20,7 +23,11 @@ export async function getBalance(userId) {
  */
 export async function deposit(userId, amount, method = PaymentMethod.Card) {
   return runInTransaction(async (session) => {
-    const wallet = await walletRepository.incrementBalance(userId, amount, session);
+    const wallet = await walletRepository.incrementBalance(
+      userId,
+      amount,
+      session,
+    );
     const transaction = await transactionRepository.create(
       { userId, amount, type: TransactionType.Deposit, method },
       session,
@@ -47,7 +54,11 @@ export async function listTransactions(userId) {
 export async function credit(userId, amount, meta = {}) {
   assertPositive(amount);
   return runInTransaction(async (session) => {
-    const wallet = await walletRepository.incrementBalance(userId, amount, session);
+    const wallet = await walletRepository.incrementBalance(
+      userId,
+      amount,
+      session,
+    );
     await transactionRepository.create({ userId, amount, ...meta }, session);
     return toWalletDTO(wallet);
   });
@@ -61,7 +72,11 @@ export async function credit(userId, amount, meta = {}) {
 export async function debit(userId, amount, meta = {}, options = {}) {
   assertPositive(amount);
   const work = async (session) => {
-    const wallet = await walletRepository.decrementBalance(userId, amount, session);
+    const wallet = await walletRepository.decrementBalance(
+      userId,
+      amount,
+      session,
+    );
     if (!wallet) {
       // Aborts the transaction — no ledger row is written.
       throw new ValidationError("Insufficient wallet balance");

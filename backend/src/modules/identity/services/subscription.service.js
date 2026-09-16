@@ -63,15 +63,18 @@ export async function subscribePremium(userId) {
     let dto;
     await session.withTransaction(async () => {
       // 1. Claim premium atomically — only if not already active.
-      const claimed = await recipientProfileRepository.activatePremiumIfInactive(
-        userId,
-        newExpiry,
-        now,
-        { session },
-      );
+      const claimed =
+        await recipientProfileRepository.activatePremiumIfInactive(
+          userId,
+          newExpiry,
+          now,
+          { session },
+        );
       if (!claimed) {
         // Lost the race (someone else just activated) — abort without charging.
-        throw new ConflictError("You already have an active premium subscription");
+        throw new ConflictError(
+          "You already have an active premium subscription",
+        );
       }
 
       // 2. Charge on the SAME session. Insufficient funds → 400 aborts the txn,

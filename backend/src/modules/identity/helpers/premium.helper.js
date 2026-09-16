@@ -11,8 +11,8 @@
 export function isPremiumActive(profile, now = new Date()) {
   return Boolean(
     profile?.isPremium &&
-      profile.premiumExpiryDate &&
-      new Date(profile.premiumExpiryDate) > now,
+    profile.premiumExpiryDate &&
+    new Date(profile.premiumExpiryDate) > now,
   );
 }
 

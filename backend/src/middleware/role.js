@@ -14,7 +14,9 @@ export function requireRole(...allowedRoles) {
       return next(new UnauthorizedError("Authentication required"));
     }
     if (!allowedRoles.includes(req.user.role)) {
-      return next(new ForbiddenError("You do not have access to this resource"));
+      return next(
+        new ForbiddenError("You do not have access to this resource"),
+      );
     }
     next();
   };

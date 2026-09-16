@@ -57,7 +57,9 @@ export async function listAccounts(filters = {}) {
   let roles = LISTABLE_ROLES;
   if (role !== undefined) {
     if (!LISTABLE_ROLES.includes(role)) {
-      throw new ValidationError(`role must be one of: ${LISTABLE_ROLES.join(", ")}`);
+      throw new ValidationError(
+        `role must be one of: ${LISTABLE_ROLES.join(", ")}`,
+      );
     }
     roles = [role];
   }
@@ -89,7 +91,10 @@ export async function listAccounts(filters = {}) {
   ]);
 
   const profileByUserId = new Map(
-    [...donorProfiles, ...recipientProfiles].map((profile) => [profile.userId, profile]),
+    [...donorProfiles, ...recipientProfiles].map((profile) => [
+      profile.userId,
+      profile,
+    ]),
   );
 
   return {
@@ -131,13 +136,19 @@ async function transitionAccountStatus(userId, targetStatus, options = {}) {
     throw new NotFoundError(`Account ${userId} not found`);
   }
   if (user.role === userRole.Admin) {
-    throw new ForbiddenError("Admin accounts cannot be deactivated or reactivated");
+    throw new ForbiddenError(
+      "Admin accounts cannot be deactivated or reactivated",
+    );
   }
   if (user.accountStatus === targetStatus) {
     throw new ConflictError(`Account is already ${targetStatus}`);
   }
 
-  const updated = await userRepository.updateAccountStatus(userId, targetStatus, options);
+  const updated = await userRepository.updateAccountStatus(
+    userId,
+    targetStatus,
+    options,
+  );
   const profile = await findProfileForUser(updated, options);
   return toAccountSummaryDTO(updated, profile);
 }

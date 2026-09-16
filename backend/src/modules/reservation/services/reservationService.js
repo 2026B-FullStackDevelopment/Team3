@@ -135,9 +135,8 @@ export async function processReservation(
 }
 
 export async function getHistory(recipientProfileId) {
-  const reservations = await ReservationRepository.getReservationsByRecipient(
-    recipientProfileId,
-  );
+  const reservations =
+    await ReservationRepository.getReservationsByRecipient(recipientProfileId);
   return reservations.map(toReservationHistoryDTO);
 }
 
@@ -153,7 +152,7 @@ export async function createReservationCheckout(
   userId,
   recipientProfileId,
   donationId,
-  quantity
+  quantity,
 ) {
   // 1. Verify the donation using the authorized interface
   let donation;
@@ -200,7 +199,7 @@ export async function createReservationCheckout(
 
   // 4. Generate the Stripe Checkout Session via the Payments Facade
   return paymentsFacade.createCheckoutSession({
-    purpose: "reservation", 
+    purpose: "reservation",
     userId,
     amountVnd: totalPaid,
     productName: `Reservation: ${donation.name}`,
@@ -210,8 +209,8 @@ export async function createReservationCheckout(
     metadata: {
       donationId,
       quantity: String(quantity),
-      recipientProfileId: String(recipientProfileId)
-    }
+      recipientProfileId: String(recipientProfileId),
+    },
   });
 }
 

@@ -30,9 +30,8 @@ export async function register({ email, password, role, profile }) {
 
   try {
     if (role === userRole.Recipient) {
-        await recipientProfileRepository.create({ userId: user._id, ...profile });
-      }
-    else{
+      await recipientProfileRepository.create({ userId: user._id, ...profile });
+    } else {
       await donorProfileRepository.create({ userId: user._id, ...profile });
     }
   } catch (error) {
@@ -72,7 +71,10 @@ export async function login({ email, password }) {
   }
 
   // 3. Verify the password; a wrong one counts toward the lockout.
-  const passwordValid = await passwordHelper.verify(password, user.passwordHash);
+  const passwordValid = await passwordHelper.verify(
+    password,
+    user.passwordHash,
+  );
   if (!passwordValid) {
     await userRepository.registerFailedAttempt(user._id);
     throw new UnauthorizedError("Invalid email or password");
@@ -143,4 +145,3 @@ export async function logout({ jti, userId, expiresAt }) {
     }
   }
 }
-

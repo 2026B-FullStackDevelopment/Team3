@@ -1,6 +1,8 @@
 function toPlainDonation(donation) {
   if (!donation) return donation;
-  return typeof donation.toObject === "function" ? donation.toObject() : donation;
+  return typeof donation.toObject === "function"
+    ? donation.toObject()
+    : donation;
 }
 
 export const SoldOutAlertEventName = "donation:sold-out";

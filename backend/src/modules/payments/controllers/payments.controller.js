@@ -13,7 +13,11 @@ export async function stripeWebhook(req, res) {
   let event;
   try {
     const stripe = getStripe();
-    event = stripe.webhooks.constructEvent(req.body, signature, env.stripe.webhookSecret);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      signature,
+      env.stripe.webhookSecret,
+    );
   } catch {
     console.error("[payments] webhook signature verification failed");
     return res.status(400).json({ error: "INVALID_SIGNATURE" });

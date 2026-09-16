@@ -65,7 +65,9 @@ export async function findIdsByCity(city, options = {}) {
 export async function findIdsByCompanyNameLike(namePattern) {
   const trimmedPattern = String(namePattern).trim();
   const regex = new RegExp(escapeRegExp(trimmedPattern), "i");
-  const profiles = await DonorProfile.find({ companyName: regex }).select("_id");
+  const profiles = await DonorProfile.find({ companyName: regex }).select(
+    "_id",
+  );
   return profiles.map((profile) => profile._id);
 }
 

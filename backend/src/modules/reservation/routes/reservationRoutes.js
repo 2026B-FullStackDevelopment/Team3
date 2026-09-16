@@ -17,4 +17,7 @@ reservationRoutes.get("/history", reservationController.getHistory);
 reservationRoutes.get("/mine", reservationController.getMyReservations);
 
 // POST /api/reservations/checkout
-reservationRoutes.post("/checkout", reservationController.createCheckoutSession);
+reservationRoutes.post(
+  "/checkout",
+  reservationController.createCheckoutSession,
+);

@@ -339,11 +339,7 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
             ],
           },
           closedAt: {
-            $cond: [
-              { $lt: ["$remainingQuantity", 1] },
-              soldOutAt,
-              "$closedAt",
-            ],
+            $cond: [{ $lt: ["$remainingQuantity", 1] }, soldOutAt, "$closedAt"],
           },
         },
       },

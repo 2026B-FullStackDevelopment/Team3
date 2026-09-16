@@ -108,8 +108,7 @@ async function withTargetNames(entries) {
       return {
         ...entry,
         targetName:
-          donorNameByProfileId.get(entry.previousState?.donorProfileId) ??
-          null,
+          donorNameByProfileId.get(entry.previousState?.donorProfileId) ?? null,
       };
     }
     return entry;

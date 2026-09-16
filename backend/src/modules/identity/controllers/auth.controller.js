@@ -3,7 +3,10 @@ import {
   validateRegister,
   validateLogin,
 } from "../validators/auth.validators.js";
-import { clearCookieOptions,sessionCookieOptions } from "../helpers/cookies.helper.js";
+import {
+  clearCookieOptions,
+  sessionCookieOptions,
+} from "../helpers/cookies.helper.js";
 import { env } from "../../../config/env.js";
 
 /**

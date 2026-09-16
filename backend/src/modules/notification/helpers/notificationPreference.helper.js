@@ -48,7 +48,9 @@ export function validatePriceRange(min, max) {
     throw new ValidationError("priceRangeMin must be an integer ≥ 0 — e.g. 0");
   }
   if (!Number.isInteger(max) || max < 0) {
-    throw new ValidationError("priceRangeMax must be an integer ≥ 0 — e.g. 20000");
+    throw new ValidationError(
+      "priceRangeMax must be an integer ≥ 0 — e.g. 20000",
+    );
   }
   if (min > max) {
     throw new ValidationError("priceRangeMin must not exceed priceRangeMax");
