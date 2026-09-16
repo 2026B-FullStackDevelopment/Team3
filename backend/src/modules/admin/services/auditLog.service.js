@@ -70,51 +70,27 @@ function isNonEmptyString(value) {
 }
 
 /**
- * Batch-resolves each entry's target display name for the Audit Log's
- * Target column. A "User" target's name is its account summary's username
- * (Recipient userName / Donor companyName fallback -- same shape
- * listAccounts/getAccountById already use). A "Donation" target's name is
- * its donor's company name, resolved via the listing's own donorProfileId --
- * the same donorName join listAllFoodListings does for Listing Moderation,
- * just keyed off a single historical donation instead of the active list.
- * A donation that no longer resolves (shouldn't happen -- donations are
- * status-flipped, never deleted) just falls back to a null name rather than
- * failing the whole page.
+ * Adds a display name to each entry's target for the Audit Log's Target
+ * column. `previousState` is a required field on every entry (see
+ * createAuditLog below) and both action types that write one already
+ * snapshot the full target state at the time of the action --
+ * deactivateUserAccount/reactivateUserAccount store the account summary
+ * (identity.getAccountById), cancelDonation stores the donation summary
+ * (donation.readDonationById) -- so a "User" target's username is already
+ * sitting right there in previousState, no extra lookup needed. A
+ * "Donation" target's previousState only has donorProfileId (not the
+ * donor's company name), so that one join -- the same one
+ * listAllFoodListings already does for Listing Moderation -- is still
+ * required.
  */
 async function withTargetNames(entries) {
-  const userTargetIds = [
-    ...new Set(
-      entries
-        .filter((entry) => entry.targetType === AuditTargetType.User)
-        .map((entry) => entry.targetId),
-    ),
-  ];
-  const donationTargetIds = [
+  const donorProfileIds = [
     ...new Set(
       entries
         .filter((entry) => entry.targetType === AuditTargetType.Donation)
-        .map((entry) => entry.targetId),
+        .map((entry) => entry.previousState?.donorProfileId)
+        .filter(Boolean),
     ),
-  ];
-
-  const [accounts, donations] = await Promise.all([
-    userTargetIds.length > 0
-      ? identity.getAccountSummariesByIds(userTargetIds)
-      : [],
-    Promise.all(
-      donationTargetIds.map((id) =>
-        donation.readDonationById(id).catch(() => null),
-      ),
-    ),
-  ]);
-
-  const usernameByUserId = new Map(
-    accounts.map((account) => [account.id, account.username ?? account.email]),
-  );
-
-  const resolvedDonations = donations.filter(Boolean);
-  const donorProfileIds = [
-    ...new Set(resolvedDonations.map((entry) => entry.donorProfileId)),
   ];
   const donorProfiles =
     donorProfileIds.length > 0
@@ -123,21 +99,17 @@ async function withTargetNames(entries) {
   const donorNameByProfileId = new Map(
     donorProfiles.map((profile) => [profile._id, profile.companyName]),
   );
-  const donorNameByDonationId = new Map(
-    resolvedDonations.map((entry) => [
-      entry.id,
-      donorNameByProfileId.get(entry.donorProfileId) ?? null,
-    ]),
-  );
 
   return entries.map((entry) => {
     if (entry.targetType === AuditTargetType.User) {
-      return { ...entry, targetName: usernameByUserId.get(entry.targetId) ?? null };
+      return { ...entry, targetName: entry.previousState?.username ?? null };
     }
     if (entry.targetType === AuditTargetType.Donation) {
       return {
         ...entry,
-        targetName: donorNameByDonationId.get(entry.targetId) ?? null,
+        targetName:
+          donorNameByProfileId.get(entry.previousState?.donorProfileId) ??
+          null,
       };
     }
     return entry;

@@ -56,9 +56,12 @@ const MENU_ITEMS = {
     { label: "Manual Entries", to: "/donor/manual-donations" },
     { label: "Profile", to: "/donor/profile" },
   ],
-  // The three admin tabs already live in the top nav (below), so the
-  // account dropdown has nothing role-specific to add -- just avatar + Log Out.
-  admin: [],
+  // Same duplication as donor's "Dashboard" above: the AuthedBar's top nav
+  // already has this once you're inside /admin, but the account dropdown is
+  // the only way back to Admin from everywhere else (the public Landing
+  // page included) -- without this, a logged-in Admin on "/" has no way in
+  // except typing the URL.
+  admin: [{ label: "Admin", to: "/admin" }],
 };
 
 function itemsForUser(user) {

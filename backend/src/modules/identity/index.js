@@ -143,11 +143,6 @@ export async function getUsersByIds(userIds, options) {
   return users.map(toUserContactDTO);
 }
 
-/** Batch-fetches account summaries by id, for the Admin module's Audit Log "User"-target-name join. */
-export function getAccountSummariesByIds(userIds, options) {
-  return accountService.getAccountSummariesByIds(userIds, options);
-}
-
 /** Finds Admin user ids whose email matches a search term (Audit Log search). */
 export function findAdminIdsByEmailLike(emailPattern) {
   return accountService.findAdminIdsByEmailLike(emailPattern);
