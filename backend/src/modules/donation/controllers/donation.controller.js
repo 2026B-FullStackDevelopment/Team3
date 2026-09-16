@@ -135,6 +135,24 @@ export async function listFoodListingDonations(req, res, next) {
   }
 }
 
+/** PATCH /api/donor/food-listings/:id/donations/:reservationId/collect */
+export async function collectFoodListingReservation(req, res, next) {
+  try {
+    const donorProfileId = requireDonorProfileId(req, res);
+    if (!donorProfileId) return;
+
+    const reservation = await donorListingService.collectFoodListingReservation(
+      req.params.id,
+      req.params.reservationId,
+      donorProfileId,
+    );
+
+    res.status(200).json({ reservation });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /** PATCH /api/donor/food-listings/:id */
 export async function updateFoodListing(req, res, next) {
   try {

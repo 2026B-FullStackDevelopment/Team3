@@ -23,8 +23,23 @@ export function useDonationDetail(id) {
 export function useListingDonations(id, filters = {}) {
   return useQuery({
     queryKey: donationKeys.listingDonations(id, filters),
-    queryFn: ({ signal }) => donationService.listingDonations(id, filters, signal),
+    queryFn: ({ signal }) =>
+      donationService.listingDonations(id, filters, signal),
     enabled: Boolean(id),
+  });
+}
+
+/** Marks one Reserved row as Collected and refreshes this listing's table. */
+export function useCollectReservation(id) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (reservationId) =>
+      donationService.collectReservation(id, reservationId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["donations", "listing-donations", id],
+      }),
   });
 }
 

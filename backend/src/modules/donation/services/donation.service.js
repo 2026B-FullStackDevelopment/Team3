@@ -598,6 +598,16 @@ export async function listFoodListingDonations(
     entries: result.entries.map(toListingDonationResponse),
   };
 }
+
+export async function collectFoodListingReservation(
+  donationId,
+  reservationId,
+  donorProfileId,
+) {
+  const listing = await getOwnedDonation(donationId, donorProfileId);
+
+  return reservation.markReservationCollected(listing.id, reservationId);
+}
 //Update Donation Flow
 export async function updateDonation(id, donorProfileId, input = {}) {
   const current = await getOwnedDonation(id, donorProfileId);

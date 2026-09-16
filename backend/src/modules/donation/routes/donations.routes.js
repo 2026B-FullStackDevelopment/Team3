@@ -8,6 +8,7 @@ import { uploadImage } from "../../../middleware/uploadImage.js";
 import { userRole } from "../../identity/index.js";
 
 import {
+  collectFoodListingReservation,
   createFoodListing,
   deleteFoodListing,
   duplicateFoodListing,
@@ -44,6 +45,10 @@ donorListingRoutes
 
 donorListingRoutes.post("/:id/duplicate", duplicateFoodListing);
 donorListingRoutes.get("/:id/donations", listFoodListingDonations);
+donorListingRoutes.patch(
+  "/:id/donations/:reservationId/collect",
+  collectFoodListingReservation,
+);
 donorListingRoutes.use("/:id/manual-donations", manualDonationRoutes);
 donorListingRoutes.patch("/:id/status", updateListingStatus);
 donorListingRoutes.patch("/:id/ration", updateListingRation);

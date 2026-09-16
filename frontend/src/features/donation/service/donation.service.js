@@ -1,7 +1,4 @@
-import {
-  httpClient,
-  unwrapHttpResponse,
-} from "@/shared/api/apiFetch.js";
+import { httpClient, unwrapHttpResponse } from "@/shared/api/apiFetch.js";
 import { normalizeDonationListing } from "@/features/donation/models/donation.js";
 import { normalizeListingDonation } from "@/features/donation/models/listingDonation.js";
 import { donationRoutes } from "@/config/api/routes/index.js";
@@ -59,7 +56,9 @@ export const donationService = {
   /** Fetches and normalizes one donation listing by its ID. */
   async detail(id, signal) {
     return unwrapListing(
-      unwrapHttpResponse(await httpClient.get(donationRoutes.listing(id), { signal })),
+      unwrapHttpResponse(
+        await httpClient.get(donationRoutes.listing(id), { signal }),
+      ),
     );
   },
 
@@ -78,14 +77,18 @@ export const donationService = {
   /** Updates the editable fields of an existing donation listing. */
   async update(id, body) {
     return unwrapListing(
-      unwrapHttpResponse(await httpClient.patch(donationRoutes.listing(id), body)),
+      unwrapHttpResponse(
+        await httpClient.patch(donationRoutes.listing(id), body),
+      ),
     );
   },
 
   /** Creates a new listing from an existing listing and supplied overrides. */
   async duplicate(id, body) {
     return unwrapListing(
-      unwrapHttpResponse(await httpClient.post(donationRoutes.duplicate(id), body)),
+      unwrapHttpResponse(
+        await httpClient.post(donationRoutes.duplicate(id), body),
+      ),
     );
   },
 
@@ -126,6 +129,16 @@ export const donationService = {
       entries: (payload?.entries ?? []).map(normalizeListingDonation),
       metadata: payload?.metadata ?? {},
     };
+  },
+
+  /** Confirms that a reserved donation has been collected by its recipient. */
+  async collectReservation(id, reservationId) {
+    const payload = unwrapHttpResponse(
+      await httpClient.patch(
+        donationRoutes.collectReservation(id, reservationId),
+      ),
+    );
+    return normalizeListingDonation(payload?.reservation);
   },
 
   /** Records an in-person donation and returns its updated normalized listing. */
