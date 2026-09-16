@@ -18,6 +18,41 @@ function requestCurrentLocation() {
   });
 }
 
+const INITIAL_FILTERS = Object.freeze({
+  search: '',
+  municipality: '',
+  foodCategory: '',
+  priceOption: '',
+});
+
+function buildListingParams(filters) {
+  const params = {
+    search: filters.search.trim() || undefined,
+    municipality: filters.municipality || undefined,
+    foodCategory: filters.foodCategory || undefined,
+  };
+
+  if (filters.priceOption === 'free') {
+    params.minPrice = 0;
+    params.maxPrice = 0;
+  } else if (filters.priceOption === 'under-50000') {
+    params.maxPrice = 50000;
+  } else if (filters.priceOption === '50000-100000') {
+    params.minPrice = 50000;
+    params.maxPrice = 100000;
+  } else if (filters.priceOption === 'over-100000') {
+    params.minPrice = 100000;
+  } else if (filters.priceOption === 'price-asc') {
+    params.sortBy = 'price';
+    params.sortOrder = 'asc';
+  } else if (filters.priceOption === 'price-desc') {
+    params.sortBy = 'price';
+    params.sortOrder = 'desc';
+  }
+
+  return params;
+}
+
 export function useReservation() {
   const { listingId } = useParams();
   const navigate = useNavigate();
@@ -30,6 +65,7 @@ export function useReservation() {
   const [error, setError] = useState(null);
   const [listingNotice, setListingNotice] = useState(null);
   const [paymentError, setPaymentError] = useState(null);
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
   const locationRef = useRef(null);
   const locationResolvedRef = useRef(false);
   const skipNextRouteLoadRef = useRef(false);
@@ -56,7 +92,10 @@ export function useReservation() {
         resolveBrowseLocation(),
         reservationService.fetchWalletBalance(),
       ]);
-      const listingsData = await reservationService.fetchActiveDonation(location);
+      const listingsData = await reservationService.fetchActiveDonation({
+        ...(location ?? {}),
+        ...buildListingParams(filters),
+      });
       const nextListings = listingsData.entries || listingsData;
       setListings(nextListings);
       setWalletBalance(balance);
@@ -83,7 +122,7 @@ export function useReservation() {
     } finally {
       setIsLoading(false);
     }
-  }, [listingId, navigate, resolveBrowseLocation]);
+  }, [filters, listingId, navigate, resolveBrowseLocation]);
 
   useEffect(() => {
     if (skipNextRouteLoadRef.current) {
@@ -99,6 +138,14 @@ export function useReservation() {
     setSelectedItem(item);
     setCurrentStep('detail');
   };
+
+  const updateFilters = useCallback((changes) => {
+    setFilters((current) => ({ ...current, ...changes }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setFilters(INITIAL_FILTERS);
+  }, []);
 
   const proceedToPayment = (quantity, total) => {
     setPaymentError(null);
@@ -172,11 +219,14 @@ export function useReservation() {
     error,
     listingNotice,
     paymentError,
+    filters,
     selectedQuantity,
     selectedTotal,
     selectedItem,
     currentStep,
     openDonationDetail,
+    updateFilters,
+    resetFilters,
     proceedToPayment,
     closeModals,
     confirmReservation,

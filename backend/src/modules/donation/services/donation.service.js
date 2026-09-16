@@ -254,6 +254,19 @@ function normalizeRecipientListingQuery(filters = {}) {
 
   return normalizedFilters;
 }
+
+async function resolveRecipientMunicipalityFilter(filters) {
+  if (!filters.municipality) return filters;
+
+  const donorProfileIds =
+    await identity.findDonorProfileIdsByMunicipality(filters.municipality);
+  const resolvedFilters = { ...filters };
+  delete resolvedFilters.municipality;
+  return {
+    ...resolvedFilters,
+    donorProfileIds: donorProfileIds.map(String),
+  };
+}
 //CREATE DONATION FLOW
 export async function createDonation(donorProfileId, input = {}) {
   const trustedDonorProfileId = requireNonEmptyString(
@@ -476,11 +489,13 @@ async function attachDonorMunicipalities(result) {
 
 export async function listActiveDonations(userId, filters = {}) {
   const normalizedFilters = normalizeRecipientListingQuery(filters);
-  const { page, limit } = normalizedFilters;
+  const resolvedFilters =
+    await resolveRecipientMunicipalityFilter(normalizedFilters);
+  const { page, limit } = resolvedFilters;
   const recipient = await identity.getRecipientContext(userId);
 
   if (!recipient?.isPremium) {
-    const result = await donationRepository.findActiveDonations(normalizedFilters);
+    const result = await donationRepository.findActiveDonations(resolvedFilters);
     return attachDonorMunicipalities(result);
   }
 
@@ -488,13 +503,13 @@ export async function listActiveDonations(userId, filters = {}) {
     recipient.recipientProfileId,
   );
   if (preferences.length === 0) {
-    const result = await donationRepository.findActiveDonations(normalizedFilters);
+    const result = await donationRepository.findActiveDonations(resolvedFilters);
     return attachDonorMunicipalities(result);
   }
 
   const coordinates = normalizeCoordinates(filters);
   const entries =
-    await donationRepository.findActiveDonationsForRanking(normalizedFilters);
+    await donationRepository.findActiveDonationsForRanking(resolvedFilters);
   const donorProfileIds = [
     ...new Set(entries.map((entry) => String(entry.donorProfileId))),
   ];

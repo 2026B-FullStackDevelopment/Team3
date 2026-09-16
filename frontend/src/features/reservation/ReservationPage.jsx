@@ -11,11 +11,14 @@ export function ReservationPage() {
     error,
     listingNotice,
     paymentError,
+    filters,
     selectedItem,
     currentStep,
     selectedTotal,
     walletBalance,
     openDonationDetail,
+    updateFilters,
+    resetFilters,
     proceedToPayment,
     closeModals,
     confirmReservation,
@@ -34,6 +37,9 @@ export function ReservationPage() {
         listings={listings}
         isLoading={isLoading}
         error={error}
+        filters={filters}
+        onFiltersChange={updateFilters}
+        onResetFilters={resetFilters}
         onSelectItem={openDonationDetail}
       />
 
