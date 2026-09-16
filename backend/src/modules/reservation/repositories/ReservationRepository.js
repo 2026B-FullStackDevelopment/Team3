@@ -6,6 +6,11 @@ export async function createReservation(reservationData, options = {}) {
   return await newReservation.save({ session: options.session });
 }
 
+/** Find a Card reservation already fulfilled from this Stripe session. */
+export async function findByStripeSessionId(stripeSessionId) {
+  return await Reservation.findOne({ stripeSessionId });
+}
+
 /**
  * SRS 5.1.4 collection history — only reservations actually collected, each
  * with the donor's name so the frontend never needs a reservedAt fallback.

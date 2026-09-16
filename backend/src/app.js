@@ -11,6 +11,7 @@ import { reservationRoutes } from "./modules/reservation/routes/reservationRoute
 import { notificationPreferenceRoutes } from "./modules/notification/routes/notificationPreference.routes.js";
 import { paymentsWebhookRoutes } from "./modules/payments/routes/paymentsWebhook.routes.js";
 import { registerPaymentHandlers } from "./modules/identity/index.js";
+import { registerPaymentHandlers as registerReservationPaymentHandlers } from "./modules/reservation/index.js";
 import { notificationRoutes } from "./modules/notification/routes/notification.routes.js";
 import { feedbackRoutes } from "./modules/feedback/routes/feedback.routes.js";
 import { recipientListingRoutes } from "./modules/donation/routes/recipientListing.routes.js";
@@ -19,6 +20,7 @@ import { env } from "./config/env.js";
 const app = express();
 
 registerPaymentHandlers();
+registerReservationPaymentHandlers();
 
 // Stripe webhook needs the raw body — mount before the JSON parser.
 app.use("/api/payments/stripe", paymentsWebhookRoutes);
