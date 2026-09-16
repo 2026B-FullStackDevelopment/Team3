@@ -1,18 +1,10 @@
-import { apiFetch } from "@/shared/api/apiFetch.js";
+import {
+  httpClient,
+  unwrapHttpResponse,
+} from "@/shared/api/apiFetch.js";
 import { normalizeDonationListing } from "@/features/donation/models/donation.js";
+import { normalizeListingDonation } from "@/features/donation/models/listingDonation.js";
 import { donationRoutes } from "@/config/api/routes/index.js";
-
-/** Converts a filters object into a URL query string, skipping empty values. */
-function queryString(filters = {}) {
-  const params = new URLSearchParams();
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      params.set(key, String(value));
-    }
-  });
-  const value = params.toString();
-  return value ? `?${value}` : "";
-}
 
 /** Extracts a listing from an API response and normalizes its frontend shape. */
 function unwrapListing(payload) {
@@ -52,9 +44,11 @@ export function buildDonationCreateFormData(body, image) {
 export const donationService = {
   /** Fetches a filtered list of donation listings with pagination metadata. */
   async list(filters = {}, signal) {
-    const payload = await apiFetch(
-      `${donationRoutes.listings}${queryString(filters)}`,
-      { signal },
+    const payload = unwrapHttpResponse(
+      await httpClient.get(donationRoutes.listings, {
+        params: filters,
+        signal,
+      }),
     );
     return {
       entries: (payload?.entries ?? []).map(normalizeDonationListing),
@@ -65,79 +59,79 @@ export const donationService = {
   /** Fetches and normalizes one donation listing by its ID. */
   async detail(id, signal) {
     return unwrapListing(
-      await apiFetch(donationRoutes.listing(id), { signal }),
+      unwrapHttpResponse(await httpClient.get(donationRoutes.listing(id), { signal })),
     );
   },
 
   /** Creates a donation listing by sending its fields and required image. */
   async create(body, image) {
     return unwrapListing(
-      await apiFetch(donationRoutes.listings, {
-        method: "POST",
-        body: buildDonationCreateFormData(body, image),
-      }),
+      unwrapHttpResponse(
+        await httpClient.post(
+          donationRoutes.listings,
+          buildDonationCreateFormData(body, image),
+        ),
+      ),
     );
   },
 
   /** Updates the editable fields of an existing donation listing. */
   async update(id, body) {
     return unwrapListing(
-      await apiFetch(donationRoutes.listing(id), { method: "PATCH", body }),
+      unwrapHttpResponse(await httpClient.patch(donationRoutes.listing(id), body)),
     );
   },
 
   /** Creates a new listing from an existing listing and supplied overrides. */
   async duplicate(id, body) {
     return unwrapListing(
-      await apiFetch(donationRoutes.duplicate(id), { method: "POST", body }),
+      unwrapHttpResponse(await httpClient.post(donationRoutes.duplicate(id), body)),
     );
   },
 
   /** Changes only the current status of a donation listing. */
   async changeStatus(id, status) {
     return unwrapListing(
-      await apiFetch(donationRoutes.status(id), {
-        method: "PATCH",
-        body: { status },
-      }),
+      unwrapHttpResponse(
+        await httpClient.patch(donationRoutes.status(id), { status }),
+      ),
     );
   },
 
   /** Changes the maximum quantity one recipient may reserve from a listing. */
   async changeRation(id, ration) {
     return unwrapListing(
-      await apiFetch(donationRoutes.ration(id), {
-        method: "PATCH",
-        body: { ration },
-      }),
+      unwrapHttpResponse(
+        await httpClient.patch(donationRoutes.ration(id), { ration }),
+      ),
     );
   },
 
   /** Deletes a donation listing by its ID. */
   remove(id) {
-    return apiFetch(donationRoutes.listing(id), { method: "DELETE" });
+    return httpClient
+      .delete(donationRoutes.listing(id))
+      .then(unwrapHttpResponse);
   },
 
   /** Fetches the paginated list of reservations/donations for one listing (SRS 4.2.5). */
   async listingDonations(id, filters = {}, signal) {
-    const payload = await apiFetch(
-      `${donationRoutes.donations(id)}${queryString(filters)}`,
-      { signal },
+    const payload = unwrapHttpResponse(
+      await httpClient.get(donationRoutes.donations(id), {
+        params: filters,
+        signal,
+      }),
     );
     return {
-      entries: payload?.entries ?? [],
+      entries: (payload?.entries ?? []).map(normalizeListingDonation),
       metadata: payload?.metadata ?? {},
     };
   },
 
   /** Records an in-person donation and returns its updated normalized listing. */
   async manualDonation(id, body) {
-    const payload = await apiFetch(
-      `${donationRoutes.listing(id)}/manual-donations`,
-      {
-        method: "POST",
-        body,
-      },
+    const payload = unwrapHttpResponse(
+      await httpClient.post(donationRoutes.manualDonations(id), body),
     );
     return {
       ...payload,
@@ -147,9 +141,11 @@ export const donationService = {
 
   /** Fetches dashboard report totals and safely normalizes chart breakdowns. */
   async report(filters = {}, signal) {
-    const payload = await apiFetch(
-      `${donationRoutes.reports}${queryString(filters)}`,
-      { signal },
+    const payload = unwrapHttpResponse(
+      await httpClient.get(donationRoutes.reports, {
+        params: filters,
+        signal,
+      }),
     );
     return {
       generatedAt: payload?.generatedAt ?? null,

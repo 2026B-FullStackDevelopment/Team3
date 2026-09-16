@@ -27,6 +27,7 @@ const RESERVATION_BLOCK_REASONS = {
   NotActive: "NOT_ACTIVE",
   Closed: "CLOSED",
   PerRequest: "PER_REQUEST",
+  BelowMinimumQuantity: "BELOW_MINIMUM_QUANTITY",
   InsufficientQuantity: "INSUFFICIENT_QUANTITY",
   RationExceeded: "RATION_EXCEEDED",
 };
@@ -75,6 +76,9 @@ function getReservationBlockReason(listing, quantity) {
   if (!allowsOnlineReservationForMeasurementUnit(listing.measurementUnit)) {
     return RESERVATION_BLOCK_REASONS.PerRequest;
   }
+  if (listing.remainingQuantity < 1) {
+    return RESERVATION_BLOCK_REASONS.BelowMinimumQuantity;
+  }
   if (quantity !== undefined && quantity > listing.remainingQuantity) {
     return RESERVATION_BLOCK_REASONS.InsufficientQuantity;
   }
@@ -112,6 +116,11 @@ function throwReservationBlock(reason) {
   }
   if (reason === RESERVATION_BLOCK_REASONS.InsufficientQuantity) {
     throw new ConflictError("Requested quantity exceeds remaining quantity");
+  }
+  if (reason === RESERVATION_BLOCK_REASONS.BelowMinimumQuantity) {
+    throw new ConflictError(
+      "Food listing has less than one measurement unit remaining",
+    );
   }
   if (reason === RESERVATION_BLOCK_REASONS.RationExceeded) {
     throw new ConflictError("Requested quantity exceeds ration limit");

@@ -121,25 +121,18 @@ const routes = [
             element: <RoleLayout role="admin" />,
             children: [
               {
-                element: <AdminShell />,
-                children: [
-                  {
-                    path: "/admin",
-                    element: (
-                      <Navigate to="/admin/listing-moderation" replace />
-                    ),
-                  },
-                  {
-                    path: "/admin/listing-moderation",
-                    element: <ListingModerationPage />,
-                  },
-                  {
-                    path: "/admin/user-management",
-                    element: <UserManagementPage />,
-                  },
-                  { path: "/admin/audit-log", element: <AuditLogPage /> },
-                ],
+                path: "/admin",
+                element: <Navigate to="/admin/listing-moderation" replace />,
               },
+              {
+                path: "/admin/listing-moderation",
+                element: <ListingModerationPage />,
+              },
+              {
+                path: "/admin/user-management",
+                element: <UserManagementPage />,
+              },
+              { path: "/admin/audit-log", element: <AuditLogPage /> },
             ],
           },
         ],

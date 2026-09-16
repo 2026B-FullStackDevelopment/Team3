@@ -3,6 +3,7 @@ import * as userRepository from "../repositories/user.repository.js";
 import * as donorProfileRepository from "../repositories/donorProfile.repository.js";
 import * as recipientProfileRepository from "../repositories/recipientProfile.repository.js";
 import { toAccountSummaryDTO } from "../dtos/accountSummary.dto.js";
+import { validateCity } from "../helpers/auth.helper.js";
 import {
   ConflictError,
   ForbiddenError,
@@ -51,7 +52,7 @@ async function findProfileForUser(user, options = {}) {
  * itself be Recipient or Donor.
  */
 export async function listAccounts(filters = {}) {
-  const { role, page, limit } = filters;
+  const { role, status, page, limit } = filters;
 
   let roles = LISTABLE_ROLES;
   if (role !== undefined) {
@@ -61,11 +62,22 @@ export async function listAccounts(filters = {}) {
     roles = [role];
   }
 
+  let accountStatus;
+  if (status !== undefined) {
+    if (!Object.values(AccountStatus).includes(status)) {
+      throw new ValidationError(
+        `status must be one of: ${Object.values(AccountStatus).join(", ")}`,
+      );
+    }
+    accountStatus = status;
+  }
+
   const normalizedPage = normalizePage(page);
   const normalizedLimit = normalizeLimit(limit);
 
   const { entries, total } = await userRepository.findAll({
     roles,
+    accountStatus,
     page: normalizedPage,
     limit: normalizedLimit,
   });
@@ -149,6 +161,25 @@ export async function reactivateAccount(userId, options = {}) {
  */
 export async function getDonorProfilesByIds(donorProfileIds, options = {}) {
   return donorProfileRepository.findByIds(donorProfileIds, options);
+}
+
+/** Resolves the current municipality for public recipient listing cards. */
+export async function getDonorMunicipalitiesByIds(
+  donorProfileIds,
+  options = {},
+) {
+  return donorProfileRepository.findByIds(donorProfileIds, options);
+}
+
+/** Finds donors in an exact supported Vietnamese municipality. */
+export async function findDonorProfileIdsByMunicipality(
+  municipality,
+  options = {},
+) {
+  return donorProfileRepository.findIdsByCity(
+    validateCity(municipality),
+    options,
+  );
 }
 
 /** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */

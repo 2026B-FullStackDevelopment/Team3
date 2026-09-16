@@ -34,6 +34,18 @@ export function ManualDonationPage() {
         donationKeys.detail(result.listing.id),
         result.listing,
       );
+      queryClient.setQueriesData(
+        { queryKey: donationKeys.lists },
+        (current) => {
+          if (!current?.entries) return current;
+          return {
+            ...current,
+            entries: current.entries.map((listing) =>
+              listing.id === result.listing.id ? result.listing : listing,
+            ),
+          };
+        },
+      );
       queryClient.invalidateQueries({ queryKey: donationKeys.all });
     },
   });
@@ -272,7 +284,10 @@ export function ManualDonationPage() {
               <StatusAlert variant="success" title="Donation recorded">
                 {mutation.data.listing.status === DonationStatus.SOLD_OUT
                   ? "The listing is now Sold Out."
-                  : "The remaining quantity and history were updated."}
+                  : `${formatQuantityWithUnit(
+                      mutation.data.listing.remainingQuantity,
+                      mutation.data.listing.measurementUnit,
+                    )} remains available.`}
               </StatusAlert>
             )}
             {mutation.isError && (

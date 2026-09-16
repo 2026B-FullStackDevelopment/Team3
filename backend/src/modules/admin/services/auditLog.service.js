@@ -70,6 +70,53 @@ function isNonEmptyString(value) {
 }
 
 /**
+ * Adds a display name to each entry's target for the Audit Log's Target
+ * column. `previousState` is a required field on every entry (see
+ * createAuditLog below) and both action types that write one already
+ * snapshot the full target state at the time of the action --
+ * deactivateUserAccount/reactivateUserAccount store the account summary
+ * (identity.getAccountById), cancelDonation stores the donation summary
+ * (donation.readDonationById) -- so a "User" target's username is already
+ * sitting right there in previousState, no extra lookup needed. A
+ * "Donation" target's previousState only has donorProfileId (not the
+ * donor's company name), so that one join -- the same one
+ * listAllFoodListings already does for Listing Moderation -- is still
+ * required.
+ */
+async function withTargetNames(entries) {
+  const donorProfileIds = [
+    ...new Set(
+      entries
+        .filter((entry) => entry.targetType === AuditTargetType.Donation)
+        .map((entry) => entry.previousState?.donorProfileId)
+        .filter(Boolean),
+    ),
+  ];
+  const donorProfiles =
+    donorProfileIds.length > 0
+      ? await identity.getDonorProfilesByIds(donorProfileIds)
+      : [];
+  const donorNameByProfileId = new Map(
+    donorProfiles.map((profile) => [profile._id, profile.companyName]),
+  );
+
+  return entries.map((entry) => {
+    if (entry.targetType === AuditTargetType.User) {
+      return { ...entry, targetName: entry.previousState?.username ?? null };
+    }
+    if (entry.targetType === AuditTargetType.Donation) {
+      return {
+        ...entry,
+        targetName:
+          donorNameByProfileId.get(entry.previousState?.donorProfileId) ??
+          null,
+      };
+    }
+    return entry;
+  });
+}
+
+/**
  * Validates and persists a new audit log entry. Only checks shape (required
  * fields present, enums valid) -- it does NOT verify adminId/targetId refer
  * to real records. That verification already happened one step earlier,
@@ -278,7 +325,9 @@ export async function listAuditLogs(filters = {}) {
   });
 
   return {
-    entries: await withAdminEmails(entries.map(toAuditLogDTO)),
+    entries: await withTargetNames(
+      await withAdminEmails(entries.map(toAuditLogDTO)),
+    ),
     total,
     page: normalizedPage,
     limit: normalizedLimit,
@@ -291,14 +340,17 @@ export async function listAuditLogs(filters = {}) {
  * passed) before anything else, since that check is real regardless of
  * what undo eventually does.
  *
- * DeactivateUser and ReactivateUser are genuinely invertible -- undoing one
- * is just calling the identity facade's opposite method -- so those revert
- * for real here, inside a transaction with the AuditLog status flip, so a
- * failed revert never gets recorded as a successful undo. CancelDonation
- * never actually cancels anything at action time either -- cancelDonation()
- * below only puts the listing in PendingCancellation limbo -- so its undo is
- * just as symmetric: donation.reinstateDonation flips it back to Active. The
- * real cancellation (and its reservation cascade) only happens later, in
+ * DeactivateUser/ReactivateUser now always log straight to Finalized (see
+ * the note above deactivateUserAccount below), so in practice they can
+ * never reach here Pending -- the entry.status check above already rejects
+ * them with a ConflictError before this switch is ever reached. Their
+ * branches stay in for two reasons: they're genuinely correct if an older
+ * Pending entry from before that change still exists (undoing one really is
+ * just calling the identity facade's opposite method), and CancelDonation
+ * still needs exactly this shape -- cancelDonation() below only puts the
+ * listing in PendingCancellation limbo, so its undo is just as symmetric:
+ * donation.reinstateDonation flips it back to Active. The real cancellation
+ * (and its reservation cascade) only happens later, in
  * finalizeExpiredEntries, if undo never runs. The `else` branch here is a
  * defensive guard for any future action added without an undo path, not a
  * real code path today.
@@ -486,9 +538,18 @@ export async function finalizeExpiredEntries() {
 // --- SRS 7.1.1, 7.2.1, 7.2.2 ------------------------------------------------
 // The three admin actions below all go through the same shape: read the
 // target's current state through its module's facade (for previousState),
-// perform the mutation through that same facade, then log it here with an
-// undo window. Listing accounts is a read, not an action, so it skips the
-// audit log entirely.
+// perform the mutation through that same facade, then log it here. Listing
+// accounts is a read, not an action, so it skips the audit log entirely.
+//
+// Only cancelDonation logs with an undo window (Pending + undoDeadline): a
+// cancelled listing needs one because finalizing it is a separate, later
+// step (the reservation cascade + notification) that a Pending window lets
+// an admin head off. Deactivate/reactivate take full effect immediately --
+// there's no later step to head off, and simply deactivating again is
+// already a one-click reversal -- so those two log straight to Finalized,
+// with no Pending phase and no undoDeadline for the audit-log sweep to
+// chase. This is a design choice specific to this team's own Audit Log
+// feature (SRS §8), not something the base SRS requirements dictate.
 
 function computeUndoDeadline() {
   return new Date(Date.now() + env.admin.undoWindowMs);
@@ -509,7 +570,8 @@ export async function listAccounts(filters = {}) {
  * The read of the pre-change state, the mutation, and the audit-log write
  * all run inside one Mongo transaction: if createAuditLog fails, the whole
  * thing rolls back instead of leaving a real change with no audit record
- * (and no undo deadline) behind it.
+ * behind it. Logged straight to Finalized -- no undo window, see the note
+ * above this section.
  */
 export async function deactivateUserAccount(adminId, userId) {
   if (!isNonEmptyString(adminId)) {
@@ -533,7 +595,7 @@ export async function deactivateUserAccount(adminId, userId) {
           targetType: AuditTargetType.User,
           targetId: userId,
           previousState: before,
-          undoDeadline: computeUndoDeadline(),
+          status: AuditLogStatus.Finalized,
         },
         { session },
       );
@@ -546,7 +608,8 @@ export async function deactivateUserAccount(adminId, userId) {
 
 /**
  * Reactivates a previously deactivated Recipient or Donor account and logs
- * it (SRS 7.2.1). Same single-transaction shape as deactivateUserAccount.
+ * it (SRS 7.2.1). Same single-transaction shape as deactivateUserAccount,
+ * including logging straight to Finalized.
  */
 export async function reactivateUserAccount(adminId, userId) {
   if (!isNonEmptyString(adminId)) {
@@ -570,7 +633,7 @@ export async function reactivateUserAccount(adminId, userId) {
           targetType: AuditTargetType.User,
           targetId: userId,
           previousState: before,
-          undoDeadline: computeUndoDeadline(),
+          status: AuditLogStatus.Finalized,
         },
         { session },
       );
@@ -597,13 +660,24 @@ export async function reactivateUserAccount(adminId, userId) {
  * matches zero donors does NOT short-circuit to empty results here -- the
  * listing-name half of the OR might still match, so donation.
  * listActiveListingsForAdmin always runs.
+ *
+ * The same box also has to match a literal Donor ID or Donation ID (SRS
+ * 7.3.2), not just a name. Donor/Donation ids are opaque uuid strings, not
+ * derivable from a name lookup, so the raw search term itself is passed
+ * through as an extra Donor ID candidate (alongside the name-matched ids)
+ * and as the Donation ID candidate -- an id that doesn't match anything
+ * real just contributes no results, same as a name that doesn't match.
  */
 export async function listAllFoodListings(filters = {}) {
   const { search, donorProfileId, donationId, page, limit } = filters;
 
   let searchDonorProfileIds;
+  let searchDonationId;
   if (isNonEmptyString(search)) {
+    const trimmedSearch = search.trim();
     searchDonorProfileIds = await identity.findDonorProfileIdsByName(search);
+    searchDonorProfileIds.push(trimmedSearch);
+    searchDonationId = trimmedSearch;
   }
 
   const {
@@ -618,6 +692,7 @@ export async function listAllFoodListings(filters = {}) {
     donorProfileId,
     search,
     searchDonorProfileIds,
+    searchDonationId,
   });
 
   const uniqueDonorProfileIds = [

@@ -147,3 +147,23 @@ export async function cancelActiveReservationsForDonation(
     { session: options.session },
   );
 }
+
+/**
+ * Same shape as cancelActiveReservationsForDonation, but for an Admin
+ * cancelling someone else's listing (SRS 7.2.2) rather than a Donor
+ * cancelling their own (SRS 4.2.3) -- kept as its own function rather than
+ * a shared one with a status parameter so each caller's intent stays
+ * obvious, and because the two land on distinct ReservationStatus values
+ * (CancelledByAdmin vs CancelledByDonor) that the rest of the app displays
+ * differently.
+ */
+export async function cancelActiveReservationsByAdmin(
+  donationId,
+  options = {},
+) {
+  return await Reservation.updateMany(
+    { donationId, status: ReservationStatus.Reserved },
+    { $set: { status: ReservationStatus.CancelledByAdmin } },
+    { session: options.session },
+  );
+}

@@ -38,6 +38,7 @@ function buildDonationQuery(filters = {}) {
     minRemainingQuantity,
     search,
     searchDonorProfileIds,
+    searchDonationId,
     createdFrom,
     createdTo,
     includeClosed = true,
@@ -51,7 +52,7 @@ function buildDonationQuery(filters = {}) {
   // given, AND them together (only keep it if it's actually one of the name
   // matches) instead of either one silently overriding the other -- an
   // empty $in correctly matches zero documents rather than "no filter."
-  if (Array.isArray(donorProfileIds) && donorProfileIds.length > 0) {
+  if (Array.isArray(donorProfileIds)) {
     const ids =
       donorProfileId !== undefined
         ? donorProfileIds.filter((id) => id === donorProfileId)
@@ -95,16 +96,24 @@ function buildDonationQuery(filters = {}) {
     const searchRegex = new RegExp(escapeRegExp(String(search).trim()), "i");
     // searchDonorProfileIds (distinct from donorProfileIds above) signals
     // that these ids were resolved from the SAME search term as the name
-    // match -- the Admin module's combined "grocery name or account name"
-    // box (SRS 7.3.2). OR them instead of this function's usual AND
-    // composition, so a listing matches on either field. An empty array is
-    // still correct here: zero donor-name matches just falls back to
-    // name-only matching, unlike donorProfileIds above, which is only set
-    // when there ARE ids to filter by.
-    if (Array.isArray(searchDonorProfileIds)) {
+    // match -- the Admin module's combined "grocery name, Donor ID, or
+    // Donation ID" box (SRS 7.3.2). It also carries the raw search term
+    // itself (not just name-resolved ids), so a literal Donor ID typed into
+    // the box matches too. OR them instead of this function's usual AND
+    // composition, so a listing matches on any field. searchDonationId is
+    // the same OR treatment for an exact _id match. Both are only ever set
+    // by the admin module; every other caller (Recipient/Donor search) still
+    // falls back to plain name-only matching.
+    if (
+      Array.isArray(searchDonorProfileIds) ||
+      searchDonationId !== undefined
+    ) {
       query.$or = [
         { name: searchRegex },
-        { donorProfileId: { $in: searchDonorProfileIds } },
+        ...(Array.isArray(searchDonorProfileIds)
+          ? [{ donorProfileId: { $in: searchDonorProfileIds } }]
+          : []),
+        ...(searchDonationId !== undefined ? [{ _id: searchDonationId }] : []),
       ];
     } else {
       query.name = searchRegex;
@@ -303,13 +312,14 @@ export async function addRevenue(id, amount, options = {}) {
 
 export async function applyReservation(id, quantity, totalPaid, options = {}) {
   const soldOutAt = new Date();
+  const minimumAvailableQuantity = Math.max(quantity, 1);
 
   return Donation.findOneAndUpdate(
     {
       _id: id,
       status: DonationStatus.Active,
       measurementUnit: { $ne: MeasurementUnit.PerRequest },
-      remainingQuantity: { $gte: quantity },
+      remainingQuantity: { $gte: minimumAvailableQuantity },
       closedAt: null,
     },
     [
@@ -323,14 +333,14 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
         $set: {
           status: {
             $cond: [
-              { $lte: ["$remainingQuantity", 0] },
+              { $lt: ["$remainingQuantity", 1] },
               DonationStatus.SoldOut,
               "$status",
             ],
           },
           closedAt: {
             $cond: [
-              { $lte: ["$remainingQuantity", 0] },
+              { $lt: ["$remainingQuantity", 1] },
               soldOutAt,
               "$closedAt",
             ],

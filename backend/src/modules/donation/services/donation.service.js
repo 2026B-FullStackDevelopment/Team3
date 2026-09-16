@@ -18,7 +18,8 @@ const MAX_LIMIT = 100;
 const VALID_MEASUREMENT_UNIT = Object.values(MeasurementUnit);
 const VALID_STATUSES = Object.values(DonationStatus);
 const VALID_FOOD_CATEGORY = Object.values(FoodCategory);
-const VALID_SORT_FIELDS = ["createdAt", "revenue"];
+const DONOR_SORT_FIELDS = ["createdAt", "revenue"];
+const RECIPIENT_SORT_FIELDS = ["createdAt", "price"];
 const VALID_SORT_ORDERS = ["asc", "desc"];
 
 function toPlainDonation(donation) {
@@ -65,6 +66,19 @@ function requireNonNegativeNumber(value, fieldName) {
     throw new ValidationError(`${fieldName} must be a non-negative number`);
   }
   return number;
+}
+
+function requireListingPrice(value) {
+  const price = Number(value);
+  if (
+    !Number.isFinite(price) ||
+    (price !== 0 && (!Number.isInteger(price) || price <= 1000))
+  ) {
+    throw new ValidationError(
+      "price must be free (0) or an integer greater than 1000 VND",
+    );
+  }
+  return price;
 }
 function requirePositiveNumber(value, fieldName) {
   const number = Number(value);
@@ -119,10 +133,10 @@ function normalizeDate(value, fieldName, endOfDay = false) {
   return date;
 }
 
-function normalizeSortBy(value) {
+function normalizeSortBy(value, allowedFields = DONOR_SORT_FIELDS) {
   if (value === undefined || value === "") return "createdAt";
   const sortBy = optionalString(value, "sortBy");
-  return validateEnum(sortBy, VALID_SORT_FIELDS, "sortBy");
+  return validateEnum(sortBy, allowedFields, "sortBy");
 }
 
 function normalizeSortOrder(value) {
@@ -137,8 +151,11 @@ function buildSort(sortBy, sortOrder) {
   };
 }
 
-function normalizeListingQuery(filters = {}) {
-  const sortBy = normalizeSortBy(filters.sortBy);
+function normalizeListingQuery(filters = {}, options = {}) {
+  const sortBy = normalizeSortBy(
+    filters.sortBy,
+    options.allowedSortFields ?? DONOR_SORT_FIELDS,
+  );
   const sortOrder = normalizeSortOrder(filters.sortOrder);
   const createdFrom = normalizeDate(filters.createdFrom, "createdFrom");
   const createdTo = normalizeDate(filters.createdTo, "createdTo", true);
@@ -221,6 +238,22 @@ function normalizeListingQuery(filters = {}) {
 
   return normalizedFilters;
 }
+
+function normalizeRecipientListingQuery(filters = {}) {
+  const normalizedFilters = normalizeListingQuery(filters, {
+    allowedSortFields: RECIPIENT_SORT_FIELDS,
+  });
+
+  normalizedFilters.includeClosed = false;
+  if (filters.municipality !== undefined) {
+    normalizedFilters.municipality = requireNonEmptyString(
+      filters.municipality,
+      "municipality",
+    );
+  }
+
+  return normalizedFilters;
+}
 //CREATE DONATION FLOW
 export async function createDonation(donorProfileId, input = {}) {
   const trustedDonorProfileId = requireNonEmptyString(
@@ -249,9 +282,7 @@ export async function createDonation(donorProfileId, input = {}) {
       : requireNonNegativeNumber(input.donationLimit, "donationLimit");
 
   const price =
-    input.price === undefined
-      ? 0
-      : requireNonNegativeNumber(input.price, "price");
+    input.price === undefined ? 0 : requireListingPrice(input.price);
   const ration =
     input.ration === undefined
       ? 0
@@ -511,6 +542,9 @@ export async function listActiveListingsForAdmin(filters = {}) {
   if (Array.isArray(filters.searchDonorProfileIds)) {
     normalizedFilters.searchDonorProfileIds = filters.searchDonorProfileIds;
   }
+  if (isNonEmptyString(filters.searchDonationId)) {
+    normalizedFilters.searchDonationId = filters.searchDonationId.trim();
+  }
 
   return donationRepository.findActiveDonations(normalizedFilters);
 }
@@ -531,6 +565,7 @@ export function toListingDonationResponse(reservation) {
   return {
     id: entry._id ?? entry.id,
     recipientUsername:
+      entry.recipientUsername ??
       recipient?.userName ??
       recipient?.username ??
       entry.manualRecipientName ??
@@ -598,15 +633,13 @@ export async function updateDonation(id, donorProfileId, input = {}) {
     }
     changes.isVegetarian = input.isVegetarian;
   }
-  for (const field of [
-    "donationLimit",
-    "price",
-    "remainingQuantity",
-    "ration",
-  ]) {
+  for (const field of ["donationLimit", "remainingQuantity", "ration"]) {
     if (input[field] !== undefined) {
       changes[field] = requireNonNegativeNumber(input[field], field);
     }
+  }
+  if (input.price !== undefined) {
+    changes.price = requireListingPrice(input.price);
   }
   if (Object.keys(changes).length === 0) {
     throw new ValidationError("No valid fields were provided");
