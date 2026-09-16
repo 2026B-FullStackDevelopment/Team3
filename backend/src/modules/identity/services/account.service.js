@@ -171,3 +171,22 @@ export async function getUsersByIds(userIds, options = {}) {
 export async function findAdminIdsByEmailLike(emailPattern) {
   return userRepository.findAdminIdsByEmailLike(emailPattern);
 }
+
+/**
+ * Batch-fetches account summaries (same username/companyName-fallback shape
+ * as listAccounts/getAccountById) by user id, for the Admin module to join a
+ * display name onto a "User"-type Audit Log target (SRS §8) -- reuses
+ * listAccounts' own profile-batching, just for an arbitrary id list instead
+ * of a role-filtered page.
+ */
+export async function getAccountSummariesByIds(userIds, options = {}) {
+  const users = await userRepository.findByIds(userIds, options);
+  const [donorProfiles, recipientProfiles] = await Promise.all([
+    donorProfileRepository.findByUserIds(userIds),
+    recipientProfileRepository.findByUserIds(userIds),
+  ]);
+  const profileByUserId = new Map(
+    [...donorProfiles, ...recipientProfiles].map((profile) => [profile.userId, profile]),
+  );
+  return users.map((user) => toAccountSummaryDTO(user, profileByUserId.get(user._id)));
+}

@@ -44,6 +44,18 @@ function formatLogTimestamp(value) {
   return `${dateFormatter.format(date)} - ${timeFormatter.format(date)}`
 }
 
+/** Target column display -- name alongside id so an admin doesn't have to
+ * cross-reference a bare uuid. A Donation target reads "Donated by" (the
+ * donor's company name) since the donation itself is what's being acted on,
+ * not the donor account; a User target keeps the plain "User" label. */
+function formatTarget(entry) {
+  const name = entry.targetName ?? '—'
+  if (entry.targetType === 'Donation') {
+    return `Donated by: ${name} | ID: ${entry.targetId}`
+  }
+  return `User: ${name} | ID: ${entry.targetId}`
+}
+
 /** Audit Log page (SRS §8). Undo calls straight into useAuditLog's
  * handleUndo -- window.confirm is enough of a safety check here, same as
  * the Deactivate/Reactivate/Cancel buttons elsewhere in Admin. Expired is
@@ -146,9 +158,7 @@ export function AuditLogPage() {
                       fabricated display name. */}
                   <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{entry.adminEmail ?? entry.adminId}</td>
                   <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{ACTION_TYPE_OPTIONS.find((o) => o.value === entry.action)?.label ?? entry.action}</td>
-                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">
-                    {entry.targetType}: {entry.targetId}
-                  </td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{formatTarget(entry)}</td>
                   <td className={cn('px-3 py-2 sm:px-4 sm:py-3 font-semibold', STATUS_STYLES[entry.status] ?? 'text-ink')}>
                     {STATUS_DISPLAY[entry.status] ?? entry.status}
                   </td>

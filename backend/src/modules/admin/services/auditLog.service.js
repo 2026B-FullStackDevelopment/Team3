@@ -70,6 +70,81 @@ function isNonEmptyString(value) {
 }
 
 /**
+ * Batch-resolves each entry's target display name for the Audit Log's
+ * Target column. A "User" target's name is its account summary's username
+ * (Recipient userName / Donor companyName fallback -- same shape
+ * listAccounts/getAccountById already use). A "Donation" target's name is
+ * its donor's company name, resolved via the listing's own donorProfileId --
+ * the same donorName join listAllFoodListings does for Listing Moderation,
+ * just keyed off a single historical donation instead of the active list.
+ * A donation that no longer resolves (shouldn't happen -- donations are
+ * status-flipped, never deleted) just falls back to a null name rather than
+ * failing the whole page.
+ */
+async function withTargetNames(entries) {
+  const userTargetIds = [
+    ...new Set(
+      entries
+        .filter((entry) => entry.targetType === AuditTargetType.User)
+        .map((entry) => entry.targetId),
+    ),
+  ];
+  const donationTargetIds = [
+    ...new Set(
+      entries
+        .filter((entry) => entry.targetType === AuditTargetType.Donation)
+        .map((entry) => entry.targetId),
+    ),
+  ];
+
+  const [accounts, donations] = await Promise.all([
+    userTargetIds.length > 0
+      ? identity.getAccountSummariesByIds(userTargetIds)
+      : [],
+    Promise.all(
+      donationTargetIds.map((id) =>
+        donation.readDonationById(id).catch(() => null),
+      ),
+    ),
+  ]);
+
+  const usernameByUserId = new Map(
+    accounts.map((account) => [account.id, account.username ?? account.email]),
+  );
+
+  const resolvedDonations = donations.filter(Boolean);
+  const donorProfileIds = [
+    ...new Set(resolvedDonations.map((entry) => entry.donorProfileId)),
+  ];
+  const donorProfiles =
+    donorProfileIds.length > 0
+      ? await identity.getDonorProfilesByIds(donorProfileIds)
+      : [];
+  const donorNameByProfileId = new Map(
+    donorProfiles.map((profile) => [profile._id, profile.companyName]),
+  );
+  const donorNameByDonationId = new Map(
+    resolvedDonations.map((entry) => [
+      entry.id,
+      donorNameByProfileId.get(entry.donorProfileId) ?? null,
+    ]),
+  );
+
+  return entries.map((entry) => {
+    if (entry.targetType === AuditTargetType.User) {
+      return { ...entry, targetName: usernameByUserId.get(entry.targetId) ?? null };
+    }
+    if (entry.targetType === AuditTargetType.Donation) {
+      return {
+        ...entry,
+        targetName: donorNameByDonationId.get(entry.targetId) ?? null,
+      };
+    }
+    return entry;
+  });
+}
+
+/**
  * Validates and persists a new audit log entry. Only checks shape (required
  * fields present, enums valid) -- it does NOT verify adminId/targetId refer
  * to real records. That verification already happened one step earlier,
@@ -278,7 +353,9 @@ export async function listAuditLogs(filters = {}) {
   });
 
   return {
-    entries: await withAdminEmails(entries.map(toAuditLogDTO)),
+    entries: await withTargetNames(
+      await withAdminEmails(entries.map(toAuditLogDTO)),
+    ),
     total,
     page: normalizedPage,
     limit: normalizedLimit,
