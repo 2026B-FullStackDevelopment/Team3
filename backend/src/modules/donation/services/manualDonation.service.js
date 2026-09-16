@@ -118,7 +118,7 @@ export async function createManualDonation(
         {
           type: wallet.TransactionType.FoodPurchase,
           method: PaymentMethod.Wallet,
-          relatedReservationId: reservationResult._id,
+          relatedReservationId: reservationResult.id,
         },
         { session },
       );

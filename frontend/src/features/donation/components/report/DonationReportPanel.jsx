@@ -175,10 +175,6 @@ export function DonationReportPanel() {
             </div>
           )}
 
-          <div className="report-footer">
-            <span>Updated {formatDateTime(report.data.generatedAt)}</span>
-            <span>Revenue trends require a future time-series API.</span>
-          </div>
         </>
       )}
     </aside>

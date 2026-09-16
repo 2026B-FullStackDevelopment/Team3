@@ -6,5 +6,7 @@ export const donationRoutes = {
   status: (id) => `/api/donor/food-listings/${id}/status`,
   ration: (id) => `/api/donor/food-listings/${id}/ration`,
   donations: (id) => `/api/donor/food-listings/${id}/donations`,
+  manualDonations: (id) => `/api/donor/food-listings/${id}/manual-donations`,
+  activeListings: '/api/donations/active',
   reports: '/api/donor/reports/dashboard',
 }

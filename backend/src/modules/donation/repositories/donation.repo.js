@@ -52,7 +52,7 @@ function buildDonationQuery(filters = {}) {
   // given, AND them together (only keep it if it's actually one of the name
   // matches) instead of either one silently overriding the other -- an
   // empty $in correctly matches zero documents rather than "no filter."
-  if (Array.isArray(donorProfileIds) && donorProfileIds.length > 0) {
+  if (Array.isArray(donorProfileIds)) {
     const ids =
       donorProfileId !== undefined
         ? donorProfileIds.filter((id) => id === donorProfileId)
@@ -301,13 +301,14 @@ export async function addRevenue(id, amount, options = {}) {
 
 export async function applyReservation(id, quantity, totalPaid, options = {}) {
   const soldOutAt = new Date();
+  const minimumAvailableQuantity = Math.max(quantity, 1);
 
   return Donation.findOneAndUpdate(
     {
       _id: id,
       status: DonationStatus.Active,
       measurementUnit: { $ne: MeasurementUnit.PerRequest },
-      remainingQuantity: { $gte: quantity },
+      remainingQuantity: { $gte: minimumAvailableQuantity },
       closedAt: null,
     },
     [
@@ -321,14 +322,14 @@ export async function applyReservation(id, quantity, totalPaid, options = {}) {
         $set: {
           status: {
             $cond: [
-              { $lte: ["$remainingQuantity", 0] },
+              { $lt: ["$remainingQuantity", 1] },
               DonationStatus.SoldOut,
               "$status",
             ],
           },
           closedAt: {
             $cond: [
-              { $lte: ["$remainingQuantity", 0] },
+              { $lt: ["$remainingQuantity", 1] },
               soldOutAt,
               "$closedAt",
             ],

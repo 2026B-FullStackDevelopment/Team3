@@ -78,6 +78,11 @@ export const DonationSchema = {
     type: Number,
     default: 0,
     min: 0,
+    validate: {
+      validator: (price) =>
+        price === 0 || (Number.isInteger(price) && price > 1000),
+      message: "price must be free (0) or an integer greater than 1000 VND",
+    },
   },
   remainingQuantity: {
     type: Number,

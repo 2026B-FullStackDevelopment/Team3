@@ -44,6 +44,48 @@ function toFeedbackDTO(reservation) {
   };
 }
 
+function getReservationId(reservation) {
+  const id = reservation?._id ?? reservation?.id;
+  return id === undefined || id === null ? id : String(id);
+}
+
+/** Minimal Reservation shape required by Donation's donor-facing history. */
+function toDonationListingReservationDTO(reservation) {
+  if (!reservation) return reservation;
+  const recipient = reservation.recipientProfileId;
+
+  return {
+    id: getReservationId(reservation),
+    recipientUsername:
+      recipient?.userName ??
+      recipient?.username ??
+      reservation.manualRecipientName ??
+      null,
+    reservedAt: reservation.reservedAt ?? null,
+    collectedAt: reservation.collectedAt ?? null,
+    quantity: reservation.quantity,
+    status: reservation.status,
+    totalPaid: reservation.totalPaid,
+    paymentMethod: reservation.paymentMethod ?? null,
+    feedback: reservation.feedback ?? null,
+  };
+}
+
+/** Minimal Reservation shape returned to Donation after a manual collection. */
+function toManualCollectionDTO(reservation) {
+  if (!reservation) return reservation;
+
+  return {
+    id: getReservationId(reservation),
+    recipientName: reservation.manualRecipientName ?? null,
+    quantity: reservation.quantity,
+    status: reservation.status,
+    totalPaid: reservation.totalPaid,
+    paymentMethod: reservation.paymentMethod ?? null,
+    collectedAt: reservation.collectedAt ?? null,
+  };
+}
+
 export async function listAffectedRecipientProfileIds(
   donationId,
   options = {},
@@ -70,11 +112,16 @@ export function cancelActiveReservationsByAdmin(donationId, options = {}) {
   );
 }
 
-export function listReservationsByDonation(donationId, options = {}) {
-  return donationSupportService.listReservationsByDonation(
+export async function listReservationsByDonation(donationId, options = {}) {
+  const result = await donationSupportService.listReservationsByDonation(
     requireDonationId(donationId),
     options,
   );
+
+  return {
+    ...result,
+    entries: result.entries.map(toDonationListingReservationDTO),
+  };
 }
 
 export function cancelActiveReservationsByDonation(
@@ -87,14 +134,15 @@ export function cancelActiveReservationsByDonation(
   );
 }
 
-export function recordManualCollection(data, options = {}) {
-  return donationSupportService.recordManualCollection(
+export async function recordManualCollection(data, options = {}) {
+  const reservation = await donationSupportService.recordManualCollection(
     {
       ...data,
       donationId: requireDonationId(data?.donationId),
     },
     options,
   );
+  return toManualCollectionDTO(reservation);
 }
 
 export async function summarizeCollectedReservationsByDonation(

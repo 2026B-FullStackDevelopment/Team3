@@ -9,8 +9,9 @@ function getDonationId(donation) {
 }
 
 function buildReservationPolicy(donation) {
-  const allowsOnlineReservation =
-    allowsOnlineReservationForMeasurementUnit(donation?.measurementUnit);
+  const allowsOnlineReservation = allowsOnlineReservationForMeasurementUnit(
+    donation?.measurementUnit,
+  );
 
   return {
     allowsOnlineReservation,
@@ -39,6 +40,69 @@ export function toDonorListingDTO(donation) {
     createdAt: donation.createdAt,
     closedAt: donation.closedAt,
     reservationPolicy: buildReservationPolicy(donation),
+  };
+}
+
+/** Maps only the fields a Recipient needs to browse active food listings. */
+export function toRecipientListingDTO(donation) {
+  if (!donation) return donation;
+
+  return {
+    id: getDonationId(donation),
+    name: donation.name,
+    description: donation.description,
+    imageUrl: donation.imageUrl,
+    foodCategory: donation.foodCategory,
+    isVegetarian: donation.isVegetarian,
+    remainingQuantity: donation.remainingQuantity,
+    ration: donation.ration,
+    measurementUnit: donation.measurementUnit,
+    price: donation.price,
+    donorMunicipality: donation.donorMunicipality ?? null,
+    createdAt: donation.createdAt,
+    reservationPolicy: buildReservationPolicy(donation),
+  };
+}
+
+/** Maps the nested result returned after a Donor records an in-person donation. */
+export function toManualDonationResponseDTO(result) {
+  if (!result) return result;
+
+  const donation = result.donation;
+  const payment = result.payment;
+  const soldOutAlert = result.soldOutAlert;
+
+  return {
+    donation: donation
+      ? {
+          id: String(donation.id ?? donation._id),
+          recipientName:
+            donation.recipientName ?? donation.manualRecipientName ?? null,
+          quantity: donation.quantity,
+          status: donation.status,
+          totalPaid: donation.totalPaid,
+          paymentMethod: donation.paymentMethod ?? null,
+          collectedAt: donation.collectedAt,
+        }
+      : null,
+    payment: payment
+      ? {
+          method: payment.method,
+          totalPrice: payment.totalPrice,
+          amountReceived: payment.amountReceived,
+          change: payment.change,
+        }
+      : null,
+    listing: toDonorListingDTO(result.listing),
+    soldOutAlert: soldOutAlert
+      ? {
+          event: soldOutAlert.event,
+          donationId: soldOutAlert.donationId,
+          donationName: soldOutAlert.donationName,
+          closedAt: soldOutAlert.closedAt,
+          message: soldOutAlert.message,
+        }
+      : null,
   };
 }
 

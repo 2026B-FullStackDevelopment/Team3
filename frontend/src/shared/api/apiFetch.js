@@ -17,7 +17,9 @@ function buildUrl(path, params) {
   const base = `${env.API_BASE_URL}${path}`
   if (!params) return base
   const query = new URLSearchParams(
-    Object.entries(params).filter(([, value]) => value !== undefined && value !== null),
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    ),
   ).toString()
   return query ? `${base}?${query}` : base
 }
@@ -38,10 +40,7 @@ async function readResponseBody(response) {
   return text || undefined
 }
 
-/**
- * SRS A.2.b REST transport. Every request exposes data, status, headers and ok.
- * Feature services may use apiFetch below when they prefer thrown ApiError values.
- */
+/** SRS A.2.b REST transport. Every request exposes data, status, headers and ok. */
 async function request(method, path, options = {}) {
   const { body, headers, params, signal, suppressUnauthorized = false } = options
   const formDataBody = isFormData(body)
@@ -86,9 +85,8 @@ export const httpClient = {
   delete: (path, options) => request('DELETE', path, options),
 }
 
-export async function apiFetch(path, options = {}) {
-  const { method = 'GET', ...requestOptions } = options
-  const result = await request(method, path, requestOptions)
+/** Converts the canonical REST result into data or a structured React Query error. */
+export function unwrapHttpResponse(result) {
   if (result.ok) return result.data
 
   const structured = result.error && typeof result.error === 'object' ? result.error : {}

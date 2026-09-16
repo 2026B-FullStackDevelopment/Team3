@@ -48,6 +48,14 @@ export async function findByIds(ids, options = {}) {
   return query;
 }
 
+/** Returns donor profile ids in one exact Vietnamese municipality/city. */
+export async function findIdsByCity(city, options = {}) {
+  const query = DonorProfile.find({ city }).select("_id");
+  if (options.session) query.session(options.session);
+  const profiles = await query;
+  return profiles.map((profile) => profile._id);
+}
+
 /**
  * Finds DonorProfile ids whose companyName matches a case-insensitive,
  * substring search -- SRS 7.3.2's "search by Donor Name", same
