@@ -444,20 +444,52 @@ function distanceKm(origin, donor) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+async function attachDonorMunicipalities(result) {
+  const donorProfileIds = [
+    ...new Set(
+      result.entries.map((entry) => String(entry.donorProfileId)),
+    ),
+  ];
+  if (donorProfileIds.length === 0) return result;
+
+  const municipalityRefs =
+    await identity.getDonorMunicipalitiesByIds(donorProfileIds);
+  const municipalityByDonor = new Map(
+    municipalityRefs.map((ref) => [
+      String(ref.donorProfileId),
+      ref.municipality,
+    ]),
+  );
+
+  return {
+    ...result,
+    entries: result.entries.map((entry) => {
+      const listing = toPlainDonation(entry);
+      return {
+        ...listing,
+        donorMunicipality:
+          municipalityByDonor.get(String(listing.donorProfileId)) ?? null,
+      };
+    }),
+  };
+}
+
 export async function listActiveDonations(userId, filters = {}) {
   const normalizedFilters = normalizeRecipientListingQuery(filters);
   const { page, limit } = normalizedFilters;
   const recipient = await identity.getRecipientContext(userId);
 
   if (!recipient?.isPremium) {
-    return donationRepository.findActiveDonations(normalizedFilters);
+    const result = await donationRepository.findActiveDonations(normalizedFilters);
+    return attachDonorMunicipalities(result);
   }
 
   const preferences = await notification.getRecipientMatchingCriteria(
     recipient.recipientProfileId,
   );
   if (preferences.length === 0) {
-    return donationRepository.findActiveDonations(normalizedFilters);
+    const result = await donationRepository.findActiveDonations(normalizedFilters);
+    return attachDonorMunicipalities(result);
   }
 
   const coordinates = normalizeCoordinates(filters);
@@ -490,12 +522,12 @@ export async function listActiveDonations(userId, filters = {}) {
   });
 
   const start = (page - 1) * limit;
-  return {
+  return attachDonorMunicipalities({
     entries: ranked.slice(start, start + limit).map(({ entry }) => entry),
     total: ranked.length,
     page,
     limit,
-  };
+  });
 }
 
 export async function getActiveDonation(id) {
@@ -507,7 +539,8 @@ export async function getActiveDonation(id) {
   ) {
     throw new NotFoundError("Active donation not found");
   }
-  return donation;
+  const result = await attachDonorMunicipalities({ entries: [donation] });
+  return result.entries[0];
 }
 
 /**
