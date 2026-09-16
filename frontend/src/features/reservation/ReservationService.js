@@ -39,3 +39,7 @@ export async function createReservation(reservationData) {
 export async function fetchReservationHistory() {
   return unwrapHttpResponse(await httpClient.get(reservationRoutes.history));
 }
+
+export async function fetchMyReservations() {
+  return unwrapHttpResponse(await httpClient.get(reservationRoutes.mine));
+}

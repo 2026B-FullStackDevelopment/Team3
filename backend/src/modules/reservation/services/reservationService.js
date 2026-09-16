@@ -11,6 +11,7 @@ import * as paymentsFacade from "../../payments/index.js";
 import {
   toReservationCreatedDTO,
   toReservationHistoryDTO,
+  toMyReservationDTO,
 } from "../dtos/reservation.dto.js";
 
 export async function processReservation(
@@ -140,6 +141,14 @@ export async function getHistory(recipientProfileId) {
   return reservations.map(toReservationHistoryDTO);
 }
 
+export async function getMyReservations(recipientProfileId) {
+  const reservations =
+    await ReservationRepository.getOpenReservationsByRecipient(
+      recipientProfileId,
+    );
+  return reservations.map(toMyReservationDTO);
+}
+
 export async function createReservationCheckout(
   userId,
   recipientProfileId,
@@ -195,8 +204,8 @@ export async function createReservationCheckout(
     userId,
     amountVnd: totalPaid,
     productName: `Reservation: ${donation.name}`,
-    successPath: "/history", 
-    cancelPath: "/history",
+    successPath: "/reservations",
+    cancelPath: "/browse",
     // Passing this data so the webhook knows exactly what to reserve once paid
     metadata: {
       donationId,

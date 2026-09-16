@@ -36,6 +36,29 @@ export async function getReservationsByRecipient(recipientProfileId) {
     });
 }
 
+/** Pending and cancelled reservations shown on the recipient's My Reservations page. */
+export async function getOpenReservationsByRecipient(recipientProfileId) {
+  return await Reservation.find({
+    recipientProfileId,
+    status: {
+      $in: [
+        ReservationStatus.Reserved,
+        ReservationStatus.CancelledByDonor,
+        ReservationStatus.CancelledByAdmin,
+      ],
+    },
+  })
+    .sort({ reservedAt: -1 })
+    .populate({
+      path: "donationId",
+      select: "name foodCategory imageUrl donorProfileId",
+      populate: {
+        path: "donorProfileId",
+        select: "companyName city location",
+      },
+    });
+}
+
 /** Check if a reservation already exists for this recipient and donation */
 export async function checkExistingReservation(recipientProfileId, donationId) {
   return await Reservation.findOne({

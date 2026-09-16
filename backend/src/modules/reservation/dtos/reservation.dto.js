@@ -44,3 +44,38 @@ export function toReservationHistoryDTO(reservation) {
     feedback: reservation.feedback ?? null,
   };
 }
+
+/** Safe pending/cancelled reservation response for the owning recipient. */
+export function toMyReservationDTO(reservation) {
+  if (!reservation) return reservation;
+
+  const donation = reservation.donationId;
+  const donor = donation?.donorProfileId;
+  const coordinates = donor?.location?.coordinates;
+
+  return {
+    id: getId(reservation),
+    donation: donation
+      ? {
+          id: getId(donation),
+          name: donation.name,
+          foodCategory: donation.foodCategory,
+          imageUrl: donation.imageUrl ?? null,
+          donorName: donor?.companyName ?? null,
+        }
+      : null,
+    quantity: reservation.quantity,
+    status: reservation.status,
+    totalPaid: reservation.totalPaid,
+    paymentMethod: reservation.paymentMethod ?? null,
+    reservedAt: reservation.reservedAt ?? null,
+    pickupLocation:
+      reservation.status === "Reserved" && Array.isArray(coordinates)
+        ? {
+            donorName: donor?.companyName ?? null,
+            municipality: donor?.city ?? null,
+            coordinates: [...coordinates],
+          }
+        : null,
+  };
+}
