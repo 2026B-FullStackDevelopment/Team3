@@ -8,6 +8,10 @@ import {
 import { credit, debit, TransactionType } from "../../wallet/index.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
 import * as paymentsFacade from "../../payments/index.js";
+import {
+  toReservationCreatedDTO,
+  toReservationHistoryDTO,
+} from "../dtos/reservation.dto.js";
 
 export async function processReservation(
   recipientProfileId,
@@ -113,7 +117,7 @@ export async function processReservation(
         notification.publishCreatedNotifications(createdNotification);
       }
 
-      return newReservation;
+      return toReservationCreatedDTO(newReservation);
     } catch (error) {
       // Restore food stock and refund wallet if the database fails to save the ticket
       await restoreReservationQuantity(donationId, quantity);
@@ -132,9 +136,10 @@ export async function processReservation(
 }
 
 export async function getHistory(recipientProfileId) {
-  return await ReservationRepository.getReservationsByRecipient(
+  const reservations = await ReservationRepository.getReservationsByRecipient(
     recipientProfileId,
   );
+  return reservations.map(toReservationHistoryDTO);
 }
 
 export async function createReservationCheckout(

@@ -16,14 +16,22 @@ export async function findByStripeSessionId(stripeSessionId) {
  * with the donor's name so the frontend never needs a reservedAt fallback.
  */
 export async function getReservationsByRecipient(recipientProfileId) {
-  return await Reservation.find({ recipientProfileId })
-    .sort({ reservedAt: -1 })
+  return await Reservation.find({
+    recipientProfileId,
+    status: {
+      $in: [
+        ReservationStatus.Collected,
+        ReservationStatus.CollectedByRecipient,
+      ],
+    },
+  })
+    .sort({ collectedAt: -1 })
     .populate({
       path: "donationId",
       select: "name foodCategory imageUrl donorProfileId",
       populate: {
         path: "donorProfileId",
-        select: "companyName address city location",
+        select: "companyName",
       },
     });
 }

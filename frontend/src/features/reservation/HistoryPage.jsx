@@ -51,8 +51,8 @@ function getDirectionsUrl(location) {
 }
 
 function HistoryItem({ item, onSelectLocation, onFeedbackSubmitted }) {
-  const reservationId = item._id ?? item.id;
-  const donation = item.donationId || {};
+  const reservationId = item.id;
+  const donation = item.donation || {};
   const pickupLocation = getPickupLocation(donation);
   const isCollected =
     item.status === "Collected" || item.status === "CollectedByRecipient";
@@ -90,7 +90,7 @@ function HistoryItem({ item, onSelectLocation, onFeedbackSubmitted }) {
             {donation.name || "Unknown Item"}
           </h2>
           <p className="mb-2 text-sm text-gray-500">
-            {pickupLocation.donorName}
+            {donation.donorName || pickupLocation.donorName}
           </p>
           <p className="text-sm font-medium text-ink">
             {isCollected ? "Collected on" : "Reserved on"}:{" "}
@@ -182,7 +182,7 @@ export function HistoryPage() {
   function handleFeedbackSubmitted(reservationId, feedback) {
     setHistory((current) =>
       current.map((item) =>
-        (item._id ?? item.id) === reservationId ? { ...item, feedback } : item,
+        item.id === reservationId ? { ...item, feedback } : item,
       ),
     );
   }
@@ -213,7 +213,7 @@ export function HistoryPage() {
         {history.length > 0 ? (
           history.map((item) => (
             <HistoryItem
-              key={item._id ?? item.id}
+              key={item.id}
               item={item}
               onSelectLocation={setSelectedLocation}
               onFeedbackSubmitted={handleFeedbackSubmitted}
