@@ -124,26 +124,6 @@ export function toReservationDonationDTO(donation) {
 }
 
 /** Public active-listing shape used by the authenticated Recipient browse UI. */
-export function toRecipientListingDTO(donation) {
-  if (!donation) return donation;
-
-  return {
-    id: getDonationId(donation),
-    name: donation.name,
-    description: donation.description,
-    imageUrl: donation.imageUrl,
-    measurementUnit: donation.measurementUnit,
-    foodCategory: donation.foodCategory,
-    isVegetarian: donation.isVegetarian,
-    donationLimit: donation.donationLimit,
-    price: donation.price,
-    remainingQuantity: donation.remainingQuantity,
-    ration: donation.ration,
-    createdAt: donation.createdAt,
-    reservationPolicy: buildReservationPolicy(donation),
-  };
-}
-
 /** Maps only state changed by Reservation stock operations. */
 export function toReservationDonationStateDTO(donation) {
   if (!donation) return donation;
