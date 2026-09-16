@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FeedbackDisplay } from "@/features/feedback/Component/FeedbackDisplay.jsx";
 import { FeedbackForm } from "@/features/feedback/Component/FeedbackForm.jsx";
 import { useFeedbackRow } from "@/features/feedback/hooks/feedbackHooks.js";
+import { formatDateTime, formatVnd } from "@/shared/utils/formatters.js";
 import * as reservationService from "./ReservationService.js";
 
 const HISTORY_IMAGE_FALLBACK =
@@ -49,15 +50,6 @@ function getDirectionsUrl(location) {
   return `https://www.google.com/maps/dir/?${params}`;
 }
 
-function formatDateTime(dateString) {
-  if (!dateString) return "Pending";
-
-  const date = new Date(dateString);
-  const options = { month: "long", day: "numeric", year: "numeric" };
-  const timeOptions = { hour: "2-digit", minute: "2-digit", hour12: false };
-  return `${date.toLocaleDateString("en-US", options)} - ${date.toLocaleTimeString("en-US", timeOptions)}`;
-}
-
 function HistoryItem({ item, onSelectLocation, onFeedbackSubmitted }) {
   const reservationId = item._id ?? item.id;
   const donation = item.donationId || {};
@@ -103,7 +95,9 @@ function HistoryItem({ item, onSelectLocation, onFeedbackSubmitted }) {
           <p className="text-sm font-medium text-ink">
             {isCollected ? "Collected on" : "Reserved on"}:{" "}
             <span className="font-normal">
-              {formatDateTime(isCollected ? item.collectedAt : item.reservedAt)}
+              {isCollected || item.reservedAt
+                ? formatDateTime(isCollected ? item.collectedAt : item.reservedAt)
+                : "Pending"}
             </span>
           </p>
           <p className="text-sm font-medium text-ink">
@@ -113,7 +107,7 @@ function HistoryItem({ item, onSelectLocation, onFeedbackSubmitted }) {
             Total:{" "}
             {item.totalPaid === 0
               ? "FREE"
-              : `${(item.totalPaid || 0).toLocaleString()} VND`}
+              : formatVnd(item.totalPaid)}
           </p>
           {item.totalPaid > 0 && item.paymentMethod && (
             <p className="text-sm text-gray-500">

@@ -1,4 +1,4 @@
-//Donation value type of BE for frontend
+// Donation wire values shared by the donation feature and its backend contract.
 export const DonationStatus = Object.freeze({
   ACTIVE: "Active",
   PAUSED: "Paused",
@@ -76,27 +76,6 @@ function assertWireValue(value, values, field) {
   return value;
 }
 
-/**
- * @typedef {Object} DonationListing
- * @property {string} id
- * @property {string} donorProfileId
- * @property {string} name
- * @property {string} description
- * @property {string|null} imageUrl
- * @property {'KG'|'G'|'L'|'ML'|'Unit'|'PerRequest'} measurementUnit
- * @property {'Fruit'|'Vegetable'|'Meat'|'CookedDish'|'BakedGoods'|'Drink'} foodCategory
- * @property {boolean|null} isVegetarian
- * @property {number} donationLimit
- * @property {number} price
- * @property {number} remainingQuantity
- * @property {number} ration
- * @property {'Active'|'Paused'|'PendingCancellation'|'Cancelled'|'SoldOut'} status
- * @property {number} revenue
- * @property {string} createdAt
- * @property {string|null} closedAt
- * @property {{allowsOnlineReservation: boolean, warningMessages: string[]}} reservationPolicy
- */
-
 export function normalizeDonationListing(transport) {
   const id = transport?.id ?? transport?._id;
   if (!id) throw new TypeError("Donation listing is missing an id.");
@@ -118,9 +97,7 @@ export function normalizeDonationListing(transport) {
       "food category",
     ),
     isVegetarian:
-      transport.isVegetarian == null
-        ? null
-        : Boolean(transport.isVegetarian),
+      transport.isVegetarian == null ? null : Boolean(transport.isVegetarian),
     donationLimit: Number(transport.donationLimit ?? 0),
     price: Number(transport.price ?? 0),
     remainingQuantity: Number(transport.remainingQuantity ?? 0),

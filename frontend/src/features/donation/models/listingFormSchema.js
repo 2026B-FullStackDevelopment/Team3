@@ -3,7 +3,7 @@ import {
   FoodCategory,
   MeasurementUnit,
   validateDonationImage,
-} from "@/lib/donation.js";
+} from "@/features/donation/models/donation.js";
 
 /** Creates the listing validation rules for create, edit, or duplicate mode. */
 export function createListingFormSchema(mode) {

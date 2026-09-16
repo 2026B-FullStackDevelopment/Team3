@@ -1,4 +1,4 @@
-import { formatVND, vndToUsd } from '@/shared/utils/format.js'
+import { formatVnd, vndToUsd } from '@/shared/utils/formatters.js'
 
 /** Dark hero showing the wallet balance in VND with a USD approximation. */
 export function BalanceCard({ balance }) {
@@ -6,7 +6,7 @@ export function BalanceCard({ balance }) {
     <div className="flex items-center justify-between rounded-card bg-ink p-6 text-white md:p-8">
       <div>
         <p className="text-sm text-white/70">Available balance</p>
-        <p className="mt-1 font-heading text-4xl font-bold">{formatVND(balance)}</p>
+        <p className="mt-1 font-heading text-4xl font-bold">{formatVnd(balance)}</p>
         <p className="mt-1 text-sm text-white/60">≈ {vndToUsd(balance).toFixed(2)} USD</p>
       </div>
       <svg

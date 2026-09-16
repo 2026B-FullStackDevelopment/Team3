@@ -5,8 +5,9 @@ import { HandCoins } from "lucide-react";
 import { donationService } from "@/features/donation/service/donation.service.js";
 import { donationKeys } from "@/features/donation/service/donationKeys.js";
 import { useDonationList } from "@/features/donation/hooks/donation.hooks.js";
-import { DonationStatus, MeasurementUnit } from "@/lib/donation.js";
-import { formatQuantityWithUnit, formatVnd } from "@/lib/formatters.js";
+import { DonationStatus, MeasurementUnit } from "@/features/donation/models/donation.js";
+import { formatVnd } from "@/shared/utils/formatters.js";
+import { formatQuantityWithUnit } from "@/features/donation/utils/donationFormatters.js";
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 

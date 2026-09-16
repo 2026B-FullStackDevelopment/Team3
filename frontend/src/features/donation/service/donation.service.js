@@ -1,5 +1,5 @@
-import { apiFetch } from "@/lib/api/apiFetch.js";
-import { normalizeDonationListing } from "@/lib/donation.js";
+import { apiFetch } from "@/shared/api/apiFetch.js";
+import { normalizeDonationListing } from "@/features/donation/models/donation.js";
 import { donationRoutes } from "@/config/api/routes/index.js";
 
 /** Converts a filters object into a URL query string, skipping empty values. */

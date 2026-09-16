@@ -5,7 +5,7 @@ import { walletService } from '@/features/wallet/Service/walletService.js'
 import { premiumService } from '@/features/wallet/Service/premiumService.js'
 import { formatSubscription } from '@/features/wallet/Model/premiumModel.js'
 import { PREMIUM_PRICE_VND } from '@/config/constants.js'
-import { formatVND } from '@/shared/utils/format.js'
+import { formatVnd } from '@/shared/utils/formatters.js'
 
 /**
  * Premium checkout hook (Wallet module). Loads the wallet balance + subscription
@@ -91,7 +91,7 @@ export function usePremium() {
       setResult({
         variant: 'success',
         title: "You're now a Premium member!",
-        message: `Payment of ${formatVND(PREMIUM_PRICE_VND)} confirmed — your benefits are active immediately.`,
+        message: `Payment of ${formatVnd(PREMIUM_PRICE_VND)} confirmed — your benefits are active immediately.`,
       })
       await refresh()
       return

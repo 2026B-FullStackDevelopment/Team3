@@ -9,7 +9,7 @@ import {
   useReducedMotion,
   useTransform,
 } from "motion/react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils/cn.js";
 
 const HINGE = "3px 6px";
 const LID_OPEN = -35;

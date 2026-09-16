@@ -1,4 +1,4 @@
-import { httpClient } from '@/config/api/httpClient.js'
+import { httpClient } from '@/shared/api/apiFetch.js'
 import { adminRoutes } from '@/config/api/routes/index.js'
 
 /**
