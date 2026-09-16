@@ -1,7 +1,7 @@
-/**
- * Join conditional class names. Falsy values are dropped.
- * Keeps Tailwind class composition readable in *.styles.js maps and components.
- */
-export function cn(...classes) {
-  return classes.filter(Boolean).join(' ')
+import { clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+/** Join conditional class names and resolve conflicting Tailwind utilities. */
+export function cn(...inputs) {
+  return twMerge(clsx(inputs))
 }

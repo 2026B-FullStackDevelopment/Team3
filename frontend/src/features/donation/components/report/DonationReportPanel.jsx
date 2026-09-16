@@ -8,8 +8,8 @@ import {
   buildPresetRange,
   REPORT_PERIODS,
 } from "@/features/donation/models/reportUtils.js";
-import { CATEGORY_LABELS, UNIT_LABELS } from "@/lib/donation.js";
-import { formatDateTime, formatVnd } from "@/lib/formatters.js";
+import { CATEGORY_LABELS, UNIT_LABELS } from "@/features/donation/models/donation.js";
+import { formatDateTime, formatVnd } from "@/shared/utils/formatters.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
 /** Coordinates report URL filters, data loading, and report presentation. */

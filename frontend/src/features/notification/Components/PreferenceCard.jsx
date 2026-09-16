@@ -1,11 +1,11 @@
 import { Card } from "@/shared/components/Card.jsx";
 import { Badge } from "@/shared/components/Badge.jsx";
-import { formatVND } from "@/shared/utils/format.js";
+import { formatVnd } from "@/shared/utils/formatters.js";
 
 function priceLabel(min, max) {
   return min === 0
-    ? `Free – ${formatVND(max)}`
-    : `${formatVND(min)} – ${formatVND(max)}`;
+    ? `Free – ${formatVnd(max)}`
+    : `${formatVnd(min)} – ${formatVnd(max)}`;
 }
 
 /** One preference row: chips + edit + delete. `index` is 1-based for the title. */

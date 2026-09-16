@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, HandCoins } from "lucide-react";
 import { useDonationList } from "@/features/donation/hooks/donation.hooks.js";
-import { DonationStatus } from "@/lib/donation.js";
+import { DonationStatus } from "@/features/donation/models/donation.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 import {
   DonationFilters,

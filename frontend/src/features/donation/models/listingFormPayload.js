@@ -1,4 +1,4 @@
-import { MeasurementUnit } from "@/lib/donation.js";
+import { MeasurementUnit } from "@/features/donation/models/donation.js";
 
 /** Converts form values into the payload expected by the Donation API. */
 export function buildListingPayload(values) {

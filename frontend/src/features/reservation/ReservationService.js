@@ -1,4 +1,4 @@
-import { httpClient } from '@/config/api/httpClient.js';
+import { httpClient } from '@/shared/api/apiFetch.js';
 
 export async function createCheckoutSession(donationId, quantity) {
     return httpClient.post('/api/reservations/checkout', { donationId, quantity });

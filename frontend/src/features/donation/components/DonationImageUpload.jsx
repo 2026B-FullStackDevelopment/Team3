@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Image as ImageIcon, UploadCloud, X } from "lucide-react";
-import { validateDonationImage } from "@/lib/donation.js";
+import { validateDonationImage } from "@/features/donation/models/donation.js";
 
 export function DonationImageUpload({
   file,

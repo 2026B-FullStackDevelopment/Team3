@@ -37,7 +37,7 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'n
 const timeFormatter = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 
 /** "2026-08-05T14:32:00Z" -> "Aug 5, 2026 - 14:32". Local to this page --
- * shared/utils/format.js's formatShortDate has no year or time component. */
+ * shared/utils/formatters.js's formatShortDate has no year or time component. */
 function formatLogTimestamp(value) {
   if (!value) return '—'
   const date = new Date(value)

@@ -1,6 +1,6 @@
 import { useListings } from '@/features/admin/hooks/useListings.js'
 import { Pagination } from '@/shared/components/Pagination.jsx'
-import { formatShortDate, formatVND } from '@/shared/utils/format.js'
+import { formatShortDate, formatVnd } from '@/shared/utils/formatters.js'
 import { cn } from '@/shared/utils/cn.js'
 
 // Mirrors the backend's DonationStatus enum (donation/models/Donation.js) --
@@ -87,7 +87,7 @@ export function ListingModerationPage() {
                   <td className="px-4 py-3 text-ink">{listing.name}</td>
                   <td className="px-4 py-3 text-ink">{listing.foodCategory}</td>
                   <td className="px-4 py-3 text-ink">{listing.remainingQuantity}</td>
-                  <td className="px-4 py-3 text-ink">{listing.price ? formatVND(listing.price) : 'Free'}</td>
+                  <td className="px-4 py-3 text-ink">{listing.price ? formatVnd(listing.price) : 'Free'}</td>
                   <td className="px-4 py-3 text-ink">{formatShortDate(listing.createdAt)}</td>
                   <td className={cn('px-4 py-3 font-semibold', STATUS_STYLES[listing.status] ?? 'text-ink')}>
                     {listing.status}

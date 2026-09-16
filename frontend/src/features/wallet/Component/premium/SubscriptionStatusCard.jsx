@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Card } from '@/shared/components/Card.jsx'
 import { Badge } from '@/shared/components/Badge.jsx'
-import { formatShortDate } from '@/shared/utils/format.js'
+import { formatShortDate } from '@/shared/utils/formatters.js'
 import { PerkList } from '@/features/wallet/Component/premium/PerkList.jsx'
 
 /** Active-subscription status for a premium recipient. */

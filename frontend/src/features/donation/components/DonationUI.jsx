@@ -20,12 +20,9 @@ import {
   CATEGORY_LABELS,
   DonationStatus,
   STATUS_LABELS,
-} from "@/lib/donation.js";
-import {
-  formatDate,
-  formatQuantityWithUnit,
-  formatVnd,
-} from "@/lib/formatters.js";
+} from "@/features/donation/models/donation.js";
+import { formatDate, formatVnd } from "@/shared/utils/formatters.js";
+import { formatQuantityWithUnit } from "@/features/donation/utils/donationFormatters.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
 export function DonationPageHeader({ eyebrow, title, description, actions }) {

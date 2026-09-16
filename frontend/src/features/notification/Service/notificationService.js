@@ -1,4 +1,4 @@
-import { httpClient } from '@/config/api/httpClient.js'
+import { httpClient } from '@/shared/api/apiFetch.js'
 import { notificationRoutes } from '@/config/api/routes/index.js'
 
 export const notificationService = {

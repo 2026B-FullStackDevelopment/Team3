@@ -5,7 +5,7 @@ import { BalanceCard } from '@/features/wallet/Component/BalanceCard.jsx'
 import { DepositForm } from '@/features/wallet/Component/DepositForm.jsx'
 import { TransactionList } from '@/features/wallet/Component/TransactionList.jsx'
 import { ResultBanner } from '@/features/wallet/Component/ResultBanner.jsx'
-import { formatVND } from '@/shared/utils/format.js'
+import { formatVnd } from '@/shared/utils/formatters.js'
 
 /**
  * Recipient Wallet page (route: /wallet). Balance + deposit + transaction
@@ -35,7 +35,7 @@ export function WalletPage() {
               title={deposit.result.kind === 'success' ? 'Deposit successful' : "Deposit couldn't be processed"}
               message={
                 deposit.result.kind === 'success'
-                  ? `${formatVND(deposit.result.amount)} added to your wallet.`
+                  ? `${formatVnd(deposit.result.amount)} added to your wallet.`
                   : deposit.result.message
               }
               onDismiss={deposit.dismissResult}

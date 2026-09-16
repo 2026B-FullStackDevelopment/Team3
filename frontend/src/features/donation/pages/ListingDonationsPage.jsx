@@ -7,7 +7,7 @@ import {
 import { DonationPageHeader } from "@/features/donation/components/DonationUI.jsx";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 import { Pagination } from "@/shared/components/Pagination.jsx";
-import { formatDateTime, formatVnd } from "@/lib/formatters.js";
+import { formatDateTime, formatVnd } from "@/shared/utils/formatters.js";
 
 const PAGE_SIZE = 20;
 

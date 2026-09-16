@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '@/shared/components/Card.jsx'
 import { Button } from '@/shared/components/Button.jsx'
 import { Badge } from '@/shared/components/Badge.jsx'
-import { formatVND } from '@/shared/utils/format.js'
+import { formatVnd } from '@/shared/utils/formatters.js'
 import { PerkList } from '@/features/wallet/Component/premium/PerkList.jsx'
 
 /** The Premium offer for a non-premium recipient. */
@@ -28,18 +28,18 @@ export function PremiumPlanCard({
           <p className="font-heading text-3xl font-bold text-ink">
             $5<span className="text-base font-medium text-muted">/month</span>
           </p>
-          <p className="text-sm text-muted">{formatVND(priceVnd)} from your wallet</p>
+          <p className="text-sm text-muted">{formatVnd(priceVnd)} from your wallet</p>
           <p className="mt-2 text-sm text-muted">
-            Wallet balance: <span className="font-semibold text-ink">{formatVND(balance)}</span>
+            Wallet balance: <span className="font-semibold text-ink">{formatVnd(balance)}</span>
           </p>
           {canAfford ? (
             <Button size="lg" className="mt-4" loading={isSubmitting} onClick={onSubscribe}>
-              Confirm &amp; Pay {formatVND(priceVnd)}
+              Confirm &amp; Pay {formatVnd(priceVnd)}
             </Button>
           ) : (
             <div className="mt-4">
               <Button size="lg" disabled>
-                Confirm &amp; Pay {formatVND(priceVnd)}
+                Confirm &amp; Pay {formatVnd(priceVnd)}
               </Button>
               <p className="mt-2 text-sm text-danger">
                 Not enough balance.{' '}
