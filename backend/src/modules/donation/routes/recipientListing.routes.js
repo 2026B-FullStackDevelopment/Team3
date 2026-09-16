@@ -9,5 +9,13 @@ import {
 
 export const recipientListingRoutes = Router();
 
+recipientListingRoutes.use(
+  requireAuth,
+  requireRole(userRole.Recipient),
+);
+
 // GET /api/donations/active
-recipientListingRoutes.get("/active", requireAuth, getActiveDonations);
+recipientListingRoutes.get("/active", getActiveDonations);
+
+// GET /api/donations/active/:id
+recipientListingRoutes.get("/active/:id", getActiveDonation);

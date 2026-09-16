@@ -445,24 +445,24 @@ function distanceKm(origin, donor) {
 }
 
 export async function listActiveDonations(userId, filters = {}) {
-  const page = normalizePage(filters.page);
-  const limit = normalizeLimit(filters.limit);
+  const normalizedFilters = normalizeRecipientListingQuery(filters);
+  const { page, limit } = normalizedFilters;
   const recipient = await identity.getRecipientContext(userId);
 
   if (!recipient?.isPremium) {
-    return donationRepository.findActiveDonations({ ...filters, page, limit });
+    return donationRepository.findActiveDonations(normalizedFilters);
   }
 
   const preferences = await notification.getRecipientMatchingCriteria(
     recipient.recipientProfileId,
   );
   if (preferences.length === 0) {
-    return donationRepository.findActiveDonations({ ...filters, page, limit });
+    return donationRepository.findActiveDonations(normalizedFilters);
   }
 
   const coordinates = normalizeCoordinates(filters);
   const entries =
-    await donationRepository.findActiveDonationsForRanking(filters);
+    await donationRepository.findActiveDonationsForRanking(normalizedFilters);
   const donorProfileIds = [
     ...new Set(entries.map((entry) => String(entry.donorProfileId))),
   ];

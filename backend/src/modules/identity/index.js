@@ -16,6 +16,7 @@ import * as subscriptionService from "./services/subscription.service.js";
 import * as paymentsFacade from "../payments/index.js";
 import {
   toDonorLocationRefDTO,
+  toDonorMunicipalityRefDTO,
   toDonorProfileRefDTO,
   toPremiumRecipientRefDTO,
   toRecipientProfileRefDTO,
