@@ -38,6 +38,7 @@ function buildDonationQuery(filters = {}) {
     minRemainingQuantity,
     search,
     searchDonorProfileIds,
+    searchDonationId,
     createdFrom,
     createdTo,
     includeClosed = true,
@@ -95,16 +96,24 @@ function buildDonationQuery(filters = {}) {
     const searchRegex = new RegExp(escapeRegExp(String(search).trim()), "i");
     // searchDonorProfileIds (distinct from donorProfileIds above) signals
     // that these ids were resolved from the SAME search term as the name
-    // match -- the Admin module's combined "grocery name or account name"
-    // box (SRS 7.3.2). OR them instead of this function's usual AND
-    // composition, so a listing matches on either field. An empty array is
-    // still correct here: zero donor-name matches just falls back to
-    // name-only matching, unlike donorProfileIds above, which is only set
-    // when there ARE ids to filter by.
-    if (Array.isArray(searchDonorProfileIds)) {
+    // match -- the Admin module's combined "grocery name, Donor ID, or
+    // Donation ID" box (SRS 7.3.2). It also carries the raw search term
+    // itself (not just name-resolved ids), so a literal Donor ID typed into
+    // the box matches too. OR them instead of this function's usual AND
+    // composition, so a listing matches on any field. searchDonationId is
+    // the same OR treatment for an exact _id match. Both are only ever set
+    // by the admin module; every other caller (Recipient/Donor search) still
+    // falls back to plain name-only matching.
+    if (
+      Array.isArray(searchDonorProfileIds) ||
+      searchDonationId !== undefined
+    ) {
       query.$or = [
         { name: searchRegex },
-        { donorProfileId: { $in: searchDonorProfileIds } },
+        ...(Array.isArray(searchDonorProfileIds)
+          ? [{ donorProfileId: { $in: searchDonorProfileIds } }]
+          : []),
+        ...(searchDonationId !== undefined ? [{ _id: searchDonationId }] : []),
       ];
     } else {
       query.name = searchRegex;

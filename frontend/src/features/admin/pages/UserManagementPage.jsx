@@ -53,21 +53,21 @@ export function UserManagementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">User Management Dashboard</h1>
+      <h1 className="text-xl font-semibold text-ink sm:text-2xl">User Management Dashboard</h1>
       <p className="mt-1 text-muted">Manage platform users, roles, and account statuses.</p>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <input
           type="text"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search by Donor Name, Donor ID, or Donation ID..."
-          className="min-w-64 flex-1 rounded-card bg-surface px-4 py-2 text-ink placeholder:text-muted"
+          className="w-full rounded-card bg-surface px-4 py-2 text-ink placeholder:text-muted sm:min-w-64 sm:flex-1"
         />
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
-          className="rounded-card bg-surface px-4 py-2 text-ink"
+          className="w-full rounded-card bg-surface px-4 py-2 text-ink sm:w-auto"
         >
           {STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -78,7 +78,7 @@ export function UserManagementPage() {
         <select
           value={roleFilter}
           onChange={(event) => setRoleFilter(event.target.value)}
-          className="rounded-card bg-surface px-4 py-2 text-ink"
+          className="w-full rounded-card bg-surface px-4 py-2 text-ink sm:w-auto"
         >
           {ROLE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -89,15 +89,15 @@ export function UserManagementPage() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-card">
-        <table className="w-full text-left">
+        <table className="w-full text-left text-sm sm:text-base">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="px-4 py-3 font-semibold">Account ID</th>
-              <th className="px-4 py-3 font-semibold">Username</th>
-              <th className="px-4 py-3 font-semibold">Email</th>
-              <th className="px-4 py-3 font-semibold">Role</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Action</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Account ID</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Username</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Email</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Role</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Status</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -122,19 +122,19 @@ export function UserManagementPage() {
             ) : (
               accounts.map((account, index) => (
                 <tr key={account.id} className={index % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
-                  <td className="px-4 py-3 text-ink">{account.id}</td>
-                  <td className="px-4 py-3 text-ink">{account.username}</td>
-                  <td className="px-4 py-3 text-ink">{account.email}</td>
-                  <td className="px-4 py-3 text-ink">{account.role}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{account.id}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{account.username}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{account.email}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{account.role}</td>
                   <td
                     className={cn(
-                      'px-4 py-3 font-semibold',
+                      'px-3 py-2 sm:px-4 sm:py-3 font-semibold',
                       account.accountStatus === ACCOUNT_STATUS.ACTIVE ? 'text-primary' : 'text-danger',
                     )}
                   >
                     {STATUS_DISPLAY[account.accountStatus] ?? account.accountStatus}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
                     {account.accountStatus === ACCOUNT_STATUS.ACTIVE ? (
                       <button
                         type="button"

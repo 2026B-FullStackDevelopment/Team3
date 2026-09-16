@@ -455,6 +455,9 @@ export async function listActiveListingsForAdmin(filters = {}) {
   if (Array.isArray(filters.searchDonorProfileIds)) {
     normalizedFilters.searchDonorProfileIds = filters.searchDonorProfileIds;
   }
+  if (isNonEmptyString(filters.searchDonationId)) {
+    normalizedFilters.searchDonationId = filters.searchDonationId.trim();
+  }
 
   return donationRepository.findActiveDonations(normalizedFilters);
 }

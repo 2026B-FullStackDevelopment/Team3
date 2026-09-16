@@ -70,6 +70,53 @@ function isNonEmptyString(value) {
 }
 
 /**
+ * Adds a display name to each entry's target for the Audit Log's Target
+ * column. `previousState` is a required field on every entry (see
+ * createAuditLog below) and both action types that write one already
+ * snapshot the full target state at the time of the action --
+ * deactivateUserAccount/reactivateUserAccount store the account summary
+ * (identity.getAccountById), cancelDonation stores the donation summary
+ * (donation.readDonationById) -- so a "User" target's username is already
+ * sitting right there in previousState, no extra lookup needed. A
+ * "Donation" target's previousState only has donorProfileId (not the
+ * donor's company name), so that one join -- the same one
+ * listAllFoodListings already does for Listing Moderation -- is still
+ * required.
+ */
+async function withTargetNames(entries) {
+  const donorProfileIds = [
+    ...new Set(
+      entries
+        .filter((entry) => entry.targetType === AuditTargetType.Donation)
+        .map((entry) => entry.previousState?.donorProfileId)
+        .filter(Boolean),
+    ),
+  ];
+  const donorProfiles =
+    donorProfileIds.length > 0
+      ? await identity.getDonorProfilesByIds(donorProfileIds)
+      : [];
+  const donorNameByProfileId = new Map(
+    donorProfiles.map((profile) => [profile._id, profile.companyName]),
+  );
+
+  return entries.map((entry) => {
+    if (entry.targetType === AuditTargetType.User) {
+      return { ...entry, targetName: entry.previousState?.username ?? null };
+    }
+    if (entry.targetType === AuditTargetType.Donation) {
+      return {
+        ...entry,
+        targetName:
+          donorNameByProfileId.get(entry.previousState?.donorProfileId) ??
+          null,
+      };
+    }
+    return entry;
+  });
+}
+
+/**
  * Validates and persists a new audit log entry. Only checks shape (required
  * fields present, enums valid) -- it does NOT verify adminId/targetId refer
  * to real records. That verification already happened one step earlier,
@@ -278,7 +325,9 @@ export async function listAuditLogs(filters = {}) {
   });
 
   return {
-    entries: await withAdminEmails(entries.map(toAuditLogDTO)),
+    entries: await withTargetNames(
+      await withAdminEmails(entries.map(toAuditLogDTO)),
+    ),
     total,
     page: normalizedPage,
     limit: normalizedLimit,
@@ -597,13 +646,24 @@ export async function reactivateUserAccount(adminId, userId) {
  * matches zero donors does NOT short-circuit to empty results here -- the
  * listing-name half of the OR might still match, so donation.
  * listActiveListingsForAdmin always runs.
+ *
+ * The same box also has to match a literal Donor ID or Donation ID (SRS
+ * 7.3.2), not just a name. Donor/Donation ids are opaque uuid strings, not
+ * derivable from a name lookup, so the raw search term itself is passed
+ * through as an extra Donor ID candidate (alongside the name-matched ids)
+ * and as the Donation ID candidate -- an id that doesn't match anything
+ * real just contributes no results, same as a name that doesn't match.
  */
 export async function listAllFoodListings(filters = {}) {
   const { search, donorProfileId, donationId, page, limit } = filters;
 
   let searchDonorProfileIds;
+  let searchDonationId;
   if (isNonEmptyString(search)) {
+    const trimmedSearch = search.trim();
     searchDonorProfileIds = await identity.findDonorProfileIdsByName(search);
+    searchDonorProfileIds.push(trimmedSearch);
+    searchDonationId = trimmedSearch;
   }
 
   const {
@@ -618,6 +678,7 @@ export async function listAllFoodListings(filters = {}) {
     donorProfileId,
     search,
     searchDonorProfileIds,
+    searchDonationId,
   });
 
   const uniqueDonorProfileIds = [
