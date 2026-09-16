@@ -51,7 +51,7 @@ async function findProfileForUser(user, options = {}) {
  * itself be Recipient or Donor.
  */
 export async function listAccounts(filters = {}) {
-  const { role, page, limit } = filters;
+  const { role, status, page, limit } = filters;
 
   let roles = LISTABLE_ROLES;
   if (role !== undefined) {
@@ -61,11 +61,22 @@ export async function listAccounts(filters = {}) {
     roles = [role];
   }
 
+  let accountStatus;
+  if (status !== undefined) {
+    if (!Object.values(AccountStatus).includes(status)) {
+      throw new ValidationError(
+        `status must be one of: ${Object.values(AccountStatus).join(", ")}`,
+      );
+    }
+    accountStatus = status;
+  }
+
   const normalizedPage = normalizePage(page);
   const normalizedLimit = normalizeLimit(limit);
 
   const { entries, total } = await userRepository.findAll({
     roles,
+    accountStatus,
     page: normalizedPage,
     limit: normalizedLimit,
   });

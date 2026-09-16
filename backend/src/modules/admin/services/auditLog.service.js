@@ -340,14 +340,17 @@ export async function listAuditLogs(filters = {}) {
  * passed) before anything else, since that check is real regardless of
  * what undo eventually does.
  *
- * DeactivateUser and ReactivateUser are genuinely invertible -- undoing one
- * is just calling the identity facade's opposite method -- so those revert
- * for real here, inside a transaction with the AuditLog status flip, so a
- * failed revert never gets recorded as a successful undo. CancelDonation
- * never actually cancels anything at action time either -- cancelDonation()
- * below only puts the listing in PendingCancellation limbo -- so its undo is
- * just as symmetric: donation.reinstateDonation flips it back to Active. The
- * real cancellation (and its reservation cascade) only happens later, in
+ * DeactivateUser/ReactivateUser now always log straight to Finalized (see
+ * the note above deactivateUserAccount below), so in practice they can
+ * never reach here Pending -- the entry.status check above already rejects
+ * them with a ConflictError before this switch is ever reached. Their
+ * branches stay in for two reasons: they're genuinely correct if an older
+ * Pending entry from before that change still exists (undoing one really is
+ * just calling the identity facade's opposite method), and CancelDonation
+ * still needs exactly this shape -- cancelDonation() below only puts the
+ * listing in PendingCancellation limbo, so its undo is just as symmetric:
+ * donation.reinstateDonation flips it back to Active. The real cancellation
+ * (and its reservation cascade) only happens later, in
  * finalizeExpiredEntries, if undo never runs. The `else` branch here is a
  * defensive guard for any future action added without an undo path, not a
  * real code path today.
@@ -535,9 +538,18 @@ export async function finalizeExpiredEntries() {
 // --- SRS 7.1.1, 7.2.1, 7.2.2 ------------------------------------------------
 // The three admin actions below all go through the same shape: read the
 // target's current state through its module's facade (for previousState),
-// perform the mutation through that same facade, then log it here with an
-// undo window. Listing accounts is a read, not an action, so it skips the
-// audit log entirely.
+// perform the mutation through that same facade, then log it here. Listing
+// accounts is a read, not an action, so it skips the audit log entirely.
+//
+// Only cancelDonation logs with an undo window (Pending + undoDeadline): a
+// cancelled listing needs one because finalizing it is a separate, later
+// step (the reservation cascade + notification) that a Pending window lets
+// an admin head off. Deactivate/reactivate take full effect immediately --
+// there's no later step to head off, and simply deactivating again is
+// already a one-click reversal -- so those two log straight to Finalized,
+// with no Pending phase and no undoDeadline for the audit-log sweep to
+// chase. This is a design choice specific to this team's own Audit Log
+// feature (SRS §8), not something the base SRS requirements dictate.
 
 function computeUndoDeadline() {
   return new Date(Date.now() + env.admin.undoWindowMs);
@@ -558,7 +570,8 @@ export async function listAccounts(filters = {}) {
  * The read of the pre-change state, the mutation, and the audit-log write
  * all run inside one Mongo transaction: if createAuditLog fails, the whole
  * thing rolls back instead of leaving a real change with no audit record
- * (and no undo deadline) behind it.
+ * behind it. Logged straight to Finalized -- no undo window, see the note
+ * above this section.
  */
 export async function deactivateUserAccount(adminId, userId) {
   if (!isNonEmptyString(adminId)) {
@@ -582,7 +595,7 @@ export async function deactivateUserAccount(adminId, userId) {
           targetType: AuditTargetType.User,
           targetId: userId,
           previousState: before,
-          undoDeadline: computeUndoDeadline(),
+          status: AuditLogStatus.Finalized,
         },
         { session },
       );
@@ -595,7 +608,8 @@ export async function deactivateUserAccount(adminId, userId) {
 
 /**
  * Reactivates a previously deactivated Recipient or Donor account and logs
- * it (SRS 7.2.1). Same single-transaction shape as deactivateUserAccount.
+ * it (SRS 7.2.1). Same single-transaction shape as deactivateUserAccount,
+ * including logging straight to Finalized.
  */
 export async function reactivateUserAccount(adminId, userId) {
   if (!isNonEmptyString(adminId)) {
@@ -619,7 +633,7 @@ export async function reactivateUserAccount(adminId, userId) {
           targetType: AuditTargetType.User,
           targetId: userId,
           previousState: before,
-          undoDeadline: computeUndoDeadline(),
+          status: AuditLogStatus.Finalized,
         },
         { session },
       );

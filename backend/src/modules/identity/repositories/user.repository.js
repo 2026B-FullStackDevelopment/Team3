@@ -131,10 +131,13 @@ export async function resetLockout(id) {
  * countDocuments() concurrently via Promise.all, same as
  * donorListing.repository.findAll / auditLog.repository.findAll.
  */
-export async function findAll({ roles, page = 1, limit = 20 } = {}) {
+export async function findAll({ roles, accountStatus, page = 1, limit = 20 } = {}) {
   const query = {};
   if (Array.isArray(roles) && roles.length > 0) {
     query.role = { $in: roles };
+  }
+  if (accountStatus !== undefined) {
+    query.accountStatus = accountStatus;
   }
 
   const skip = (page - 1) * limit;
