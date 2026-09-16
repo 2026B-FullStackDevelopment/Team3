@@ -130,6 +130,24 @@
   font-weight: 600;
 }
 
+.vegetarian-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+  border-radius: 9999px;
+  background-color: var(--color-surface);
+  color: var(--color-muted);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vegetarian-badge.is-vegetarian {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
 .card-content {
   padding: 1.5rem;
   display: flex;
@@ -146,6 +164,16 @@
   color: var(--color-muted);
   font-size: 0.875rem;
   margin-bottom: 1rem;
+}
+
+.listing-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
 }
 
 .card-footer {
@@ -245,6 +273,23 @@
   margin: 1rem 0 1.5rem 0;
   font-style: italic;
   outline: none;
+}
+
+.reservation-policy-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid #d97706;
+  border-radius: 0.75rem;
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.reservation-policy-warning ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
 }
 
 /* --- Quantity Selector --- */

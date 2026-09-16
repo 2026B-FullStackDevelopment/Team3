@@ -44,9 +44,7 @@ export async function processReservation(
       throw new Error("Quantity must be a positive number.");
     }
     if (donation.ration > 0 && quantity > donation.ration) {
-      throw new Error(
-        `You cannot reserve more than the allowed ration of ${donation.ration}.`,
-      );
+      throw new Error("Requested quantity exceeds ration limit.");
     }
 
     // Prevent Duplicate Reservations
@@ -170,7 +168,7 @@ export async function createReservationCheckout(
     throw new Error("Quantity must be a positive number.");
   }
   if (donation.ration > 0 && quantity > donation.ration) {
-    throw new Error(`You cannot reserve more than the allowed ration of ${donation.ration}.`);
+    throw new Error("Requested quantity exceeds ration limit.");
   }
   if (quantity > donation.remainingQuantity) {
     throw new Error("Insufficient stock.");

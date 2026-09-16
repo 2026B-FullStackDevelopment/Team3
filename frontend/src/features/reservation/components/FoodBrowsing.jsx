@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatDateTime } from '@/shared/utils/formatters.js';
 
 export default function FoodBrowsing({ listings, isLoading, error, onSelectItem }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,16 +42,28 @@ export default function FoodBrowsing({ listings, isLoading, error, onSelectItem 
       {/* Food Grid */}
       <div className="food-grid">
         {filteredListings.length > 0 ? (
-          filteredListings.map((item) => (
+          filteredListings.map((item) => {
+            const allowsOnlineReservation =
+              item.reservationPolicy?.allowsOnlineReservation ??
+              item.measurementUnit !== 'PerRequest';
+
+            return (
             <div key={item._id || item.id} className="food-card">
               <div className="card-image-container">
                 <span className="category-badge">{item.foodCategory}</span>
+                <span className={`vegetarian-badge ${item.isVegetarian ? 'is-vegetarian' : ''}`}>
+                  {item.isVegetarian ? 'Vegetarian' : 'Non-vegetarian'}
+                </span>
                 <img src={item.imageUrl} alt={item.name} className="food-image" />
               </div>
               
               <div className="card-content">
                 <h3>{item.name}</h3>
-                <p className="donor-name">{item.donorName || 'Local Farm'}</p>
+                <p className="donor-name">{item.donorName || 'Local Donor'}</p>
+                <div className="listing-meta">
+                  <span>{item.donorMunicipality || 'Municipality unavailable'}</span>
+                  <span>Posted {formatDateTime(item.createdAt)}</span>
+                </div>
                 
                 <div className="card-footer">
                   <span className="stock-info">{item.remainingQuantity} {item.measurementUnit} left</span>
@@ -63,11 +76,12 @@ export default function FoodBrowsing({ listings, isLoading, error, onSelectItem 
                   className="btn-reserve"
                   onClick={() => onSelectItem(item)}
                 >
-                  View and Reserve
+                  {allowsOnlineReservation ? 'View and Reserve' : 'View Details'}
                 </button>
               </div>
             </div>
-          ))
+            );
+          })
         ) : (
           <div className="no-results">No food listings match your search.</div>
         )}
