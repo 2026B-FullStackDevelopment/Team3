@@ -184,8 +184,10 @@ export function AuditLogPage() {
                       </>
                     ) : entry.status === 'Undone' ? (
                       <span className="text-blue-600">Already Undone</span>
-                    ) : (
+                    ) : entry.undoDeadline ? (
                       <span className="text-muted">Expired</span>
+                    ) : (
+                      <span className="text-muted">—</span>
                     )}
                   </td>
                 </tr>

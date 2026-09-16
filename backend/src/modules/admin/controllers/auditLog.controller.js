@@ -38,7 +38,7 @@ export async function undoAuditLogAction(req, res) {
 
 /**
  * GET /api/admin/accounts
- * Query: role, page, limit
+ * Query: role, status, page, limit
  */
 export async function listAccounts(req, res) {
   const result = await auditLogService.listAccounts(req.query);
