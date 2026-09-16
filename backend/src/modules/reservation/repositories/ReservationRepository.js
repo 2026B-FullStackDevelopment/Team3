@@ -51,6 +51,28 @@ export async function findByDonationId(donationId, options = {}) {
   return { entries, total, page, limit };
 }
 
+/** Atomically confirm that one reserved donation was collected. */
+export async function markReservedAsCollected(
+  donationId,
+  reservationId,
+  collectedAt,
+) {
+  return await Reservation.findOneAndUpdate(
+    {
+      _id: reservationId,
+      donationId,
+      status: ReservationStatus.Reserved,
+    },
+    {
+      $set: {
+        status: ReservationStatus.Collected,
+        collectedAt,
+      },
+    },
+    { new: true },
+  ).populate("recipientProfileId", "userName username");
+}
+
 export function aggregateCollectedByDonationIds(donationIds, options = {}) {
   if (donationIds.length === 0) return Promise.resolve([]);
 

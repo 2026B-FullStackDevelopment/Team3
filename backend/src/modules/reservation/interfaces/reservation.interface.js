@@ -56,6 +56,7 @@ function toDonationListingReservationDTO(reservation) {
 
   return {
     id: getReservationId(reservation),
+    donationId: reservation.donationId,
     recipientUsername:
       recipient?.userName ??
       recipient?.username ??
@@ -124,10 +125,16 @@ export async function listReservationsByDonation(donationId, options = {}) {
   };
 }
 
-export function cancelActiveReservationsByDonation(
-  donationId,
-  options = {},
-) {
+export async function markReservationCollected(donationId, reservationId) {
+  const updated = await donationSupportService.markReservationCollected(
+    requireDonationId(donationId),
+    requireReservationId(reservationId),
+  );
+
+  return toDonationListingReservationDTO(updated);
+}
+
+export function cancelActiveReservationsByDonation(donationId, options = {}) {
   return donationSupportService.cancelActiveReservationsByDonation(
     requireDonationId(donationId),
     options,
@@ -183,7 +190,11 @@ export async function summarizeCollectedReservationsByDonation(
  * elsewhere in this file. reservationId is a raw URL param, so that's the
  * one arg actually validated at this boundary.
  */
-export async function submitFeedback(reservationId, recipientProfileId, feedback) {
+export async function submitFeedback(
+  reservationId,
+  recipientProfileId,
+  feedback,
+) {
   const updated = await reservationRepository.submitFeedback(
     requireReservationId(reservationId),
     recipientProfileId,
