@@ -597,13 +597,24 @@ export async function reactivateUserAccount(adminId, userId) {
  * matches zero donors does NOT short-circuit to empty results here -- the
  * listing-name half of the OR might still match, so donation.
  * listActiveListingsForAdmin always runs.
+ *
+ * The same box also has to match a literal Donor ID or Donation ID (SRS
+ * 7.3.2), not just a name. Donor/Donation ids are opaque uuid strings, not
+ * derivable from a name lookup, so the raw search term itself is passed
+ * through as an extra Donor ID candidate (alongside the name-matched ids)
+ * and as the Donation ID candidate -- an id that doesn't match anything
+ * real just contributes no results, same as a name that doesn't match.
  */
 export async function listAllFoodListings(filters = {}) {
   const { search, donorProfileId, donationId, page, limit } = filters;
 
   let searchDonorProfileIds;
+  let searchDonationId;
   if (isNonEmptyString(search)) {
+    const trimmedSearch = search.trim();
     searchDonorProfileIds = await identity.findDonorProfileIdsByName(search);
+    searchDonorProfileIds.push(trimmedSearch);
+    searchDonationId = trimmedSearch;
   }
 
   const {
@@ -618,6 +629,7 @@ export async function listAllFoodListings(filters = {}) {
     donorProfileId,
     search,
     searchDonorProfileIds,
+    searchDonationId,
   });
 
   const uniqueDonorProfileIds = [

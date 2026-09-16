@@ -70,21 +70,21 @@ export function AuditLogPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Audit Log</h1>
+      <h1 className="text-xl font-semibold text-ink sm:text-2xl">Audit Log</h1>
       <p className="mt-1 text-muted">Review admin activity and undo recent actions within the allowed time window.</p>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <input
           type="text"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search by Admin Username, Target ID, or Action Type..."
-          className="min-w-64 flex-1 rounded-card bg-surface px-4 py-2 text-ink placeholder:text-muted"
+          className="w-full rounded-card bg-surface px-4 py-2 text-ink placeholder:text-muted sm:min-w-64 sm:flex-1"
         />
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
-          className="rounded-card bg-surface px-4 py-2 text-ink"
+          className="w-full rounded-card bg-surface px-4 py-2 text-ink sm:w-auto"
         >
           {STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -95,7 +95,7 @@ export function AuditLogPage() {
         <select
           value={actionTypeFilter}
           onChange={(event) => setActionTypeFilter(event.target.value)}
-          className="rounded-card bg-surface px-4 py-2 text-ink"
+          className="w-full rounded-card bg-surface px-4 py-2 text-ink sm:w-auto"
         >
           {ACTION_TYPE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -106,16 +106,16 @@ export function AuditLogPage() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-card">
-        <table className="w-full text-left">
+        <table className="w-full text-left text-sm sm:text-base">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="px-4 py-3 font-semibold">Log ID</th>
-              <th className="px-4 py-3 font-semibold">Admin</th>
-              <th className="px-4 py-3 font-semibold">Action</th>
-              <th className="px-4 py-3 font-semibold">Target</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Timestamp</th>
-              <th className="px-4 py-3 font-semibold">Undo</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Log ID</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Admin</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Action</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Target</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Status</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Timestamp</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Undo</th>
             </tr>
           </thead>
           <tbody>
@@ -140,20 +140,20 @@ export function AuditLogPage() {
             ) : (
               entries.map((entry, index) => (
                 <tr key={entry.id} className={index % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
-                  <td className="px-4 py-3 text-ink">{entry.id}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{entry.id}</td>
                   {/* Admin has no username field at all (only email) -- see
                       SESSION_NOTES.md for why this joins to email, not a
                       fabricated display name. */}
-                  <td className="px-4 py-3 text-ink">{entry.adminEmail ?? entry.adminId}</td>
-                  <td className="px-4 py-3 text-ink">{ACTION_TYPE_OPTIONS.find((o) => o.value === entry.action)?.label ?? entry.action}</td>
-                  <td className="px-4 py-3 text-ink">
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{entry.adminEmail ?? entry.adminId}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{ACTION_TYPE_OPTIONS.find((o) => o.value === entry.action)?.label ?? entry.action}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">
                     {entry.targetType}: {entry.targetId}
                   </td>
-                  <td className={cn('px-4 py-3 font-semibold', STATUS_STYLES[entry.status] ?? 'text-ink')}>
+                  <td className={cn('px-3 py-2 sm:px-4 sm:py-3 font-semibold', STATUS_STYLES[entry.status] ?? 'text-ink')}>
                     {STATUS_DISPLAY[entry.status] ?? entry.status}
                   </td>
-                  <td className="px-4 py-3 text-ink">{formatLogTimestamp(entry.createdAt)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{formatLogTimestamp(entry.createdAt)}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
                     {entry.status === 'Pending' ? (
                       <>
                         <button

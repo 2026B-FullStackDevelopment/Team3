@@ -32,7 +32,7 @@ export function ListingModerationPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Listing Moderation Dashboard</h1>
+      <h1 className="text-xl font-semibold text-ink sm:text-2xl">Listing Moderation Dashboard</h1>
       <p className="mt-1 text-muted">Review and manage food listings posted by donors.</p>
 
       <div className="mt-6">
@@ -46,18 +46,18 @@ export function ListingModerationPage() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-card">
-        <table className="w-full text-left">
+        <table className="w-full text-left text-sm sm:text-base">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="px-4 py-3 font-semibold">Listing ID</th>
-              <th className="px-4 py-3 font-semibold">Donor</th>
-              <th className="px-4 py-3 font-semibold">Food Name</th>
-              <th className="px-4 py-3 font-semibold">Category</th>
-              <th className="px-4 py-3 font-semibold">Qty</th>
-              <th className="px-4 py-3 font-semibold">Price</th>
-              <th className="px-4 py-3 font-semibold">Posted</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Action</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Listing ID</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Donor</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Food Name</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Category</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Qty</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Price</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Posted</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Status</th>
+              <th className="px-3 py-2 sm:px-4 sm:py-3 font-semibold">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -82,17 +82,17 @@ export function ListingModerationPage() {
             ) : (
               listings.map((listing, index) => (
                 <tr key={listing.id} className={index % 2 === 0 ? 'bg-surface' : 'bg-cream'}>
-                  <td className="px-4 py-3 text-ink">{listing.id}</td>
-                  <td className="px-4 py-3 text-ink">{listing.donorName ?? '—'}</td>
-                  <td className="px-4 py-3 text-ink">{listing.name}</td>
-                  <td className="px-4 py-3 text-ink">{listing.foodCategory}</td>
-                  <td className="px-4 py-3 text-ink">{listing.remainingQuantity}</td>
-                  <td className="px-4 py-3 text-ink">{listing.price ? formatVnd(listing.price) : 'Free'}</td>
-                  <td className="px-4 py-3 text-ink">{formatShortDate(listing.createdAt)}</td>
-                  <td className={cn('px-4 py-3 font-semibold', STATUS_STYLES[listing.status] ?? 'text-ink')}>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{listing.id}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{listing.donorName ?? '—'}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{listing.name}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{listing.foodCategory}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{listing.remainingQuantity}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{listing.price ? formatVnd(listing.price) : 'Free'}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3 text-ink">{formatShortDate(listing.createdAt)}</td>
+                  <td className={cn('px-3 py-2 sm:px-4 sm:py-3 font-semibold', STATUS_STYLES[listing.status] ?? 'text-ink')}>
                     {listing.status}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
                     {listing.status !== 'Cancelled' && (
                       <button
                         type="button"
