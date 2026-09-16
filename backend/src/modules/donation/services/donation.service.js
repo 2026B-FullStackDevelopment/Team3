@@ -442,6 +442,11 @@ function matchesPreference(listing, donor, preference) {
   );
 }
 
+function isSameMunicipality(left, right) {
+  if (!left || !right) return false;
+  return left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0;
+}
+
 function distanceKm(origin, donor) {
   const [longitude, latitude] = donor?.location?.coordinates ?? [];
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
@@ -526,11 +531,18 @@ export async function listActiveDonations(userId, filters = {}) {
       entry,
       stableIndex,
       isMatch,
+      isRecipientCity: isSameMunicipality(donor?.city, recipient.city),
       distance:
         isMatch && coordinates ? distanceKm(coordinates, donor) : Infinity,
     };
   });
   ranked.sort((left, right) => {
+    if (
+      !coordinates &&
+      left.isRecipientCity !== right.isRecipientCity
+    ) {
+      return left.isRecipientCity ? -1 : 1;
+    }
     if (left.isMatch !== right.isMatch) return left.isMatch ? -1 : 1;
     if (left.distance !== right.distance) return left.distance - right.distance;
     return left.stableIndex - right.stableIndex;
