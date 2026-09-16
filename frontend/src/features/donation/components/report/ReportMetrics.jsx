@@ -1,5 +1,5 @@
 import { CalendarDays, HandCoins, PackageOpen } from "lucide-react";
-import { formatVnd } from "@/lib/formatters.js";
+import { formatVnd } from "@/shared/utils/formatters.js";
 
 /** Displays one headline value in the report summary. */
 function StatisticCard({ icon, label, value }) {

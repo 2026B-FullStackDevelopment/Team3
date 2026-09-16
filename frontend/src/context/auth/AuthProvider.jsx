@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from '@/context/auth/context.js'
 import { authService } from '@/features/identity/Service/authService.js'
 import { formatAuthUser } from '@/features/identity/Model/authModel.js'
-import { onUnauthorized } from '@/config/api/httpClient.js'
+import { onUnauthorized } from '@/shared/api/apiFetch.js'
 
 /**
  * Holds the authenticated session. Hydrates from GET /api/auth/me on mount

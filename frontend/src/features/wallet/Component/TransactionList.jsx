@@ -1,5 +1,5 @@
 import { Card } from '@/shared/components/Card.jsx'
-import { formatVND, formatShortDate } from '@/shared/utils/format.js'
+import { formatShortDate, formatVnd } from '@/shared/utils/formatters.js'
 
 function EmptyState() {
   return (
@@ -45,7 +45,7 @@ export function TransactionList({ transactions }) {
                 <td className="py-3 text-ink">{tx.label}</td>
                 <td className={`py-3 font-semibold ${tx.incoming ? 'text-primary' : 'text-ink'}`}>
                   {tx.incoming ? '+' : '−'}
-                  {formatVND(tx.amount)}
+                  {formatVnd(tx.amount)}
                 </td>
               </tr>
             ))}

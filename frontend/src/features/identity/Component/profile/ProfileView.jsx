@@ -1,7 +1,7 @@
 import { Card } from '@/shared/components/Card.jsx'
 import { Button } from '@/shared/components/Button.jsx'
 import { Badge } from '@/shared/components/Badge.jsx'
-import { formatShortDate } from '@/shared/utils/format.js'
+import { formatShortDate } from '@/shared/utils/formatters.js'
 import { ProfileHeader } from '@/features/identity/Component/profile/ProfileHeader.jsx'
 import { ContactInfoList } from '@/features/identity/Component/profile/ContactInfoList.jsx'
 import { SubscriptionCard } from '@/features/identity/Component/profile/SubscriptionCard.jsx'

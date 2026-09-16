@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/Button.jsx'
 import { FormField } from '@/shared/components/FormField.jsx'
 import { Input } from '@/shared/components/Input.jsx'
 import { Select } from '@/shared/components/Select.jsx'
-import { formatVND } from '@/shared/utils/format.js'
+import { formatVnd } from '@/shared/utils/formatters.js'
 import { cn } from '@/shared/utils/cn.js'
 
 const METHOD_OPTIONS = [{ value: 'wallet', label: 'Local wallet top-up (simulated)' }]
@@ -25,7 +25,7 @@ export function DepositForm({
 
   let label = 'Deposit funds'
   if (result?.kind === 'error') label = 'Try again'
-  else if (amountValid) label = `Deposit ${formatVND(amountNum)}`
+  else if (amountValid) label = `Deposit ${formatVnd(amountNum)}`
 
   return (
     <Card>
@@ -57,7 +57,7 @@ export function DepositForm({
                     : 'border-khaki-strong bg-surface text-ink hover:bg-khaki',
                 )}
               >
-                {formatVND(value)}
+                {formatVnd(value)}
               </button>
             )
           })}

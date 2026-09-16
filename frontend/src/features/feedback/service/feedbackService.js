@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api/apiFetch.js'
+import { apiFetch } from '@/shared/api/apiFetch.js'
 import { feedbackRoutes } from '@/config/api/routes/index.js'
 
 export const feedbackService = {

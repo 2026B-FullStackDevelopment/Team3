@@ -6,7 +6,7 @@ import {
   CATEGORY_LABELS,
   MeasurementUnit,
   UNIT_LABELS,
-} from "@/lib/donation.js";
+} from "@/features/donation/models/donation.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 import { DonationImageUpload } from "@/features/donation/components/DonationImageUpload.jsx";
 import {

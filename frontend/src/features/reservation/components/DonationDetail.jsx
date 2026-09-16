@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function DonationDetail({ item, onClose, onProceed }) {
   const limit = item.ration > 0 

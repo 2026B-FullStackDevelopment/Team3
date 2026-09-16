@@ -1,5 +1,5 @@
 import { Eye } from 'lucide-react'
-import { cn } from '@/lib/utils.js'
+import { cn } from '@/shared/utils/cn.js'
 
 export function PreviewDataBadge({ className }) {
   return (

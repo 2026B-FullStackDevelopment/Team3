@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Info, LoaderCircle, TriangleAlert } from 'lucide-react'
-import { cn } from '@/lib/utils.js'
+import { cn } from '@/shared/utils/cn.js'
 
 const variants = {
   info: { icon: Info, className: 'border-aff-border bg-aff-panel text-aff-text' },
