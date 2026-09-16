@@ -9,8 +9,9 @@ function getDonationId(donation) {
 }
 
 function buildReservationPolicy(donation) {
-  const allowsOnlineReservation =
-    allowsOnlineReservationForMeasurementUnit(donation?.measurementUnit);
+  const allowsOnlineReservation = allowsOnlineReservationForMeasurementUnit(
+    donation?.measurementUnit,
+  );
 
   return {
     allowsOnlineReservation,
@@ -54,6 +55,7 @@ export function toRecipientListingDTO(donation) {
     foodCategory: donation.foodCategory,
     isVegetarian: donation.isVegetarian,
     remainingQuantity: donation.remainingQuantity,
+    ration: donation.ration,
     measurementUnit: donation.measurementUnit,
     price: donation.price,
     donorMunicipality: donation.donorMunicipality ?? null,

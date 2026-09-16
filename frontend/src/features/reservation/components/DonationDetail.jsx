@@ -1,9 +1,12 @@
 import { useState } from 'react';
 
 export default function DonationDetail({ item, onClose, onProceed }) {
-  const limit = item.ration > 0 
-    ? Math.min(item.ration, item.remainingQuantity) 
-    : item.remainingQuantity;
+  const remainingQuantity = Number(item.remainingQuantity ?? 0);
+  const ration = Number(item.ration ?? 0);
+  const hasRation = ration > 0;
+  const limit = hasRation > 0 
+    ? Math.min(ration, remainingQuantity) 
+    : remainingQuantity;
 
   const isIncremental = item.measurementUnit?.toLowerCase() === 'unit';
 
@@ -66,7 +69,9 @@ export default function DonationDetail({ item, onClose, onProceed }) {
             <input 
               type="text" 
               readOnly 
-              value={`Limit ${limit} ${item.measurementUnit} per person`} 
+              value={hasRation
+                    ? `Limit ${limit} ${item.measurementUnit} per person`
+                    : `Up to ${limit} ${item.measurementUnit} available`} 
               className="limit-display"
             />
           </div>
