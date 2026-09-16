@@ -18,6 +18,15 @@ export function toDonorProfileRefDTO(profile) {
   };
 }
 
+/** DonorProfile -> public location data required by recipient food browsing. */
+export function toDonorMunicipalityRefDTO(profile) {
+  if (!profile) return null;
+  return {
+    donorProfileId: String(profile._id),
+    municipality: profile.city ?? null,
+  };
+}
+
 /** RecipientProfile -> { _id, userId } | null */
 export function toRecipientProfileRefDTO(profile) {
   if (!profile) return null;

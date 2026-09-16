@@ -3,6 +3,7 @@ import * as userRepository from "../repositories/user.repository.js";
 import * as donorProfileRepository from "../repositories/donorProfile.repository.js";
 import * as recipientProfileRepository from "../repositories/recipientProfile.repository.js";
 import { toAccountSummaryDTO } from "../dtos/accountSummary.dto.js";
+import { validateCity } from "../helpers/auth.helper.js";
 import {
   ConflictError,
   ForbiddenError,
@@ -149,6 +150,25 @@ export async function reactivateAccount(userId, options = {}) {
  */
 export async function getDonorProfilesByIds(donorProfileIds, options = {}) {
   return donorProfileRepository.findByIds(donorProfileIds, options);
+}
+
+/** Resolves the current municipality for public recipient listing cards. */
+export async function getDonorMunicipalitiesByIds(
+  donorProfileIds,
+  options = {},
+) {
+  return donorProfileRepository.findByIds(donorProfileIds, options);
+}
+
+/** Finds donors in an exact supported Vietnamese municipality. */
+export async function findDonorProfileIdsByMunicipality(
+  municipality,
+  options = {},
+) {
+  return donorProfileRepository.findIdsByCity(
+    validateCity(municipality),
+    options,
+  );
 }
 
 /** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */

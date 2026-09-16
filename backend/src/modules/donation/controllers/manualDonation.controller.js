@@ -1,4 +1,5 @@
 import * as manualDonationService from "../services/manualDonation.service.js";
+import { toManualDonationResponseDTO } from "../dtos/donation.dto.js";
 
 function getDonorProfileId(req) {
   return req.user?.donorProfileId;
@@ -20,7 +21,7 @@ export async function createManualDonation(req, res, next) {
       req.params.id,
       req.body,
     );
-    return res.status(201).json(result);
+    return res.status(201).json(toManualDonationResponseDTO(result));
   } catch (error) {
     return next(error);
   }

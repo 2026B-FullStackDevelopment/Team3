@@ -1,5 +1,6 @@
 import * as donationRepository from "../repositories/donation.repo.js";
 import * as reservation from "../../reservation/interfaces/reservation.interface.js";
+import * as identity from "../../identity/index.js";
 import {
   MeasurementUnit,
   DonationStatus,
@@ -19,7 +20,8 @@ const MAX_LIMIT = 100;
 const VALID_MEASUREMENT_UNIT = Object.values(MeasurementUnit);
 const VALID_STATUSES = Object.values(DonationStatus);
 const VALID_FOOD_CATEGORY = Object.values(FoodCategory);
-const VALID_SORT_FIELDS = ["createdAt", "revenue"];
+const DONOR_SORT_FIELDS = ["createdAt", "revenue"];
+const RECIPIENT_SORT_FIELDS = ["createdAt", "price"];
 const VALID_SORT_ORDERS = ["asc", "desc"];
 
 function toPlainDonation(donation) {
@@ -66,6 +68,19 @@ function requireNonNegativeNumber(value, fieldName) {
     throw new ValidationError(`${fieldName} must be a non-negative number`);
   }
   return number;
+}
+
+function requireListingPrice(value) {
+  const price = Number(value);
+  if (
+    !Number.isFinite(price) ||
+    (price !== 0 && (!Number.isInteger(price) || price <= 1000))
+  ) {
+    throw new ValidationError(
+      "price must be free (0) or an integer greater than 1000 VND",
+    );
+  }
+  return price;
 }
 function requirePositiveNumber(value, fieldName) {
   const number = Number(value);
@@ -120,10 +135,10 @@ function normalizeDate(value, fieldName, endOfDay = false) {
   return date;
 }
 
-function normalizeSortBy(value) {
+function normalizeSortBy(value, allowedFields = DONOR_SORT_FIELDS) {
   if (value === undefined || value === "") return "createdAt";
   const sortBy = optionalString(value, "sortBy");
-  return validateEnum(sortBy, VALID_SORT_FIELDS, "sortBy");
+  return validateEnum(sortBy, allowedFields, "sortBy");
 }
 
 function normalizeSortOrder(value) {
@@ -138,8 +153,11 @@ function buildSort(sortBy, sortOrder) {
   };
 }
 
-function normalizeListingQuery(filters = {}) {
-  const sortBy = normalizeSortBy(filters.sortBy);
+function normalizeListingQuery(filters = {}, options = {}) {
+  const sortBy = normalizeSortBy(
+    filters.sortBy,
+    options.allowedSortFields ?? DONOR_SORT_FIELDS,
+  );
   const sortOrder = normalizeSortOrder(filters.sortOrder);
   const createdFrom = normalizeDate(filters.createdFrom, "createdFrom");
   const createdTo = normalizeDate(filters.createdTo, "createdTo", true);
@@ -222,6 +240,22 @@ function normalizeListingQuery(filters = {}) {
 
   return normalizedFilters;
 }
+
+function normalizeRecipientListingQuery(filters = {}) {
+  const normalizedFilters = normalizeListingQuery(filters, {
+    allowedSortFields: RECIPIENT_SORT_FIELDS,
+  });
+
+  normalizedFilters.includeClosed = false;
+  if (filters.municipality !== undefined) {
+    normalizedFilters.municipality = requireNonEmptyString(
+      filters.municipality,
+      "municipality",
+    );
+  }
+
+  return normalizedFilters;
+}
 //CREATE DONATION FLOW
 export async function createDonation(donorProfileId, input = {}) {
   const trustedDonorProfileId = requireNonEmptyString(
@@ -252,7 +286,7 @@ export async function createDonation(donorProfileId, input = {}) {
   const price =
     input.price === undefined
       ? 0
-      : requireNonNegativeNumber(input.price, "price");
+      : requireListingPrice(input.price);
   const ration =
     input.ration === undefined
       ? 0
@@ -353,11 +387,40 @@ export async function listDonation(filters = {}) {
   return donationRepository.findAll(normalizedFilters);
 }
 export async function listActiveDonations(filters = {}) {
-  return donationRepository.findActiveDonations({
-    ...filters,
-    page: normalizePage(filters.page),
-    limit: normalizeLimit(filters.limit),
-  });
+  const normalizedFilters = normalizeRecipientListingQuery(filters);
+
+  if (normalizedFilters.municipality !== undefined) {
+    normalizedFilters.donorProfileIds = (
+      await identity.findDonorProfileIdsByMunicipality(
+        normalizedFilters.municipality,
+      )
+    ).map(String);
+    delete normalizedFilters.municipality;
+  }
+
+  const result = await donationRepository.findActiveDonations(normalizedFilters);
+  const donorProfileIds = [
+    ...new Set(result.entries.map((entry) => String(entry.donorProfileId))),
+  ];
+  const municipalityRefs =
+    donorProfileIds.length === 0
+      ? []
+      : await identity.getDonorMunicipalitiesByIds(donorProfileIds);
+  const municipalityByDonorId = new Map(
+    municipalityRefs.map((ref) => [
+      String(ref.donorProfileId),
+      ref.municipality,
+    ]),
+  );
+
+  return {
+    ...result,
+    entries: result.entries.map((entry) => ({
+      ...toPlainDonation(entry),
+      donorMunicipality:
+        municipalityByDonorId.get(String(entry.donorProfileId)) ?? null,
+    })),
+  };
 }
 
 /**
@@ -412,6 +475,7 @@ export function toListingDonationResponse(reservation) {
   return {
     id: entry._id ?? entry.id,
     recipientUsername:
+      entry.recipientUsername ??
       recipient?.userName ??
       recipient?.username ??
       entry.manualRecipientName ??
@@ -481,13 +545,15 @@ export async function updateDonation(id, donorProfileId, input = {}) {
   }
   for (const field of [
     "donationLimit",
-    "price",
     "remainingQuantity",
     "ration",
   ]) {
     if (input[field] !== undefined) {
       changes[field] = requireNonNegativeNumber(input[field], field);
     }
+  }
+  if (input.price !== undefined) {
+    changes.price = requireListingPrice(input.price);
   }
   if (Object.keys(changes).length === 0) {
     throw new ValidationError("No valid fields were provided");

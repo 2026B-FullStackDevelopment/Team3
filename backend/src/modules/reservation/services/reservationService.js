@@ -4,7 +4,7 @@ import {
   applyReservation,
   readListingById,
   restoreReservationQuantity,
-} from "../../donation/interfaces/donorListing.interface.js";
+} from "../../donation/interfaces/donation.interface.js";
 import { credit, debit, TransactionType } from "../../wallet/index.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
 import * as paymentsFacade from "../../payments/index.js";

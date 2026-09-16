@@ -15,6 +15,7 @@ import * as premiumHelper from "./helpers/premium.helper.js";
 import * as subscriptionService from "./services/subscription.service.js";
 import * as paymentsFacade from "../payments/index.js";
 import {
+  toDonorMunicipalityRefDTO,
   toDonorProfileRefDTO,
   toRecipientProfileRefDTO,
   toUserContactDTO,
@@ -130,6 +131,23 @@ export async function getDonorProfilesByIds(donorProfileIds, options) {
     options,
   );
   return profiles.map(toDonorProfileRefDTO);
+}
+
+/** Returns only the public municipality data Donation needs for recipient browse. */
+export async function getDonorMunicipalitiesByIds(donorProfileIds, options) {
+  const profiles = await accountService.getDonorMunicipalitiesByIds(
+    donorProfileIds,
+    options,
+  );
+  return profiles.map(toDonorMunicipalityRefDTO);
+}
+
+/** Resolves donors in an exact supported Vietnamese municipality. */
+export function findDonorProfileIdsByMunicipality(municipality, options) {
+  return accountService.findDonorProfileIdsByMunicipality(
+    municipality,
+    options,
+  );
 }
 
 /** Finds DonorProfile ids whose companyName matches a search term (SRS 7.3.2). */
