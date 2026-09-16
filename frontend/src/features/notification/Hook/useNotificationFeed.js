@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth/useAuth.js";
 import { useNotificationSound } from "@/features/notification/Hook/useNotificationSound.js";
 import {
@@ -168,6 +169,7 @@ function errorMessage(result, fallback) {
 }
 
 export function useNotificationFeed() {
+  const navigate = useNavigate();
   const { user, status: authStatus, role } = useAuth();
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const seenIds = useRef(new Set());
@@ -366,8 +368,16 @@ export function useNotificationFeed() {
     [currentRequest, isCurrentRequest, state.entries],
   );
   const selectNotification = useCallback(
-    (notification) => markRead(notification.id),
-    [markRead],
+    async (notification) => {
+      await markRead(notification.id);
+      if (
+        notification.type === NOTIFICATION_TYPES.LISTING_MATCHED &&
+        notification.relatedDonationId
+      ) {
+        navigate(`/browse/${encodeURIComponent(notification.relatedDonationId)}`);
+      }
+    },
+    [markRead, navigate],
   );
 
   const markAllRead = useCallback(async () => {

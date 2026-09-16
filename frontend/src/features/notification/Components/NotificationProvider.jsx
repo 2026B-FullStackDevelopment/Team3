@@ -8,7 +8,11 @@ export function NotificationProvider({ children }) {
   return (
     <NotificationContext.Provider value={value}>
       {children}
-      <NotificationToast notification={toast} onDismiss={dismissToast} />
+      <NotificationToast
+        notification={toast}
+        onDismiss={dismissToast}
+        onSelect={value.selectNotification}
+      />
     </NotificationContext.Provider>
   );
 }

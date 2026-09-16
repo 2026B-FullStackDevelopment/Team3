@@ -35,6 +35,10 @@ export function NotificationPanel({ panelRef, onClose }) {
   };
   const filteredStatus = filter === "unread" ? unreadStatus : status;
   const feedPath = role === "Donor" ? "/donor/notifications" : "/notifications";
+  const selectAndClose = async (notification) => {
+    await selectNotification(notification);
+    onClose();
+  };
 
   return (
     <section
@@ -139,7 +143,7 @@ export function NotificationPanel({ panelRef, onClose }) {
           <NotificationItem
             key={notification.id}
             notification={notification}
-            onSelect={selectNotification}
+            onSelect={selectAndClose}
             compact
           />
         ))}

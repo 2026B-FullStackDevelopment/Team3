@@ -12,6 +12,22 @@ export async function listForRecipient(recipientProfileId) {
   return toNotificationPreferenceDTOList(prefs);
 }
 
+/** Minimal preference criteria exposed to another module through the interface. */
+export async function getMatchingCriteria(recipientProfileId) {
+  const preferences = await repo.findByRecipientProfileId(recipientProfileId);
+  return preferences.map((preference) => ({
+    foodCategory: [...preference.foodCategory],
+    isVegetarian: preference.isVegetarian,
+    priceRangeMin: preference.priceRangeMin,
+    priceRangeMax: preference.priceRangeMax,
+    city: preference.city,
+  }));
+}
+
+export function findMatchingRecipientProfileIds(listing) {
+  return repo.findMatchingRecipientProfileIds(listing);
+}
+
 /** Creates a preference for the recipient; 409 if an identical one exists. */
 export async function createForRecipient(recipientProfileId, data) {
   const existing = await repo.findByRecipientProfileId(recipientProfileId);
@@ -52,7 +68,11 @@ export async function updateForRecipient(prefId, recipientProfileId, patch) {
     );
   }
 
-  const pref = await repo.updateByIdAndRecipient(prefId, recipientProfileId, patch);
+  const pref = await repo.updateByIdAndRecipient(
+    prefId,
+    recipientProfileId,
+    patch,
+  );
   if (!pref) {
     throw new NotFoundError("Notification preference not found");
   }

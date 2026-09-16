@@ -123,6 +123,7 @@ export function toReservationDonationDTO(donation) {
   };
 }
 
+/** Public active-listing shape used by the authenticated Recipient browse UI. */
 /** Maps only state changed by Reservation stock operations. */
 export function toReservationDonationStateDTO(donation) {
   if (!donation) return donation;

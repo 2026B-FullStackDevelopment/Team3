@@ -1,10 +1,8 @@
 import * as donationRepository from "../repositories/donation.repo.js";
 import * as reservation from "../../reservation/interfaces/reservation.interface.js";
+import * as notification from "../../notification/interfaces/notification.interface.js";
 import * as identity from "../../identity/index.js";
-import {
-  MeasurementUnit,
-  DonationStatus,
-} from "../models/donation.model.js";
+import { MeasurementUnit, DonationStatus } from "../models/donation.model.js";
 import {
   ConflictError,
   NotFoundError,
@@ -284,9 +282,7 @@ export async function createDonation(donorProfileId, input = {}) {
       : requireNonNegativeNumber(input.donationLimit, "donationLimit");
 
   const price =
-    input.price === undefined
-      ? 0
-      : requireListingPrice(input.price);
+    input.price === undefined ? 0 : requireListingPrice(input.price);
   const ration =
     input.ration === undefined
       ? 0
@@ -297,7 +293,7 @@ export async function createDonation(donorProfileId, input = {}) {
     input.isVegetarian,
     "isVegetarian",
   );
-  return donationRepository.create({
+  const listing = await donationRepository.create({
     donorProfileId: trustedDonorProfileId,
     name,
     description: optionalString(input.description, "description"),
@@ -314,6 +310,20 @@ export async function createDonation(donorProfileId, input = {}) {
     createdAt: new Date(),
     closedAt: null,
   });
+
+  try {
+    await notification.notifyNewListingMatches({
+      donationId: String(listing._id),
+      donorProfileId: String(listing.donorProfileId),
+      foodCategory: listing.foodCategory,
+      isVegetarian: listing.isVegetarian,
+      price: listing.price,
+    });
+  } catch (error) {
+    console.error("[notification] listing matching failed", error);
+  }
+
+  return listing;
 }
 
 /**
@@ -386,41 +396,118 @@ export async function listDonation(filters = {}) {
   const normalizedFilters = normalizeListingQuery(filters);
   return donationRepository.findAll(normalizedFilters);
 }
-export async function listActiveDonations(filters = {}) {
-  const normalizedFilters = normalizeRecipientListingQuery(filters);
+function normalizeCoordinates(filters) {
+  if (filters.latitude === undefined && filters.longitude === undefined) {
+    return null;
+  }
+  const latitude = Number(filters.latitude);
+  const longitude = Number(filters.longitude);
+  if (
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    throw new ValidationError(
+      "latitude and longitude must be valid coordinates",
+    );
+  }
+  return { latitude, longitude };
+}
 
-  if (normalizedFilters.municipality !== undefined) {
-    normalizedFilters.donorProfileIds = (
-      await identity.findDonorProfileIdsByMunicipality(
-        normalizedFilters.municipality,
-      )
-    ).map(String);
-    delete normalizedFilters.municipality;
+function matchesPreference(listing, donor, preference) {
+  return (
+    preference.foodCategory.includes(listing.foodCategory) &&
+    preference.isVegetarian === listing.isVegetarian &&
+    listing.price >= preference.priceRangeMin &&
+    listing.price <= preference.priceRangeMax &&
+    donor?.city?.localeCompare(preference.city, undefined, {
+      sensitivity: "accent",
+    }) === 0
+  );
+}
+
+function distanceKm(origin, donor) {
+  const [longitude, latitude] = donor?.location?.coordinates ?? [];
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
+    return Infinity;
+  const radians = (degrees) => (degrees * Math.PI) / 180;
+  const latDelta = radians(latitude - origin.latitude);
+  const lonDelta = radians(longitude - origin.longitude);
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(radians(origin.latitude)) *
+      Math.cos(radians(latitude)) *
+      Math.sin(lonDelta / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export async function listActiveDonations(userId, filters = {}) {
+  const page = normalizePage(filters.page);
+  const limit = normalizeLimit(filters.limit);
+  const recipient = await identity.getRecipientContext(userId);
+
+  if (!recipient?.isPremium) {
+    return donationRepository.findActiveDonations({ ...filters, page, limit });
   }
 
-  const result = await donationRepository.findActiveDonations(normalizedFilters);
-  const donorProfileIds = [
-    ...new Set(result.entries.map((entry) => String(entry.donorProfileId))),
-  ];
-  const municipalityRefs =
-    donorProfileIds.length === 0
-      ? []
-      : await identity.getDonorMunicipalitiesByIds(donorProfileIds);
-  const municipalityByDonorId = new Map(
-    municipalityRefs.map((ref) => [
-      String(ref.donorProfileId),
-      ref.municipality,
-    ]),
+  const preferences = await notification.getRecipientMatchingCriteria(
+    recipient.recipientProfileId,
   );
+  if (preferences.length === 0) {
+    return donationRepository.findActiveDonations({ ...filters, page, limit });
+  }
 
+  const coordinates = normalizeCoordinates(filters);
+  const entries =
+    await donationRepository.findActiveDonationsForRanking(filters);
+  const donorProfileIds = [
+    ...new Set(entries.map((entry) => String(entry.donorProfileId))),
+  ];
+  const donorRefs = await identity.getDonorProximityRefs(donorProfileIds);
+  const donors = new Map(
+    donorRefs.map((donor) => [String(donor.donorProfileId), donor]),
+  );
+  const ranked = entries.map((entry, stableIndex) => {
+    const donor = donors.get(String(entry.donorProfileId));
+    const isMatch = preferences.some((preference) =>
+      matchesPreference(entry, donor, preference),
+    );
+    return {
+      entry,
+      stableIndex,
+      isMatch,
+      distance:
+        isMatch && coordinates ? distanceKm(coordinates, donor) : Infinity,
+    };
+  });
+  ranked.sort((left, right) => {
+    if (left.isMatch !== right.isMatch) return left.isMatch ? -1 : 1;
+    if (left.distance !== right.distance) return left.distance - right.distance;
+    return left.stableIndex - right.stableIndex;
+  });
+
+  const start = (page - 1) * limit;
   return {
-    ...result,
-    entries: result.entries.map((entry) => ({
-      ...toPlainDonation(entry),
-      donorMunicipality:
-        municipalityByDonorId.get(String(entry.donorProfileId)) ?? null,
-    })),
+    entries: ranked.slice(start, start + limit).map(({ entry }) => entry),
+    total: ranked.length,
+    page,
+    limit,
   };
+}
+
+export async function getActiveDonation(id) {
+  const donation = await getDonationById(id);
+  if (
+    donation.status !== DonationStatus.Active ||
+    donation.closedAt ||
+    donation.remainingQuantity < 1
+  ) {
+    throw new NotFoundError("Active donation not found");
+  }
+  return donation;
 }
 
 /**
@@ -546,11 +633,7 @@ export async function updateDonation(id, donorProfileId, input = {}) {
     }
     changes.isVegetarian = input.isVegetarian;
   }
-  for (const field of [
-    "donationLimit",
-    "remainingQuantity",
-    "ration",
-  ]) {
+  for (const field of ["donationLimit", "remainingQuantity", "ration"]) {
     if (input[field] !== undefined) {
       changes[field] = requireNonNegativeNumber(input[field], field);
     }

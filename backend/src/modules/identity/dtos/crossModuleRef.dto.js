@@ -36,6 +36,30 @@ export function toRecipientProfileRefDTO(profile) {
   };
 }
 
+/** Donor location fields needed for listing matching and proximity ordering. */
+export function toDonorLocationRefDTO(profile) {
+  if (!profile) return null;
+  return {
+    donorProfileId: String(profile._id),
+    city: profile.city ?? null,
+    location: profile.location
+      ? {
+          type: profile.location.type,
+          coordinates: [...profile.location.coordinates],
+        }
+      : null,
+  };
+}
+
+/** Active Premium Recipient reference used for notification fan-out. */
+export function toPremiumRecipientRefDTO(profile) {
+  if (!profile) return null;
+  return {
+    recipientProfileId: String(profile._id),
+    userId: String(profile.userId),
+  };
+}
+
 /** User -> { _id, email } | null */
 export function toUserContactDTO(user) {
   if (!user) return null;

@@ -1,6 +1,5 @@
 import { RouterProvider } from "react-router-dom";
 import { AuthProvider } from "@/context/auth/AuthProvider.jsx";
-import { NotificationProvider } from "@/features/notification/Components/NotificationProvider.jsx";
 import { router } from "@/routes/index.jsx";
 import { RouteErrorBoundary } from "@/app/RouteErrorBoundary.jsx";
 /**
@@ -15,9 +14,7 @@ export default function App() {
           Skip to main content
         </a>
 
-        <NotificationProvider>
-          <RouterProvider router={router} />
-        </NotificationProvider>
+        <RouterProvider router={router} />
       </AuthProvider>
     </RouteErrorBoundary>
   );
