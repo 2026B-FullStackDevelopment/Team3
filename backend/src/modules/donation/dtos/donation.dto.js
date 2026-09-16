@@ -9,8 +9,9 @@ function getDonationId(donation) {
 }
 
 function buildReservationPolicy(donation) {
-  const allowsOnlineReservation =
-    allowsOnlineReservationForMeasurementUnit(donation?.measurementUnit);
+  const allowsOnlineReservation = allowsOnlineReservationForMeasurementUnit(
+    donation?.measurementUnit,
+  );
 
   return {
     allowsOnlineReservation,
@@ -56,6 +57,27 @@ export function toReservationDonationDTO(donation) {
     remainingQuantity: donation.remainingQuantity,
     ration: donation.ration,
     closedAt: donation.closedAt,
+  };
+}
+
+/** Public active-listing shape used by the authenticated Recipient browse UI. */
+export function toRecipientListingDTO(donation) {
+  if (!donation) return donation;
+
+  return {
+    id: getDonationId(donation),
+    name: donation.name,
+    description: donation.description,
+    imageUrl: donation.imageUrl,
+    measurementUnit: donation.measurementUnit,
+    foodCategory: donation.foodCategory,
+    isVegetarian: donation.isVegetarian,
+    donationLimit: donation.donationLimit,
+    price: donation.price,
+    remainingQuantity: donation.remainingQuantity,
+    ration: donation.ration,
+    createdAt: donation.createdAt,
+    reservationPolicy: buildReservationPolicy(donation),
   };
 }
 

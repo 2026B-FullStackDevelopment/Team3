@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { notificationContent } from "@/features/notification/Model/notificationModel.js";
 
-export function NotificationToast({ notification, onDismiss }) {
+export function NotificationToast({ notification, onDismiss, onSelect }) {
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -34,18 +34,29 @@ export function NotificationToast({ notification, onDismiss }) {
           className="fixed right-4 top-20 z-50 w-[calc(100%-2rem)] max-w-sm rounded-card border border-khaki-strong bg-surface p-4 text-ink shadow-xl"
         >
           <div className="flex items-start gap-3">
-            <span
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-white"
-              aria-hidden="true"
+            <button
+              type="button"
+              onClick={() => {
+                onSelect?.(notification);
+                onDismiss();
+              }}
+              className="flex min-w-0 flex-1 items-start gap-3 text-left"
             >
-              ✓
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-heading text-sm font-semibold">
-                {content.title}
-              </p>
-              <p className="mt-1 text-sm text-muted">{content.message}</p>
-            </div>
+              <span
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-white"
+                aria-hidden="true"
+              >
+                ✓
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-heading text-sm font-semibold">
+                  {content.title}
+                </span>
+                <span className="mt-1 block text-sm text-muted">
+                  {content.message}
+                </span>
+              </span>
+            </button>
             <button
               type="button"
               onClick={onDismiss}

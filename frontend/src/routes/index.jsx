@@ -5,6 +5,7 @@ import { GuestOnlyRoute } from "@/routes/guards/GuestOnlyRoute.jsx";
 import { RequireRole } from "@/routes/guards/RequireRole.jsx";
 import { RoleLayout } from "@/routes/layouts/RoleLayout.jsx";
 import { AdminShell } from "@/routes/layouts/AdminShell.jsx";
+import { NotificationRootLayout } from "@/routes/layouts/NotificationRootLayout.jsx";
 import { LandingPage } from "@/features/marketing/Page/LandingPage.jsx";
 import { LoginPage } from "@/features/identity/Page/auth/LoginPage.jsx";
 import { RegisterPage } from "@/features/identity/Page/auth/RegisterPage.jsx";
@@ -33,7 +34,7 @@ import { HistoryPage } from "@/features/reservation/HistoryPage.jsx";
  * Authed pages sit under a role-aware RoleLayout. Placeholder targets are
  * replaced as each module plan runs.
  */
-export const router = createBrowserRouter([
+const routes = [
   // ---- Public ----
   { path: "/", element: <LandingPage /> },
 
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
             children: [
               { path: "/profile", element: <RecipientProfilePage /> },
               { path: "/browse", element: <ReservationPage /> },
+              { path: "/browse/:listingId", element: <ReservationPage /> },
               {
                 path: "/reservations",
                 element: <Placeholder name="My Reservations" />,
@@ -148,4 +150,11 @@ export const router = createBrowserRouter([
   // ---- System ----
   { path: "/forbidden", element: <ForbiddenPage /> },
   { path: "*", element: <NotFoundPage /> },
+];
+
+export const router = createBrowserRouter([
+  {
+    element: <NotificationRootLayout />,
+    children: routes,
+  },
 ]);

@@ -166,6 +166,17 @@ export async function findActiveDonations(filters = {}) {
   });
 }
 
+/** All filtered active listings before pagination so service ranking is global. */
+export async function findActiveDonationsForRanking(filters = {}) {
+  const query = buildDonationQuery({
+    ...filters,
+    status: DonationStatus.Active,
+    minRemainingQuantity: filters.minRemainingQuantity ?? 1,
+    includeClosed: false,
+  });
+  return Donation.find(query).sort(filters.sort ?? { createdAt: -1 });
+}
+
 export async function findAll(filters = {}) {
   const {
     page = DEFAULT_PAGE,

@@ -9,6 +9,7 @@ export function ReservationPage() {
     listings,
     isLoading,
     error,
+    listingNotice,
     paymentError,
     selectedItem,
     currentStep,
@@ -26,6 +27,8 @@ export function ReservationPage() {
         <h1>Welcome Back!</h1>
         <p>Find Surplus Food Near You</p>
       </header>
+
+      {listingNotice && <div className="error-banner">{listingNotice}</div>}
 
       <FoodBrowsing
         listings={listings}

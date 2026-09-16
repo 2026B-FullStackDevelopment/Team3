@@ -15,7 +15,9 @@ import * as premiumHelper from "./helpers/premium.helper.js";
 import * as subscriptionService from "./services/subscription.service.js";
 import * as paymentsFacade from "../payments/index.js";
 import {
+  toDonorLocationRefDTO,
   toDonorProfileRefDTO,
+  toPremiumRecipientRefDTO,
   toRecipientProfileRefDTO,
   toUserContactDTO,
 } from "./dtos/crossModuleRef.dto.js";
@@ -50,7 +52,9 @@ export function loadAuthUser(userId) {
 
 /** Returns the DonorProfile (ref DTO) linked to an authenticated User, or null. */
 export async function loadDonorProfile(userId) {
-  return toDonorProfileRefDTO(await donorProfileRepository.findByUserId(userId));
+  return toDonorProfileRefDTO(
+    await donorProfileRepository.findByUserId(userId),
+  );
 }
 
 /** Returns a DonorProfile (ref DTO) by profile id for profile-to-User resolution. */
@@ -95,7 +99,38 @@ export async function getRecipientContext(userId) {
   return {
     recipientProfileId: profile._id,
     isPremium: premiumHelper.isPremiumActive(profile),
+    city: profile.city ?? null,
   };
+}
+
+/** Donor city/location DTO for Notification matching. */
+export async function getDonorMatchingLocation(donorProfileId, options) {
+  return toDonorLocationRefDTO(
+    await donorProfileRepository.findById(donorProfileId, options),
+  );
+}
+
+/** Batch donor city/location DTOs for recipient listing proximity ordering. */
+export async function getDonorProximityRefs(donorProfileIds, options) {
+  const profiles = await donorProfileRepository.findByIds(
+    donorProfileIds,
+    options,
+  );
+  return profiles.map(toDonorLocationRefDTO);
+}
+
+/** Current Premium recipients from a set of preference-owner profile ids. */
+export async function getActivePremiumRecipientRefs(
+  recipientProfileIds,
+  options,
+) {
+  const profiles = await recipientProfileRepository.findByIds(
+    recipientProfileIds,
+    options,
+  );
+  return profiles
+    .filter((profile) => premiumHelper.isPremiumActive(profile))
+    .map(toPremiumRecipientRefDTO);
 }
 
 // --- Admin account management (SRS 7.1.1, 7.2.1) ---------------------------
@@ -153,5 +188,8 @@ export function findAdminIdsByEmailLike(emailPattern) {
  * app startup so a completed "premium" Checkout Session activates premium.
  */
 export function registerPaymentHandlers() {
-  paymentsFacade.registerHandler("premium", subscriptionService.activatePremiumFromPayment);
+  paymentsFacade.registerHandler(
+    "premium",
+    subscriptionService.activatePremiumFromPayment,
+  );
 }

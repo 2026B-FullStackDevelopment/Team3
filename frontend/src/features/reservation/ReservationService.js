@@ -1,21 +1,29 @@
 import { httpClient } from '@/shared/api/apiFetch.js';
+import { donationRoutes } from '@/config/api/routes/index.js';
+
+function requireData(result, fallback) {
+    if (result.ok) return result.data;
+    throw new Error(result.error?.message || fallback);
+}
 
 export async function createCheckoutSession(donationId, quantity) {
     return httpClient.post('/api/reservations/checkout', { donationId, quantity });
 }
 
-export async function fetchActiveDonation() {
-    const response = await fetch('/api/donations/active', {
-        method: 'GET',
-        headers: { 'Content-type': 'application/json' }
+export async function fetchActiveDonation(location) {
+    const result = await httpClient.get(donationRoutes.active, {
+        params: location ? {
+            latitude: location.latitude,
+            longitude: location.longitude,
+        } : undefined,
     });
+    return requireData(result, 'Failed to fetch active donations');
+}
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch active donations');
-    }
-
-    return response.json();
+export async function fetchActiveDonationById(donationId) {
+    const result = await httpClient.get(donationRoutes.activeListing(donationId));
+    const data = requireData(result, 'This food listing is no longer available.');
+    return data.listing;
 }
 
 export async function fetchWalletBalance() {
