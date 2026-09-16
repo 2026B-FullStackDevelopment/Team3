@@ -257,6 +257,8 @@
   padding: 3rem;
   display: flex;
   flex-direction: column;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .donation-detail h2 {
@@ -269,6 +271,28 @@
   font-size: 1.25rem;
   color: var(--color-primary);
   margin-bottom: 1.5rem;
+}
+
+.pickup-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0 1rem;
+  color: var(--color-ink);
+}
+
+.pickup-map span,
+.pickup-map p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.pickup-map iframe {
+  width: 100%;
+  height: 170px;
+  border: 0;
+  border-radius: 0.75rem;
 }
 
 .stock-warning {

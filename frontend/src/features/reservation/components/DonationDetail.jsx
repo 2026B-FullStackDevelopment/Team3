@@ -1,6 +1,20 @@
 import { useState } from 'react';
 
+function getMapUrl(pickupLocation) {
+  const [longitude, latitude] = pickupLocation?.coordinates ?? [];
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  const offset = 0.008;
+  const params = new URLSearchParams({
+    bbox: `${longitude - offset},${latitude - offset},${longitude + offset},${latitude + offset}`,
+    layer: 'mapnik',
+    marker: `${latitude},${longitude}`,
+  });
+  return `https://www.openstreetmap.org/export/embed.html?${params}`;
+}
+
 export default function DonationDetail({ item, onClose, onProceed }) {
+  const mapUrl = getMapUrl(item.pickupLocation);
   const isPerRequest =
     item.reservationPolicy?.allowsOnlineReservation === false ||
     item.measurementUnit === 'PerRequest';
@@ -70,6 +84,23 @@ export default function DonationDetail({ item, onClose, onProceed }) {
               {item.price === 0 ? 'FREE' : `${item.price.toLocaleString()} VND`}
             </span>
           </div>
+
+          <section className="pickup-map" aria-label="Donor pickup location">
+            <strong>Pickup location</strong>
+            {item.pickupLocation?.municipality && (
+              <span>{item.pickupLocation.municipality}</span>
+            )}
+            {mapUrl ? (
+              <iframe
+                title={`Pickup location for ${item.name}`}
+                src={mapUrl}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <p>Map preview unavailable because the donor has no saved location.</p>
+            )}
+          </section>
 
           {isPerRequest && (
             <div className="reservation-policy-warning" role="status">

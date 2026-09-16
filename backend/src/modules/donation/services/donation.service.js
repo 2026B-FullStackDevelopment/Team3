@@ -462,7 +462,7 @@ function distanceKm(origin, donor) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function attachDonorMunicipalities(result) {
+async function attachDonorSummaries(result) {
   const donorProfileIds = [
     ...new Set(
       result.entries.map((entry) => String(entry.donorProfileId)),
@@ -470,13 +470,18 @@ async function attachDonorMunicipalities(result) {
   ];
   if (donorProfileIds.length === 0) return result;
 
-  const municipalityRefs =
-    await identity.getDonorMunicipalitiesByIds(donorProfileIds);
+  const [municipalityRefs, donorRefs] = await Promise.all([
+    identity.getDonorMunicipalitiesByIds(donorProfileIds),
+    identity.getDonorProfilesByIds(donorProfileIds),
+  ]);
   const municipalityByDonor = new Map(
     municipalityRefs.map((ref) => [
       String(ref.donorProfileId),
       ref.municipality,
     ]),
+  );
+  const donorNameById = new Map(
+    donorRefs.map((ref) => [String(ref._id), ref.companyName ?? null]),
   );
 
   return {
@@ -487,6 +492,7 @@ async function attachDonorMunicipalities(result) {
         ...listing,
         donorMunicipality:
           municipalityByDonor.get(String(listing.donorProfileId)) ?? null,
+        donorName: donorNameById.get(String(listing.donorProfileId)) ?? null,
       };
     }),
   };
@@ -501,7 +507,7 @@ export async function listActiveDonations(userId, filters = {}) {
 
   if (!recipient?.isPremium) {
     const result = await donationRepository.findActiveDonations(resolvedFilters);
-    return attachDonorMunicipalities(result);
+    return attachDonorSummaries(result);
   }
 
   const preferences = await notification.getRecipientMatchingCriteria(
@@ -509,7 +515,7 @@ export async function listActiveDonations(userId, filters = {}) {
   );
   if (preferences.length === 0) {
     const result = await donationRepository.findActiveDonations(resolvedFilters);
-    return attachDonorMunicipalities(result);
+    return attachDonorSummaries(result);
   }
 
   const coordinates = normalizeCoordinates(filters);
@@ -549,7 +555,7 @@ export async function listActiveDonations(userId, filters = {}) {
   });
 
   const start = (page - 1) * limit;
-  return attachDonorMunicipalities({
+  return attachDonorSummaries({
     entries: ranked.slice(start, start + limit).map(({ entry }) => entry),
     total: ranked.length,
     page,
@@ -566,8 +572,24 @@ export async function getActiveDonation(id) {
   ) {
     throw new NotFoundError("Active donation not found");
   }
-  const result = await attachDonorMunicipalities({ entries: [donation] });
-  return result.entries[0];
+  const [donorLocation, donorProfile] = await Promise.all([
+    identity.getDonorMatchingLocation(donation.donorProfileId),
+    identity.loadDonorProfileById(donation.donorProfileId),
+  ]);
+  const listing = toPlainDonation(donation);
+  return {
+    ...listing,
+    donorName: donorProfile?.companyName ?? null,
+    donorMunicipality: donorLocation?.city ?? null,
+    pickupLocation: donorLocation
+      ? {
+          municipality: donorLocation.city ?? null,
+          coordinates: donorLocation.location?.coordinates
+            ? [...donorLocation.location.coordinates]
+            : null,
+        }
+      : null,
+  };
 }
 
 /**

@@ -103,12 +103,9 @@ export function useReservation() {
       setListingNotice(null);
 
       if (listingId && openLinkedListing) {
-        const listed = nextListings.find(
-          (item) => String(item._id || item.id) === String(listingId),
-        );
         try {
-          const target = listed
-            ?? await reservationService.fetchActiveDonationById(listingId);
+          const target =
+            await reservationService.fetchActiveDonationById(listingId);
           setSelectedItem(target);
           setCurrentStep('detail');
         } catch (listingError) {
@@ -133,10 +130,20 @@ export function useReservation() {
     loadListingsAndBalance();
   }, [loadListingsAndBalance]);
 
-  const openDonationDetail = (item) => {
+  const openDonationDetail = async (item) => {
     setPaymentError(null);
-    setSelectedItem(item);
-    setCurrentStep('detail');
+    setListingNotice(null);
+    setIsLoading(true);
+    try {
+      const itemId = item.id || item._id;
+      const detail = await reservationService.fetchActiveDonationById(itemId);
+      setSelectedItem(detail);
+      setCurrentStep('detail');
+    } catch (requestError) {
+      setListingNotice(requestError.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateFilters = useCallback((changes) => {

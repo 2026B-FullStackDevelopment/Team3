@@ -58,9 +58,26 @@ export function toRecipientListingDTO(donation) {
     ration: donation.ration,
     measurementUnit: donation.measurementUnit,
     price: donation.price,
+    donorName: donation.donorName ?? null,
     donorMunicipality: donation.donorMunicipality ?? null,
     createdAt: donation.createdAt,
     reservationPolicy: buildReservationPolicy(donation),
+  };
+}
+
+/** Adds pickup coordinates only to the authenticated single-listing detail. */
+export function toRecipientListingDetailDTO(donation) {
+  if (!donation) return donation;
+  const coordinates = donation.pickupLocation?.coordinates;
+
+  return {
+    ...toRecipientListingDTO(donation),
+    pickupLocation: donation.pickupLocation
+      ? {
+          municipality: donation.pickupLocation.municipality ?? null,
+          coordinates: Array.isArray(coordinates) ? [...coordinates] : null,
+        }
+      : null,
   };
 }
 

@@ -1,5 +1,8 @@
 import * as donorListingService from "../services/donation.service.js";
-import { toRecipientListingDTO } from "../dtos/donation.dto.js";
+import {
+  toRecipientListingDetailDTO,
+  toRecipientListingDTO,
+} from "../dtos/donation.dto.js";
 
 export async function getActiveDonations(req, res, next) {
   try {
@@ -20,7 +23,7 @@ export async function getActiveDonations(req, res, next) {
 export async function getActiveDonation(req, res, next) {
   try {
     const listing = await donorListingService.getActiveDonation(req.params.id);
-    res.status(200).json({ listing: toRecipientListingDTO(listing) });
+    res.status(200).json({ listing: toRecipientListingDetailDTO(listing) });
   } catch (error) {
     next(error);
   }
