@@ -23,7 +23,14 @@ export function createListingFormSchema(mode) {
         .number()
         .min(0, "Donation limit cannot be negative."),
       ration: z.coerce.number().min(0, "Ration cannot be negative."),
-      price: z.coerce.number().min(0, "Price cannot be negative."),
+      price: z.coerce
+        .number()
+        .int("Price must be a whole number of VND.")
+        .min(0, "Price cannot be negative.")
+        .refine(
+          (price) => price === 0 || price > 1000,
+          "Price must be Free (0) or greater than 1,000 VND.",
+        ),
       image: z.any().nullable().optional(),
     })
     .superRefine((values, context) => {
@@ -59,6 +66,20 @@ export function createListingFormSchema(mode) {
           code: "custom",
           path: ["remainingQuantity"],
           message: "Per Unit quantity must be a whole number.",
+        });
+      }
+
+      // A positive donation limit is the listing's total offered quantity, so
+      // the currently available quantity cannot be larger than that total.
+      // A zero limit keeps its existing meaning: the total cap is untracked.
+      if (
+        values.donationLimit > 0 &&
+        values.remainingQuantity > values.donationLimit
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["remainingQuantity"],
+          message: "Available quantity cannot exceed donation limit.",
         });
       }
 

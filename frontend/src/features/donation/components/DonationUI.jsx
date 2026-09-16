@@ -21,7 +21,7 @@ import {
   DonationStatus,
   STATUS_LABELS,
 } from "@/features/donation/models/donation.js";
-import { formatDate, formatVnd } from "@/shared/utils/formatters.js";
+import { formatDateTime, formatVnd } from "@/shared/utils/formatters.js";
 import { formatQuantityWithUnit } from "@/features/donation/utils/donationFormatters.js";
 import { StatusAlert } from "@/shared/components/status-alert.jsx";
 
@@ -38,7 +38,12 @@ export function DonationPageHeader({ eyebrow, title, description, actions }) {
   );
 }
 
-export function DonationFilters({ filters, onChange, onClear }) {
+export function DonationFilters({
+  dateRangeInvalid,
+  filters,
+  onChange,
+  onClear,
+}) {
   return (
     <div className="donation-filters" aria-label="Filter donation listings">
       <label className="donation-search">
@@ -49,6 +54,26 @@ export function DonationFilters({ filters, onChange, onClear }) {
             onChange({ ...filters, search: event.target.value })
           }
           placeholder="Search by listing name"
+        />
+      </label>
+      <label className="donation-filter-date">
+        <span>Created from</span>
+        <input
+          type="date"
+          value={filters.createdFrom}
+          onChange={(event) =>
+            onChange({ ...filters, createdFrom: event.target.value })
+          }
+        />
+      </label>
+      <label className="donation-filter-date">
+        <span>Created to</span>
+        <input
+          type="date"
+          value={filters.createdTo}
+          onChange={(event) =>
+            onChange({ ...filters, createdTo: event.target.value })
+          }
         />
       </label>
       <label>
@@ -85,6 +110,11 @@ export function DonationFilters({ filters, onChange, onClear }) {
       <button className="button-quiet" type="button" onClick={onClear}>
         Clear
       </button>
+      {dateRangeInvalid && (
+        <p className="donation-filter-error" role="alert">
+          Created from cannot be after Created to.
+        </p>
+      )}
     </div>
   );
 }
@@ -151,9 +181,10 @@ export function ListingCard({ listing }) {
               <span>
                 {CATEGORY_LABELS[listing.foodCategory] ?? listing.foodCategory}
               </span>
-              {listing.isVegetarian && (
+              {listing.isVegetarian != null && (
                 <span>
-                  <Leaf size={13} /> Vegetarian
+                  {listing.isVegetarian && <Leaf size={13} />}
+                  {listing.isVegetarian ? "Vegetarian" : "Non-vegetarian"}
                 </span>
               )}
             </div>
@@ -174,6 +205,17 @@ export function ListingCard({ listing }) {
             <dd>{listing.price === 0 ? "Free" : formatVnd(listing.price)}</dd>
           </div>
           <div>
+            <dt>Donation limit</dt>
+            <dd>
+              {listing.donationLimit > 0
+                ? formatQuantityWithUnit(
+                    listing.donationLimit,
+                    listing.measurementUnit,
+                  )
+                : "Not tracked"}
+            </dd>
+          </div>
+          <div>
             <dt>Donated</dt>
             <dd>
               {donated === null
@@ -186,11 +228,15 @@ export function ListingCard({ listing }) {
             <dd>{formatVnd(listing.revenue)}</dd>
           </div>
           <div>
-            <dt>{closed ? "Closed on" : "Created on"}</dt>
-            <dd>
-              {formatDate(closed ? listing.closedAt : listing.createdAt)}
-            </dd>
+            <dt>Created on</dt>
+            <dd>{formatDateTime(listing.createdAt)}</dd>
           </div>
+          {closed && (
+            <div>
+              <dt>Closed on</dt>
+              <dd>{formatDateTime(listing.closedAt)}</dd>
+            </div>
+          )}
         </dl>
         {(statusMutation.error || deleteMutation.error) && (
           <StatusAlert variant="danger" title="Action failed">

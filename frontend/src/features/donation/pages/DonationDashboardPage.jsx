@@ -14,19 +14,33 @@ import {
 const defaultFilters = {
   search: "",
   foodCategory: "",
+  createdFrom: "",
+  createdTo: "",
   sortBy: "createdAt",
   sortOrder: "desc",
 };
 
 export function DonationDashboardPage({ listingsOnly = false }) {
   const [filters, setFilters] = useState(defaultFilters);
+  const dateRangeInvalid = Boolean(
+    filters.createdFrom &&
+      filters.createdTo &&
+      filters.createdFrom > filters.createdTo,
+  );
   const requestFilters = useMemo(
-    () => ({
-      includeClosed: true,
-      limit: 100,
-      ...filters,
-    }),
-    [filters],
+    () => {
+      const next = {
+        includeClosed: true,
+        limit: 100,
+        ...filters,
+      };
+      if (dateRangeInvalid) {
+        delete next.createdFrom;
+        delete next.createdTo;
+      }
+      return next;
+    },
+    [dateRangeInvalid, filters],
   );
   const query = useDonationList(requestFilters);
   const entries = query.data?.entries ?? [];
@@ -69,6 +83,7 @@ export function DonationDashboardPage({ listingsOnly = false }) {
         }
       />
       <DonationFilters
+        dateRangeInvalid={dateRangeInvalid}
         filters={filters}
         onChange={setFilters}
         onClear={() => setFilters(defaultFilters)}
@@ -99,12 +114,18 @@ export function DonationDashboardPage({ listingsOnly = false }) {
               title="Your Active Donations"
               listings={current}
               emptyTitle={
-                filters.search || filters.foodCategory
+                filters.search ||
+                filters.foodCategory ||
+                filters.createdFrom ||
+                filters.createdTo
                   ? "No matching listings found"
                   : "No active donations"
               }
               emptyCopy={
-                filters.search || filters.foodCategory
+                filters.search ||
+                filters.foodCategory ||
+                filters.createdFrom ||
+                filters.createdTo
                   ? "Clear the filters to see all donation listings."
                   : "Create a listing to begin receiving reservations and recording handoffs."
               }

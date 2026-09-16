@@ -16,7 +16,7 @@ export function buildListingPayload(values) {
     remainingQuantity: perRequest ? 1 : values.remainingQuantity,
     donationLimit: perRequest ? 0 : values.donationLimit,
     ration: perRequest ? 0 : values.ration,
-    price: values.price > 0 && values.price < 1000 ? 0 : values.price,
+    price: values.price,
   };
 }
 

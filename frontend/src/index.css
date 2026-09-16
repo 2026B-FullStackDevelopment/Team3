@@ -200,7 +200,11 @@
 .donation-eyebrow { color: var(--aff-primary) !important; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .donation-header-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: .75rem; }
 .donation-header-actions svg { margin-right: .4rem; }
-.donation-filters { display: grid; grid-template-columns: minmax(220px, 1fr) 220px 220px auto; gap: .75rem; padding: 1rem; border: 1px solid var(--aff-border); border-radius: var(--aff-radius-lg); background: var(--aff-panel); }
+.donation-filters { display: grid; grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 190px)) auto; gap: .75rem; align-items: end; padding: 1rem; border: 1px solid var(--aff-border); border-radius: var(--aff-radius-lg); background: var(--aff-panel); }
+.donation-filters label { min-width: 0; }
+.donation-filter-date { display: grid; gap: .35rem; }
+.donation-filter-date span { color: var(--aff-muted); font-size: .75rem; font-weight: 700; }
+.donation-filter-error { grid-column: 1 / -1; margin: 0; color: var(--aff-danger); font-size: .78rem; }
 .donation-filters input, .donation-filters select, .report-heading select,
 .listing-form input, .listing-form select, .listing-form textarea,
 .manual-form input {
@@ -208,7 +212,7 @@
   background: white; padding: .72rem .85rem; color: var(--aff-text);
 }
 .button-quiet, .listing-actions > button { border: 1px solid var(--aff-border); border-radius: .65rem; background: transparent; padding: .6rem .8rem; color: var(--aff-text); font-weight: 700; }
-.dashboard-grid { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(310px, .9fr); gap: 1.5rem; align-items: start; }
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(420px, 1fr); gap: 1.5rem; align-items: start; }
 .dashboard-listings { display: grid; gap: 1.5rem; }
 .donation-section, .report-panel { overflow: hidden; border: 1px solid var(--aff-border); border-radius: var(--aff-radius-lg); background: var(--aff-panel); box-shadow: var(--aff-shadow); }
 .donation-section > h2 { margin: 0; padding: 1.15rem 1.35rem; background: var(--aff-primary); color: white; font-size: 1.2rem; letter-spacing: .025em; text-transform: uppercase; }
@@ -253,8 +257,8 @@
 .report-heading h2 { margin: .2rem 0 0; font-size: 1.25rem; }
 .report-period-controls, .report-period-controls > label { display: grid; gap: .35rem; }
 .report-period-controls label > span { color: var(--aff-muted); font-size: .75rem; font-weight: 700; }
-.report-period-controls select, .report-period-controls input { width: 100%; border: 1px solid var(--aff-border); border-radius: .75rem; background: white; padding: .65rem .75rem; color: var(--aff-text); }
-.report-custom-range { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; align-items: end; }
+.report-period-controls select, .report-period-controls input { width: 100%; min-width: 0; max-width: 100%; border: 1px solid var(--aff-border); border-radius: .75rem; background: white; padding: .65rem .75rem; color: var(--aff-text); }
+.report-custom-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; align-items: end; }
 .report-custom-range label { display: grid; gap: .3rem; }
 .report-custom-range button, .report-filter-error { grid-column: 1 / -1; }
 .report-filter-error, .report-filter-hint { margin: 0; color: var(--aff-danger); font-size: .78rem; }
@@ -333,12 +337,15 @@
 .manual-summary { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 .manual-summary span, .change-due { display: grid; gap: .2rem; padding: 1rem; border-radius: .75rem; background: #edf2df; }
 .manual-summary strong, .change-due strong { font-size: 1.2rem; }
-@media (max-width: 1050px) {
+@media (max-width: 1180px) {
   .dashboard-grid { grid-template-columns: 1fr; }
   .report-panel { position: static; }
   .report-heading { grid-template-columns: 1fr minmax(240px, 360px); align-items: start; }
   .report-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .report-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1050px) {
   .donation-filters { grid-template-columns: 1fr 1fr; }
   .listing-card { grid-template-columns: minmax(160px, 190px) minmax(0, 1fr) 150px; }
 }

@@ -44,7 +44,6 @@ export function ListingForm({
     defaultValues: listingFormDefaults,
   });
   const unit = useWatch({ control, name: "measurementUnit" });
-  const price = Number(useWatch({ control, name: "price" }) || 0);
   const image = useWatch({ control, name: "image" });
 
   useEffect(() => {
@@ -225,11 +224,7 @@ export function ListingForm({
         <label>
           Price (VND)
           <input type="number" min="0" step="1" {...register("price")} />
-          <small>
-            {price > 0 && price < 1000
-              ? "This will be saved as Free."
-              : "Prices below 1,000 VND become Free."}
-          </small>
+          <small>Enter 0 for Free, or a whole-number price above 1,000 VND.</small>
           <FieldError error={errors.price} />
         </label>
       </div>
