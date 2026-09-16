@@ -15,7 +15,6 @@ import { PremiumPage } from "@/features/wallet/Page/PremiumPage.jsx";
 import { NotificationPreferencesPage } from "@/features/notification/Page/NotificationPreferencesPage.jsx";
 import { ForbiddenPage } from "@/routes/pages/ForbiddenPage.jsx";
 import { NotFoundPage } from "@/routes/pages/NotFoundPage.jsx";
-import { Placeholder } from "@/routes/pages/Placeholder.jsx";
 import { DonationDashboardPage } from "@/features/donation/pages/DonationDashboardPage.jsx";
 import { ListingFormPage } from "@/features/donation/pages/ListingFormPage.jsx";
 import { ManualDonationPage } from "@/features/donation/pages/ManualDonationPage.jsx";
@@ -26,6 +25,7 @@ import { AuditLogPage } from "@/features/admin/pages/AuditLogPage.jsx";
 import { NotificationPage } from "@/features/notification/Page/NotificationPage.jsx";
 import { ReservationPage } from "@/features/reservation/ReservationPage.jsx";
 import { HistoryPage } from "@/features/reservation/HistoryPage.jsx";
+import { MyReservationsPage } from "@/features/reservation/MyReservationsPage.jsx";
 
 /**
  * Application route tree, gated by role (SRS A.2.c). Public pages render
@@ -61,7 +61,7 @@ const routes = [
               { path: "/browse/:listingId", element: <ReservationPage /> },
               {
                 path: "/reservations",
-                element: <Placeholder name="My Reservations" />,
+                element: <MyReservationsPage />,
               },
               { path: "/history", element: <HistoryPage /> },
               { path: "/notifications", element: <NotificationPage /> },

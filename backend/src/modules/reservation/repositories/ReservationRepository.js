@@ -16,14 +16,45 @@ export async function findByStripeSessionId(stripeSessionId) {
  * with the donor's name so the frontend never needs a reservedAt fallback.
  */
 export async function getReservationsByRecipient(recipientProfileId) {
-  return await Reservation.find({ recipientProfileId })
+  return await Reservation.find({
+    recipientProfileId,
+    status: {
+      $in: [
+        ReservationStatus.Collected,
+        ReservationStatus.CollectedByRecipient,
+      ],
+    },
+  })
+    .sort({ collectedAt: -1 })
+    .populate({
+      path: "donationId",
+      select: "name foodCategory imageUrl donorProfileId",
+      populate: {
+        path: "donorProfileId",
+        select: "companyName",
+      },
+    });
+}
+
+/** Pending and cancelled reservations shown on the recipient's My Reservations page. */
+export async function getOpenReservationsByRecipient(recipientProfileId) {
+  return await Reservation.find({
+    recipientProfileId,
+    status: {
+      $in: [
+        ReservationStatus.Reserved,
+        ReservationStatus.CancelledByDonor,
+        ReservationStatus.CancelledByAdmin,
+      ],
+    },
+  })
     .sort({ reservedAt: -1 })
     .populate({
       path: "donationId",
       select: "name foodCategory imageUrl donorProfileId",
       populate: {
         path: "donorProfileId",
-        select: "companyName address city location",
+        select: "companyName city location",
       },
     });
 }

@@ -25,6 +25,7 @@ const PUBLIC_LINKS = [
 const ROLE_LINKS = {
   recipient: [
     { label: "Browse", to: "/browse" },
+    { label: "My Reservations", to: "/reservations" },
     { label: "History", to: "/history" },
   ],
   donor: [

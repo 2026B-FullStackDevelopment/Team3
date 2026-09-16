@@ -13,5 +13,8 @@ reservationRoutes.post("/", reservationController.createReservation);
 // GET /api/reservations/history
 reservationRoutes.get("/history", reservationController.getHistory);
 
+// GET /api/reservations/mine
+reservationRoutes.get("/mine", reservationController.getMyReservations);
+
 // POST /api/reservations/checkout
 reservationRoutes.post("/checkout", reservationController.createCheckoutSession);

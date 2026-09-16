@@ -1,6 +1,24 @@
 import { useState } from 'react';
 
+function getMapUrl(pickupLocation) {
+  const [longitude, latitude] = pickupLocation?.coordinates ?? [];
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  const offset = 0.008;
+  const params = new URLSearchParams({
+    bbox: `${longitude - offset},${latitude - offset},${longitude + offset},${latitude + offset}`,
+    layer: 'mapnik',
+    marker: `${latitude},${longitude}`,
+  });
+  return `https://www.openstreetmap.org/export/embed.html?${params}`;
+}
+
 export default function DonationDetail({ item, onClose, onProceed }) {
+  const mapUrl = getMapUrl(item.pickupLocation);
+  const isPerRequest =
+    item.reservationPolicy?.allowsOnlineReservation === false ||
+    item.measurementUnit === 'PerRequest';
+  const policyWarnings = item.reservationPolicy?.warningMessages ?? [];
   const remainingQuantity = Number(item.remainingQuantity ?? 0);
   const ration = Number(item.ration ?? 0);
   const hasRation = ration > 0;
@@ -33,8 +51,10 @@ export default function DonationDetail({ item, onClose, onProceed }) {
     setQuantity(parsed);
 
     // 4. Validate limit
-    if (parsed > limit) {
-      setError('Error: Quantity exceeds the limit. Please reduce your quantity.');
+    if (hasRation && parsed > ration) {
+      setError('Error: Requested quantity exceeds ration limit.');
+    } else if (parsed > remainingQuantity) {
+      setError('Error: Requested quantity exceeds remaining quantity.');
     } else {
       setError('');
     }
@@ -44,7 +64,7 @@ export default function DonationDetail({ item, onClose, onProceed }) {
   const totalPrice = currentQuantity * item.price;
 
   const handleReserveClick = () => {
-    if (currentQuantity > limit || currentQuantity <= 0) return;
+    if (isPerRequest || currentQuantity > limit || currentQuantity <= 0) return;
     onProceed(currentQuantity, totalPrice);
   };
 
@@ -65,7 +85,38 @@ export default function DonationDetail({ item, onClose, onProceed }) {
             </span>
           </div>
 
-          <div className="limit-input">
+          <section className="pickup-map" aria-label="Donor pickup location">
+            <strong>Pickup location</strong>
+            {item.pickupLocation?.municipality && (
+              <span>{item.pickupLocation.municipality}</span>
+            )}
+            {mapUrl ? (
+              <iframe
+                title={`Pickup location for ${item.name}`}
+                src={mapUrl}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <p>Map preview unavailable because the donor has no saved location.</p>
+            )}
+          </section>
+
+          {isPerRequest && (
+            <div className="reservation-policy-warning" role="status">
+              <strong>This listing cannot be reserved online.</strong>
+              <span>Contact or visit the donor to request this food.</span>
+              {policyWarnings.length > 0 && (
+                <ul>
+                  {policyWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {!isPerRequest && <div className="limit-input">
             <input 
               type="text" 
               readOnly 
@@ -74,9 +125,9 @@ export default function DonationDetail({ item, onClose, onProceed }) {
                     : `Up to ${limit} ${item.measurementUnit} available`} 
               className="limit-display"
             />
-          </div>
+          </div>}
 
-          <div className="quantity-selector">
+          {!isPerRequest && <div className="quantity-selector">
             {isIncremental ? (
               <>
                 <button 
@@ -108,15 +159,15 @@ export default function DonationDetail({ item, onClose, onProceed }) {
               />
             )}
             <span className="unit-label">{item.measurementUnit}</span>
-          </div>
+          </div>}
 
           <div className="modal-actions">
             <button 
               className="btn-reserve" 
               onClick={handleReserveClick}
-              disabled={!!error || currentQuantity <= 0}
+              disabled={isPerRequest || !!error || currentQuantity <= 0}
             >
-              Reserve
+              {isPerRequest ? 'Online Reservation Unavailable' : 'Reserve'}
             </button>
             <button className="btn-cancel" onClick={onClose}>
               Cancel

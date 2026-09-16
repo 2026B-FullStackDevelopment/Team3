@@ -254,6 +254,19 @@ function normalizeRecipientListingQuery(filters = {}) {
 
   return normalizedFilters;
 }
+
+async function resolveRecipientMunicipalityFilter(filters) {
+  if (!filters.municipality) return filters;
+
+  const donorProfileIds =
+    await identity.findDonorProfileIdsByMunicipality(filters.municipality);
+  const resolvedFilters = { ...filters };
+  delete resolvedFilters.municipality;
+  return {
+    ...resolvedFilters,
+    donorProfileIds: donorProfileIds.map(String),
+  };
+}
 //CREATE DONATION FLOW
 export async function createDonation(donorProfileId, input = {}) {
   const trustedDonorProfileId = requireNonEmptyString(
@@ -429,6 +442,11 @@ function matchesPreference(listing, donor, preference) {
   );
 }
 
+function isSameMunicipality(left, right) {
+  if (!left || !right) return false;
+  return left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0;
+}
+
 function distanceKm(origin, donor) {
   const [longitude, latitude] = donor?.location?.coordinates ?? [];
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
@@ -444,25 +462,65 @@ function distanceKm(origin, donor) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+async function attachDonorSummaries(result) {
+  const donorProfileIds = [
+    ...new Set(
+      result.entries.map((entry) => String(entry.donorProfileId)),
+    ),
+  ];
+  if (donorProfileIds.length === 0) return result;
+
+  const [municipalityRefs, donorRefs] = await Promise.all([
+    identity.getDonorMunicipalitiesByIds(donorProfileIds),
+    identity.getDonorProfilesByIds(donorProfileIds),
+  ]);
+  const municipalityByDonor = new Map(
+    municipalityRefs.map((ref) => [
+      String(ref.donorProfileId),
+      ref.municipality,
+    ]),
+  );
+  const donorNameById = new Map(
+    donorRefs.map((ref) => [String(ref._id), ref.companyName ?? null]),
+  );
+
+  return {
+    ...result,
+    entries: result.entries.map((entry) => {
+      const listing = toPlainDonation(entry);
+      return {
+        ...listing,
+        donorMunicipality:
+          municipalityByDonor.get(String(listing.donorProfileId)) ?? null,
+        donorName: donorNameById.get(String(listing.donorProfileId)) ?? null,
+      };
+    }),
+  };
+}
+
 export async function listActiveDonations(userId, filters = {}) {
-  const page = normalizePage(filters.page);
-  const limit = normalizeLimit(filters.limit);
+  const normalizedFilters = normalizeRecipientListingQuery(filters);
+  const resolvedFilters =
+    await resolveRecipientMunicipalityFilter(normalizedFilters);
+  const { page, limit } = resolvedFilters;
   const recipient = await identity.getRecipientContext(userId);
 
   if (!recipient?.isPremium) {
-    return donationRepository.findActiveDonations({ ...filters, page, limit });
+    const result = await donationRepository.findActiveDonations(resolvedFilters);
+    return attachDonorSummaries(result);
   }
 
   const preferences = await notification.getRecipientMatchingCriteria(
     recipient.recipientProfileId,
   );
   if (preferences.length === 0) {
-    return donationRepository.findActiveDonations({ ...filters, page, limit });
+    const result = await donationRepository.findActiveDonations(resolvedFilters);
+    return attachDonorSummaries(result);
   }
 
   const coordinates = normalizeCoordinates(filters);
   const entries =
-    await donationRepository.findActiveDonationsForRanking(filters);
+    await donationRepository.findActiveDonationsForRanking(resolvedFilters);
   const donorProfileIds = [
     ...new Set(entries.map((entry) => String(entry.donorProfileId))),
   ];
@@ -479,23 +537,30 @@ export async function listActiveDonations(userId, filters = {}) {
       entry,
       stableIndex,
       isMatch,
+      isRecipientCity: isSameMunicipality(donor?.city, recipient.city),
       distance:
         isMatch && coordinates ? distanceKm(coordinates, donor) : Infinity,
     };
   });
   ranked.sort((left, right) => {
+    if (
+      !coordinates &&
+      left.isRecipientCity !== right.isRecipientCity
+    ) {
+      return left.isRecipientCity ? -1 : 1;
+    }
     if (left.isMatch !== right.isMatch) return left.isMatch ? -1 : 1;
     if (left.distance !== right.distance) return left.distance - right.distance;
     return left.stableIndex - right.stableIndex;
   });
 
   const start = (page - 1) * limit;
-  return {
+  return attachDonorSummaries({
     entries: ranked.slice(start, start + limit).map(({ entry }) => entry),
     total: ranked.length,
     page,
     limit,
-  };
+  });
 }
 
 export async function getActiveDonation(id) {
@@ -507,7 +572,24 @@ export async function getActiveDonation(id) {
   ) {
     throw new NotFoundError("Active donation not found");
   }
-  return donation;
+  const [donorLocation, donorProfile] = await Promise.all([
+    identity.getDonorMatchingLocation(donation.donorProfileId),
+    identity.loadDonorProfileById(donation.donorProfileId),
+  ]);
+  const listing = toPlainDonation(donation);
+  return {
+    ...listing,
+    donorName: donorProfile?.companyName ?? null,
+    donorMunicipality: donorLocation?.city ?? null,
+    pickupLocation: donorLocation
+      ? {
+          municipality: donorLocation.city ?? null,
+          coordinates: donorLocation.location?.coordinates
+            ? [...donorLocation.location.coordinates]
+            : null,
+        }
+      : null,
+  };
 }
 
 /**

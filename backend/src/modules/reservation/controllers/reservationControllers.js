@@ -63,6 +63,21 @@ export async function getHistory(req, res, next) {
   }
 }
 
+/** GET /api/reservations/mine — pending and cancelled reservations. */
+export async function getMyReservations(req, res, next) {
+  try {
+    const recipientProfile = await requireRecipientProfile(req, res);
+    if (!recipientProfile) return;
+
+    const reservations = await ReservationService.getMyReservations(
+      recipientProfile._id,
+    );
+    res.status(200).json({ reservations });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /**
  * POST /api/reservations/checkout
  * Generates a Stripe checkout URL for Card payments
