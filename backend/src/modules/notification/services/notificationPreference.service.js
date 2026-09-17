@@ -24,8 +24,8 @@ export async function getMatchingCriteria(recipientProfileId) {
   }));
 }
 
-export function findMatchingRecipientProfileIds(listing) {
-  return repo.findMatchingRecipientProfileIds(listing);
+export function findMatchingRecipientProfileIds(listing, options = {}) {
+  return repo.findMatchingRecipientProfileIds(listing, options);
 }
 
 /** Creates a preference for the recipient; 409 if an identical one exists. */

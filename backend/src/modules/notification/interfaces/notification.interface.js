@@ -31,12 +31,15 @@ export async function notifyNewListingMatches(event, options = {}) {
   if (!donor?.city) return [];
 
   const recipientProfileIds =
-    await notificationPreferenceService.findMatchingRecipientProfileIds({
-      foodCategory: event.foodCategory,
-      isVegetarian: event.isVegetarian,
-      price: event.price,
-      city: donor.city,
-    });
+    await notificationPreferenceService.findMatchingRecipientProfileIds(
+      {
+        foodCategory: event.foodCategory,
+        isVegetarian: event.isVegetarian,
+        price: event.price,
+        city: donor.city,
+      },
+      options,
+    );
   if (recipientProfileIds.length === 0) return [];
 
   const recipients = await identity.getActivePremiumRecipientRefs(
@@ -50,7 +53,9 @@ export async function notifyNewListingMatches(event, options = {}) {
     },
     options,
   );
-  publishNotifications(results);
+  // A caller using a MongoDB transaction must publish only after commit so a
+  // Recipient never receives an event for data that is later rolled back.
+  if (options.publish !== false) publishNotifications(results);
   return results;
 }
 

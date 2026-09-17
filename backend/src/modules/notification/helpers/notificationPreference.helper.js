@@ -34,10 +34,12 @@ export function validateFoodCategories(value) {
   return value;
 }
 
-/** isVegetarian must be a boolean. */
+/** null means any dietary status; booleans request an exact status. */
 export function validateIsVegetarian(value) {
-  if (typeof value !== "boolean") {
-    throw new ValidationError("isVegetarian must be a boolean (true or false)");
+  if (value !== null && typeof value !== "boolean") {
+    throw new ValidationError(
+      "isVegetarian must be true, false, or null for any status",
+    );
   }
   return value;
 }

@@ -127,10 +127,15 @@ function buildDonationQuery(filters = {}) {
   return query;
 }
 
-export async function create(data) {
+export async function create(data, options = {}) {
   // imageUrl is part of the complete service-validated payload and is enforced
   // again by the Donation schema before MongoDB persistence.
-  return Donation.create(data);
+  if (!options.session) return Donation.create(data);
+
+  const [donation] = await Donation.create([data], {
+    session: options.session,
+  });
+  return donation;
 }
 
 export async function findById(id, options = {}) {
