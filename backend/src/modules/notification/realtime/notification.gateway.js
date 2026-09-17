@@ -77,6 +77,17 @@ export function publishNotifications(notifications) {
     ? notifications
     : [notifications];
 
+  // TEMP diagnostic: how many results reached publish and their created flags.
+  // A `created:false` result is skipped below (no emit) — this line still logs
+  // it, unlike the per-emit log further down.
+  console.log(
+    "[socket] publishNotifications: %d result(s), created flags: %o",
+    results.length,
+    results.map((r) =>
+      r && typeof r === "object" && "created" in r ? r.created : "raw",
+    ),
+  );
+
   for (const result of results.filter(Boolean)) {
     const isCreationResult =
       typeof result === "object" &&
