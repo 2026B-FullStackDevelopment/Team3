@@ -97,7 +97,12 @@ export function useReservation() {
         ...buildListingParams(filters),
       });
       const nextListings = listingsData.entries || listingsData;
-      setListings(nextListings);
+      // Apply the selected price order after the API's recipient ranking.
+      const priceDirection = filters.priceOption === 'price-asc' ? 1
+        : filters.priceOption === 'price-desc' ? -1 : 0;
+      setListings(priceDirection
+        ? [...nextListings].sort((a, b) => priceDirection * (a.price - b.price))
+        : nextListings);
       setWalletBalance(balance);
       setError(null);
       setListingNotice(null);
