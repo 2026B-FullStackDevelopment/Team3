@@ -173,27 +173,14 @@ pnpm check
 Implemented as skeletons — the routers and controllers exist, every handler
 currently answers `501 Not Implemented`.
 
-### Donor dashboard — `/api/donor/food-listings`
+### Contribution Table 
+| Member Name | Member's Feature | Workload Percentage |
+|---|---|---:|
+| Phuc Huynh Tan | Donation & Notification  | 25% |
+| Nguyen Nhat Minh | Admin & Feedback | 25% |
+| Dung Tien Dao | Wallet, Notification Preference, Profile & Authentication | 25% |
+| Tin Vi Lam | Reservation & Recipient | 25% |
 
-| Method   | Path             | Purpose                                                        |
-| -------- | ---------------- | -------------------------------------------------------------- |
-| `GET`    | `/`              | Dashboard list of the donor's listings (paginated, filterable) |
-| `POST`   | `/`              | Create a listing                                               |
-| `GET`    | `/statistics`    | Dashboard totals and chart series                              |
-| `GET`    | `/:id`           | One listing                                                    |
-| `PATCH`  | `/:id`           | Edit listing details                                           |
-| `DELETE` | `/:id`           | Delete a listing with no records against it                    |
-| `POST`   | `/:id/duplicate` | New listing reusing this configuration                         |
-| `GET`    | `/:id/donations` | Donation and reservation records                               |
-| `POST`   | `/:id/donations` | Manually record food given to a recipient                      |
-| `PATCH`  | `/:id/status`    | Publish / pause / resume / cancel / complete                   |
-| `PATCH`  | `/:id/ration`    | Set or clear the per-recipient ration limit                    |
-
-`/statistics` is registered before `/:id` on purpose — reorder them and Express
-matches `statistics` as an id, making the route unreachable.
-
-These routes have **no authentication or ownership scoping yet**. The auth,
-role and ownership middleware are still empty files.
 
 ## Documentation
 
