@@ -123,6 +123,33 @@ export function toManualDonationResponseDTO(result) {
   };
 }
 
+/** Maps an online or manual reservation to the Donor listing-history contract. */
+export function toListingReservationDTO(reservation) {
+  if (!reservation) return reservation;
+  const entry =
+    typeof reservation.toObject === "function"
+      ? reservation.toObject()
+      : reservation;
+  const recipient = entry.recipientProfileId;
+
+  return {
+    id: entry._id ?? entry.id,
+    recipientUsername:
+      entry.recipientUsername ??
+      recipient?.userName ??
+      recipient?.username ??
+      entry.manualRecipientName ??
+      null,
+    reservedAt: entry.reservedAt ?? null,
+    collectedAt: entry.collectedAt ?? null,
+    quantity: entry.quantity,
+    status: entry.status,
+    totalPaid: entry.totalPaid,
+    paymentMethod: entry.paymentMethod ?? null,
+    feedback: entry.feedback ?? null,
+  };
+}
+
 /** Maps listing fields required for Reservation eligibility and payment. */
 export function toReservationDonationDTO(donation) {
   if (!donation) return donation;
