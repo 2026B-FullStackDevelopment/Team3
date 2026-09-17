@@ -52,7 +52,7 @@ async function findProfileForUser(user, options = {}) {
  * itself be Recipient or Donor.
  */
 export async function listAccounts(filters = {}) {
-  const { role, status, page, limit } = filters;
+  const { role, status, search, page, limit } = filters;
 
   let roles = LISTABLE_ROLES;
   if (role !== undefined) {
@@ -80,6 +80,7 @@ export async function listAccounts(filters = {}) {
   const { entries, total } = await userRepository.findAll({
     roles,
     accountStatus,
+    search,
     page: normalizedPage,
     limit: normalizedLimit,
   });
