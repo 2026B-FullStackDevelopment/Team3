@@ -106,12 +106,23 @@ export function usePreferenceForm(editing, onSaved) {
     defaultValues: editing
       ? {
           categories: editing.categories,
-          vegetarian: editing.isVegetarian ? "vegetarian" : "any",
+          vegetarian:
+            editing.isVegetarian == null
+              ? "any"
+              : editing.isVegetarian
+                ? "vegetarian"
+                : "nonVegetarian",
           min: String(editing.priceRangeMin),
           max: String(editing.priceRangeMax),
           city: editing.city,
         }
-      : { categories: [], vegetarian: "any", min: "", max: "", city: "" },
+      : {
+          categories: [],
+          vegetarian: "any",
+          min: "",
+          max: "",
+          city: "",
+        },
   });
 
   const categories = useWatch({ control, name: "categories" }) ?? [];

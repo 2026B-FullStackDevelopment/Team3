@@ -8,6 +8,11 @@ function priceLabel(min, max) {
     : `${formatVnd(min)} – ${formatVnd(max)}`;
 }
 
+function vegetarianLabel(value) {
+  if (value == null) return "Any dietary status";
+  return value ? "Vegetarian only" : "Non-vegetarian only";
+}
+
 /** One preference row: chips + edit + delete. `index` is 1-based for the title. */
 export function PreferenceCard({ preference, index, onEdit, onDelete }) {
   const { categories, isVegetarian, priceRangeMin, priceRangeMax, city } =
@@ -22,7 +27,7 @@ export function PreferenceCard({ preference, index, onEdit, onDelete }) {
               {c}
             </Badge>
           ))}
-          {isVegetarian && <Badge variant="khaki">Vegetarian only</Badge>}
+          <Badge variant="khaki">{vegetarianLabel(isVegetarian)}</Badge>
           <Badge variant="khaki">
             {priceLabel(priceRangeMin, priceRangeMax)}
           </Badge>

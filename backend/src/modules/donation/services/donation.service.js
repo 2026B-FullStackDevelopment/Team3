@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 import * as donationRepository from "../repositories/donation.repo.js";
 import * as reservation from "../../reservation/interfaces/reservation.interface.js";
 import * as notification from "../../notification/interfaces/notification.interface.js";
@@ -307,36 +309,48 @@ export async function createDonation(donorProfileId, input = {}) {
     input.isVegetarian,
     "isVegetarian",
   );
-  const listing = await donationRepository.create({
-    donorProfileId: trustedDonorProfileId,
-    name,
-    description: optionalString(input.description, "description"),
-    imageUrl,
-    measurementUnit,
-    foodCategory,
-    isVegetarian: isVegetarian ?? null,
-    donationLimit,
-    price,
-    remainingQuantity,
-    ration,
-    status: DonationStatus.Active,
-    revenue: 0,
-    createdAt: new Date(),
-    closedAt: null,
-  });
-
+  const session = await mongoose.startSession();
+  let listing;
+  let createdNotifications = [];
   try {
-    await notification.notifyNewListingMatches({
-      donationId: String(listing._id),
-      donorProfileId: String(listing.donorProfileId),
-      foodCategory: listing.foodCategory,
-      isVegetarian: listing.isVegetarian,
-      price: listing.price,
+    await session.withTransaction(async () => {
+      listing = await donationRepository.create(
+        {
+          donorProfileId: trustedDonorProfileId,
+          name,
+          description: optionalString(input.description, "description"),
+          imageUrl,
+          measurementUnit,
+          foodCategory,
+          isVegetarian: isVegetarian ?? null,
+          donationLimit,
+          price,
+          remainingQuantity,
+          ration,
+          status: DonationStatus.Active,
+          revenue: 0,
+          createdAt: new Date(),
+          closedAt: null,
+        },
+        { session },
+      );
+
+      createdNotifications = await notification.notifyNewListingMatches(
+        {
+          donationId: String(listing._id),
+          donorProfileId: String(listing.donorProfileId),
+          foodCategory: listing.foodCategory,
+          isVegetarian: listing.isVegetarian,
+          price: listing.price,
+        },
+        { session, publish: false },
+      );
     });
-  } catch (error) {
-    console.error("[notification] listing matching failed", error);
+  } finally {
+    await session.endSession();
   }
 
+  notification.publishCreatedNotifications(createdNotifications);
   return listing;
 }
 
@@ -434,7 +448,8 @@ function normalizeCoordinates(filters) {
 function matchesPreference(listing, donor, preference) {
   return (
     preference.foodCategory.includes(listing.foodCategory) &&
-    preference.isVegetarian === listing.isVegetarian &&
+    (preference.isVegetarian == null ||
+      preference.isVegetarian === listing.isVegetarian) &&
     listing.price >= preference.priceRangeMin &&
     listing.price <= preference.priceRangeMax &&
     donor?.city?.localeCompare(preference.city, undefined, {

@@ -17,15 +17,24 @@ export async function findByRecipientProfileId(recipientProfileId) {
 }
 
 /** Preference owners whose complete preference matches a newly-created listing. */
-export async function findMatchingRecipientProfileIds(listing) {
+export async function findMatchingRecipientProfileIds(listing, options = {}) {
   const city = new RegExp(`^${escapeRegExp(listing.city)}$`, "i");
-  const preferences = await NotificationPreference.find({
+  // A null preference is the explicit "Any" wildcard. A listing whose status
+  // is not specified only matches that wildcard; it must not be described as
+  // vegetarian or non-vegetarian to a Recipient.
+  const vegetarianFilter =
+    listing.isVegetarian === null || listing.isVegetarian === undefined
+      ? null
+      : { $in: [null, listing.isVegetarian] };
+  const query = NotificationPreference.find({
     foodCategory: listing.foodCategory,
-    isVegetarian: listing.isVegetarian,
+    isVegetarian: vegetarianFilter,
     priceRangeMin: { $lte: listing.price },
     priceRangeMax: { $gte: listing.price },
     city,
   }).select("recipientProfileId");
+  if (options.session) query.session(options.session);
+  const preferences = await query;
 
   return [
     ...new Set(

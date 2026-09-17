@@ -11,6 +11,7 @@ import { CategoryChips } from "@/features/notification/Components/CategoryChips.
 
 const VEGETARIAN_OPTIONS = [
   { value: "any", label: "Any" },
+  { value: "nonVegetarian", label: "Non-vegetarian" },
   { value: "vegetarian", label: "Vegetarian only" },
 ];
 

@@ -33,7 +33,8 @@ export function formatPreferences(list) {
 export function toPreferencePayload(form) {
   return {
     foodCategory: form.categories.map(categoryToEnum),
-    isVegetarian: form.vegetarian === 'vegetarian',
+    isVegetarian:
+      form.vegetarian === 'any' ? null : form.vegetarian === 'vegetarian',
     priceRangeMin: Number(form.min),
     priceRangeMax: Number(form.max),
     city: form.city,
