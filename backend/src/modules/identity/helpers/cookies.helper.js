@@ -1,13 +1,15 @@
 import { env } from "../../../config/env.js";
 /**
- * Cookie options for the session token. httpOnly keeps it out of JS (XSS),
- * SameSite=Lax is our CSRF defense (BUSINESS_RULES §5.3), Secure is on only
- * in production so local HTTP dev still works. `expires` matches the JWT exp.
+ * Cookie options for the session token. httpOnly keeps it out of JS (XSS).
+ * In production the frontend and backend are on different Render domains, so the
+ * cookie must be SameSite=None (sent on cross-site XHR/fetch) + Secure. Locally
+ * (same-origin via the Vite proxy, plain HTTP) we keep SameSite=Lax as the CSRF
+ * defense (BUSINESS_RULES §5.3) with Secure off. `expires` matches the JWT exp.
  */
 export function sessionCookieOptions(expiresAt) {
   return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: env.isProduction ? "none" : "lax",
     secure: env.isProduction,
     expires: expiresAt,
     path: "/",
@@ -21,7 +23,7 @@ export function sessionCookieOptions(expiresAt) {
 export function clearCookieOptions() {
   return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: env.isProduction ? "none" : "lax",
     secure: env.isProduction,
     path: "/",
   };
