@@ -195,3 +195,30 @@ docs/
 4. Create a Pull Request to `dev`.
 5. Get the required review before merging.
 6. Keep your branch updated with `dev`.
+
+## Gold Dataset
+All accounts use the shared password: `FoodShare2026!`
+
+Admin:
+
+- `admin@aff.com`
+
+Recipients:
+
+- `gold.recipient@aff.com`
+- `minh.anh@aff.com`
+- `quoc.bao@aff.com`
+- `thu.ha@aff.com`
+- `gia.huy@aff.com`
+- `ngoc.lan@aff.com`
+- `duc.minh@aff.com`
+
+Donors:
+
+- `gold.donor@aff.com`
+- `bep.viet@aff.com`
+- `nong.san.an.lanh@aff.com`
+- `com.nha.am.ap@aff.com`
+- `thuc.pham.minh.tam@aff.com`
+- `suat.an.huong.duong@aff.com`
+- `bep.nhan.ai.da.lat@aff.com`
