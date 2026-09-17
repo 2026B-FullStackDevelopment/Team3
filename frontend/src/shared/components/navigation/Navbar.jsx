@@ -51,17 +51,9 @@ const MENU_ITEMS = {
       icon: "bell",
     },
   ],
-  donor: [
-    { label: "Dashboard", to: "/donor/dashboard" },
-    { label: "My Listings", to: "/donor/listings" },
-    { label: "Manual Entries", to: "/donor/manual-donations" },
-    { label: "Profile", to: "/donor/profile" },
-  ],
-  // Same duplication as donor's "Dashboard" above: the AuthedBar's top nav
-  // already has this once you're inside /admin, but the account dropdown is
-  // the only way back to Admin from everywhere else (the public Landing
-  // page included) -- without this, a logged-in Admin on "/" has no way in
-  // except typing the URL.
+  donor: [{ label: "Profile", to: "/donor/profile" }],
+  // The account dropdown is the only way back to Admin from outside the
+  // protected Admin layout (including the public Landing page).
   admin: [{ label: "Admin", to: "/admin" }],
 };
 
