@@ -72,14 +72,26 @@ export function initializeNotificationGateway(httpServer) {
 }
 
 export function publishNotifications(notifications) {
+  // TEMP diagnostic: fires on EVERY call, BEFORE the socketServer guard — so a
+  // second (uninitialized) module instance where socketServer is undefined is
+  // still visible here. If this logs "socketServer set: false", the gateway was
+  // loaded twice (connections registered on a different copy than this one).
+  const count = Array.isArray(notifications)
+    ? notifications.length
+    : notifications
+      ? 1
+      : 0;
+  console.log(
+    "[socket] publishNotifications ENTER — socketServer set: %s, results: %d",
+    Boolean(socketServer),
+    count,
+  );
+
   if (!socketServer) return;
   const results = Array.isArray(notifications)
     ? notifications
     : [notifications];
 
-  // TEMP diagnostic: how many results reached publish and their created flags.
-  // A `created:false` result is skipped below (no emit) — this line still logs
-  // it, unlike the per-emit log further down.
   console.log(
     "[socket] publishNotifications: %d result(s), created flags: %o",
     results.length,
