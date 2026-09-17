@@ -59,6 +59,13 @@ export function initializeNotificationGateway(httpServer) {
   socketServer.use(authenticateSocket);
   socketServer.on("connection", (socket) => {
     socket.join(`user:${socket.data.userId}`);
+    // TEMP diagnostic: which userId room this socket joined (compare with the
+    // emit target logged in publishNotifications).
+    console.log(
+      "[socket] connected — joined room user:%s (role: %s)",
+      socket.data.userId,
+      socket.data.role,
+    );
   });
 
   return socketServer;
@@ -80,9 +87,17 @@ export function publishNotifications(notifications) {
     const notification = isCreationResult ? result.notification : result;
     if (!notification) continue;
 
-    socketServer
-      .to(`user:${notification.userId}`)
-      .emit("notification:created", notification);
+    // TEMP diagnostic: what room we emit to, whether anyone is in it, and the
+    // created flag. roomSize 0 => userId mismatch (join id != emit id).
+    const room = `user:${notification.userId}`;
+    console.log(
+      "[socket] emit → %s | roomSize: %d | created: %s",
+      room,
+      socketServer.sockets.adapter.rooms.get(room)?.size ?? 0,
+      isCreationResult ? result.created : "n/a",
+    );
+
+    socketServer.to(room).emit("notification:created", notification);
   }
 }
 
