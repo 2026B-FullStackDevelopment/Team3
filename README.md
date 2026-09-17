@@ -7,12 +7,12 @@ Full-stack application developed by Team 3 for the Full-Stack Development course
 - Huynh Tan Phuc - s4103131 - Donor Dashboard & Notification
 - Dao Tien Dung - s4088577 - Authentication & Profile & Notification Preference & Wallet
 - Lam Vi Tin - s4116601 - Recipient & Reservation History
-- Nguyen Nhat Minh - s4112692 - Admin & Feedback
+- Nguyen Nhat Minh - s4112692 - Admin
 
 ## Tech Stack
 
-- **Frontend:** React + Vite + TypeScript
-- **Backend:** Node.js + Express + TypeScript
+- **Frontend:** React + Vite + JavaScript
+- **Backend:** Node.js + Express + JavaScript
 - **Documentation:** SRS, diagrams, reports
 
 ## Project Structure
@@ -21,7 +21,6 @@ Full-stack application developed by Team 3 for the Full-Stack Development course
 Team3/
 ├── frontend/            # React + Vite
 ├── backend/             # Node.js + Express
-├── docs/                # Documentation (not created yet)
 ├── .gitignore
 ├── README.md
 ├── package.json         # Workspace root — scripts only, no app code
@@ -168,18 +167,13 @@ pnpm build:backend
 pnpm check
 ```
 
-## API Routes
-
-Implemented as skeletons — the routers and controllers exist, every handler
-currently answers `501 Not Implemented`.
-
 ### Contribution Table 
-| Member Name | Member's Feature | Workload Percentage |
-|---|---|---:|
-| Phuc Huynh Tan | Donation & Notification  | 25% |
-| Nguyen Nhat Minh | Admin & Feedback | 25% |
-| Dung Tien Dao | Wallet, Notification Preference, Profile & Authentication | 25% |
-| Tin Vi Lam | Reservation & Recipient | 25% |
+| Member Name | Member's Feature | Workload Percentage |Github Name|
+|---|---|---|---:|
+| Phuc Huynh Tan | Donation & Notification  | 25% |travinhcot|
+| Nguyen Nhat Minh | Admin | 25% |MinhRGB|
+| Dung Tien Dao | Wallet, Notification Preference, Profile & Authentication | 25% |s4088577-ui & DungDao59|
+| Tin Vi Lam | Reservation & Recipient | 25% |tin-lamvi|
 
 
 ## Documentation
