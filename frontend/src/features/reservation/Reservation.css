@@ -236,12 +236,13 @@
   display: flex;
   flex-direction: row;
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   min-height: 450px;
 }
 
 .donation-detail .modal-image-container {
-  flex: 1;
+  flex: 0 0 38%;
+  min-width: 0;
   height: auto;
   background-color: var(--color-khaki-strong);
 }
@@ -254,7 +255,8 @@
 
 .donation-detail .modal-body {
   flex: 1;
-  padding: 3rem;
+  min-width: 0;
+  padding: clamp(2rem, 4vw, 3rem);
   display: flex;
   flex-direction: column;
   max-height: 90vh;
@@ -514,4 +516,85 @@ input[type=number]::-webkit-outer-spin-button {
 }
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .donation-detail {
+    flex-direction: column;
+    width: min(100%, 30rem);
+    max-height: calc(100dvh - 1rem);
+    min-height: 0;
+    border-radius: 1.25rem;
+  }
+
+  .donation-detail .modal-image-container {
+    flex: 0 0 clamp(7rem, 22vh, 9rem);
+    width: 100%;
+    height: clamp(7rem, 22vh, 9rem);
+  }
+
+  .donation-detail .modal-image {
+    display: block;
+  }
+
+  .donation-detail .modal-body {
+    min-height: 0;
+    max-height: none;
+    padding: 1rem;
+  }
+
+  .donation-detail h2 {
+    overflow-wrap: anywhere;
+    font-size: 1.65rem;
+  }
+
+  .donation-detail .donor-name {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .pickup-map iframe {
+    height: 130px;
+  }
+
+  .limit-display {
+    margin: 0.75rem 0 1rem;
+  }
+
+  .quantity-selector {
+    gap: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .quantity-selector button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .incremental-input,
+  .custom-input {
+    min-width: 0;
+    font-size: 1.5rem;
+  }
+
+  .unit-label {
+    flex-shrink: 0;
+    font-size: 1.125rem;
+  }
+
+  .modal-actions {
+    gap: 0.75rem;
+  }
+
+  .btn-reserve,
+  .btn-cancel {
+    min-width: 0;
+    padding: 0.8rem 0.65rem;
+    font-size: 1rem;
+  }
 }
