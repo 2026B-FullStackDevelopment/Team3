@@ -52,6 +52,15 @@ function toPlainDonation(donation) {
     : donation;
 }
 
+function validateRemainingQuantityWithinLimit(
+  remainingQuantity,
+  donationLimit,
+) {
+  if (donationLimit > 0 && remainingQuantity > donationLimit) {
+    throw new ValidationError("remainingQuantity cannot exceed donationLimit");
+  }
+}
+
 async function resolveRecipientMunicipalityFilter(filters) {
   if (!filters.municipality) return filters;
 
@@ -91,6 +100,8 @@ export async function createDonation(donorProfileId, input = {}) {
     input.donationLimit === undefined
       ? 0
       : requireNonNegativeNumber(input.donationLimit, "donationLimit");
+
+  validateRemainingQuantityWithinLimit(remainingQuantity, donationLimit);
 
   const price =
     input.price === undefined ? 0 : requireListingPrice(input.price);
@@ -454,6 +465,12 @@ export async function updateDonation(id, donorProfileId, input = {}) {
   if (input.price !== undefined) {
     changes.price = requireListingPrice(input.price);
   }
+
+  validateRemainingQuantityWithinLimit(
+    changes.remainingQuantity ?? current.remainingQuantity,
+    changes.donationLimit ?? current.donationLimit,
+  );
+
   if (Object.keys(changes).length === 0) {
     throw new ValidationError("No valid fields were provided");
   }
