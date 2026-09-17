@@ -42,7 +42,15 @@ const ROLE_LINKS = {
 
 // Account dropdown items per role.
 const MENU_ITEMS = {
-  recipient: [{ label: "Profile", to: "/profile", icon: "user" }],
+  recipient: [
+    { label: "Profile", to: "/profile", icon: "user" },
+    { label: "Wallet", to: "/wallet", icon: "wallet" },
+    {
+      label: "Notification Preferences",
+      to: "/notification-preferences",
+      icon: "bell",
+    },
+  ],
   donor: [{ label: "Profile", to: "/donor/profile" }],
   // The account dropdown is the only way back to Admin from outside the
   // protected Admin layout (including the public Landing page).
