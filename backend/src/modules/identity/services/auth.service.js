@@ -64,10 +64,13 @@ export async function login({ email, password }) {
   }
 
   // 2. A live lock short-circuits before any password attempt is allowed.
-  if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
-    throw new UnauthorizedError(
-      "Account is temporarily locked due to too many failed attempts. Try again later.",
-    );
+  if (user.lockedUntil) {
+    if (user.lockedUntil.getTime() > Date.now()) {
+      throw new UnauthorizedError(
+        "Account is temporarily locked due to too many failed attempts. Try again later.",
+      );
+    }
+    await userRepository.resetLockout(user._id);
   }
 
   // 3. Verify the password; a wrong one counts toward the lockout.
