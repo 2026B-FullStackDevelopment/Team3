@@ -551,17 +551,36 @@ export async function changeDonationStatus(id, donorProfileId, requestStatus) {
       `A donation with no remaining quantity cannot be activated`,
     );
   }
-  const updated = await donationRepository.updateDonationStatus(
-    id,
-    donorProfileId,
-    status,
-  );
-  if (!updated) {
-    throw new NotFoundError("Donation not found");
+  if (status !== DonationStatus.Cancelled) {
+    const updated = await donationRepository.updateDonationStatus(
+      id,
+      donorProfileId,
+      status,
+    );
+    if (!updated) {
+      throw new NotFoundError("Donation not found");
+    }
+    return updated;
   }
 
-  if (status === DonationStatus.Cancelled) {
-    await reservation.cancelActiveReservationsByDonation(id);
+  const session = await mongoose.startSession();
+  let updated;
+  try {
+    await session.withTransaction(async () => {
+      updated = await donationRepository.updateDonationStatus(
+        id,
+        donorProfileId,
+        status,
+        { session },
+      );
+      if (!updated) {
+        throw new NotFoundError("Donation not found");
+      }
+
+      await reservation.cancelActiveReservationsByDonation(id, { session });
+    });
+  } finally {
+    await session.endSession();
   }
 
   return updated;

@@ -228,7 +228,12 @@ export async function updateById(id, data, options = {}) {
   );
 }
 
-export async function updateOwnedDonation(id, donorProfileId, data) {
+export async function updateOwnedDonation(
+  id,
+  donorProfileId,
+  data,
+  options = {},
+) {
   return Donation.findOneAndUpdate(
     {
       _id: id,
@@ -236,11 +241,16 @@ export async function updateOwnedDonation(id, donorProfileId, data) {
       status: { $ne: DonationStatus.PendingCancellation },
     },
     { $set: data },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true, session: options.session },
   );
 }
 
-export async function updateDonationStatus(id, donorProfileId, status) {
+export async function updateDonationStatus(
+  id,
+  donorProfileId,
+  status,
+  options = {},
+) {
   const update = { status };
 
   if (
@@ -254,7 +264,7 @@ export async function updateDonationStatus(id, donorProfileId, status) {
     update.closedAt = null;
   }
 
-  return updateOwnedDonation(id, donorProfileId, update);
+  return updateOwnedDonation(id, donorProfileId, update, options);
 }
 
 export async function updateDonationRation(id, donorProfileId, ration) {
