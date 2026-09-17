@@ -1,5 +1,6 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { authRoutes } from "./modules/identity/routes/auth.routes.js";
 import { profileRoutes } from "./modules/identity/routes/profile.routes.js";
 import { walletRoutes } from "./modules/wallet/routes/wallet.routes.js";
@@ -18,6 +19,12 @@ import { recipientListingRoutes } from "./modules/donation/routes/recipientListi
 import { env } from "./config/env.js";
 
 const app = express();
+
+// The frontend is served from a different origin (its own Render domain), so the
+// browser needs CORS with credentials to send/receive the httpOnly auth cookie.
+// Origin comes from FRONTEND_ORIGIN (same value the Socket.IO gateway uses); a
+// single explicit origin is required because credentialed CORS can't use "*".
+app.use(cors({ origin: env.realtime.corsOrigin, credentials: true }));
 
 registerPaymentHandlers();
 registerReservationPaymentHandlers();
