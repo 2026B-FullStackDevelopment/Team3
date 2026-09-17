@@ -142,6 +142,7 @@ export async function resetLockout(id) {
 export async function findAll({
   roles,
   accountStatus,
+  search,
   page = 1,
   limit = 20,
 } = {}) {
@@ -151,6 +152,9 @@ export async function findAll({
   }
   if (accountStatus !== undefined) {
     query.accountStatus = accountStatus;
+  }
+  if (typeof search === "string" && search.trim() !== "") {
+    query.email = new RegExp(escapeRegExp(search.trim()), "i");
   }
 
   const skip = (page - 1) * limit;
