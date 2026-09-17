@@ -46,6 +46,8 @@ export async function notifyNewListingMatches(event, options = {}) {
     recipientProfileIds,
     options,
   );
+  if (recipients.length === 0) return [];
+
   const results = await notificationService.notifyListingMatched(
     {
       donationId: event.donationId,
@@ -53,6 +55,11 @@ export async function notifyNewListingMatches(event, options = {}) {
     },
     options,
   );
+  if (results.length !== recipients.length) {
+    throw new Error(
+      `Expected ${recipients.length} matched-listing notifications, created ${results.length}`,
+    );
+  }
   // A caller using a MongoDB transaction must publish only after commit so a
   // Recipient never receives an event for data that is later rolled back.
   if (options.publish !== false) publishNotifications(results);

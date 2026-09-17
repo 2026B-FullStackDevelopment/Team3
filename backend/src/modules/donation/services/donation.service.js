@@ -350,6 +350,9 @@ export async function createDonation(donorProfileId, input = {}) {
     await session.endSession();
   }
 
+  // The records are committed at this point. Realtime delivery is best-effort;
+  // recipients that were offline recover the same records through the REST
+  // notification feed when they reconnect.
   notification.publishCreatedNotifications(createdNotifications);
   return listing;
 }
