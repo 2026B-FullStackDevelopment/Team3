@@ -448,19 +448,6 @@ function normalizeCoordinates(filters) {
   return { latitude, longitude };
 }
 
-function matchesPreference(listing, donor, preference) {
-  return (
-    preference.foodCategory.includes(listing.foodCategory) &&
-    (preference.isVegetarian == null ||
-      preference.isVegetarian === listing.isVegetarian) &&
-    listing.price >= preference.priceRangeMin &&
-    listing.price <= preference.priceRangeMax &&
-    donor?.city?.localeCompare(preference.city, undefined, {
-      sensitivity: "accent",
-    }) === 0
-  );
-}
-
 function isSameMunicipality(left, right) {
   if (!left || !right) return false;
   return left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0;
@@ -522,16 +509,7 @@ export async function listActiveDonations(userId, filters = {}) {
   const { page, limit } = resolvedFilters;
   const recipient = await identity.getRecipientContext(userId);
 
-  if (!recipient?.isPremium) {
-    const result =
-      await donationRepository.findActiveDonations(resolvedFilters);
-    return attachDonorSummaries(result);
-  }
-
-  const preferences = await notification.getRecipientMatchingCriteria(
-    recipient.recipientProfileId,
-  );
-  if (preferences.length === 0) {
+  if (!recipient?.isPremium || normalizedFilters.sortBy === "price") {
     const result =
       await donationRepository.findActiveDonations(resolvedFilters);
     return attachDonorSummaries(result);
@@ -549,23 +527,17 @@ export async function listActiveDonations(userId, filters = {}) {
   );
   const ranked = entries.map((entry, stableIndex) => {
     const donor = donors.get(String(entry.donorProfileId));
-    const isMatch = preferences.some((preference) =>
-      matchesPreference(entry, donor, preference),
-    );
     return {
       entry,
       stableIndex,
-      isMatch,
       isRecipientCity: isSameMunicipality(donor?.city, recipient.city),
-      distance:
-        isMatch && coordinates ? distanceKm(coordinates, donor) : Infinity,
+      distance: coordinates ? distanceKm(coordinates, donor) : Infinity,
     };
   });
   ranked.sort((left, right) => {
     if (!coordinates && left.isRecipientCity !== right.isRecipientCity) {
       return left.isRecipientCity ? -1 : 1;
     }
-    if (left.isMatch !== right.isMatch) return left.isMatch ? -1 : 1;
     if (left.distance !== right.distance) return left.distance - right.distance;
     return left.stableIndex - right.stableIndex;
   });
