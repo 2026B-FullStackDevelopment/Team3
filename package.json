@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
-    "dev:frontend": "pnpm --dir frontend dev",
-    "dev:backend": "pnpm --dir backend dev",
-    "build:frontend": "pnpm --dir frontend build",
-    "build:backend": "pnpm --dir backend build"
+    "dev": "concurrently -n frontend,backend -c cyan,magenta \"pnpm dev:frontend\" \"pnpm dev:backend\"",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:backend": "pnpm --filter backend build",
+    "check": "pnpm --filter backend check"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +17,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^11.21.0",
+      "version": "11.21.0",
       "onFail": "download"
     }
   },

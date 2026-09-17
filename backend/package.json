@@ -2,12 +2,16 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "check": "tsc --noEmit",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/scripts/seed.js",
+    "lint": "eslint src",
+    "format:check": "prettier --check src",
+    "test:repository": "node --test src/modules/*/repositories/__tests__/*.test.js",
+    "test:db": "node src/scripts/testSeed.js",
+    "build": "pnpm lint && pnpm format:check"
   },
   "keywords": [],
   "author": "",
@@ -21,13 +25,25 @@
   },
   "type": "module",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.2",
+    "multer": "^2.2.0",
+    "nodemon": "^3.1.14",
+    "resend": "^6.28.0",
+    "socket.io": "4.8.3",
+    "stripe": "^22.6.2",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.2.0",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "@eslint/js": "^9.19.0",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2"
   }
 }
